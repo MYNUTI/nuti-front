@@ -1,0 +1,62 @@
+/* ============================================================
+   마이뉴티 디자인 토큰 v1.0 (2026-08-19)
+   출처: 디자인 시안 세트(40화면) — 근거: _방법론/컬러 시스템 리서치
+   사용: nuti-front 전역 스타일에 import 후 var(--token)으로만 색·간격 사용
+   ============================================================ */
+:root {
+  /* ── 뉴트럴 (웜 — Notion·Headspace 계열, 순백·순검정 금지) */
+  --bg:            #FAF7F2;  /* 앱 배경 (웜 크림) */
+  --surface:       #FFFFFF;  /* 카드 */
+  --surface-tile:  #F3EDE3;  /* 썸네일·아이콘 타일 */
+  --ink:           #2E2A24;  /* 본문·제목 (웜 잉크) */
+  --ink-sub:       #8A8177;  /* 보조 텍스트 */
+  --ink-faint:     #B3A896;  /* 비활성·플레이스홀더 */
+  --hairline:      #F0E9DE;  /* 카드 보더 (뎁스는 보더로 — 섀도 없음) */
+  --track:         #EFE9E0;  /* 막대 트랙·디바이더·세그먼트 배경 */
+
+  /* ── CTA (베리 — 등급 hue와 불충돌하는 유일 계열) */
+  --cta:           #A03E68;
+  --cta-ink:       #FDF7FA;
+  --cta-tint:      #F5E5EC;  /* 목표 칩·라이트 배지 배경 */
+  --ghost-border:  #E2D9CC;
+
+  /* ── 등급 5색 — [필 / 틴트 배경 / 틴트 위 문자] 3값 세트
+        hue 관습(그린→레드) 유지, C는 앰버화, E는 순빨강 순화(비처벌) */
+  --grade-a-fill:  #00A05A;  --grade-a-tint: #E3F3EB;  --grade-a-text: #00784A;
+  --grade-b-fill:  #7DB022;  --grade-b-tint: #EFF4DF;  --grade-b-text: #5A8412;
+  --grade-c-fill:  #E8A800;  --grade-c-tint: #FBF1D8;  --grade-c-text: #8F6A0A;
+  --grade-d-fill:  #EE7B2E;  --grade-d-tint: #FBECDE;  --grade-d-text: #B0541A;
+  --grade-e-fill:  #E5484D;  --grade-e-tint: #FAE6E4;  --grade-e-text: #AC3438;
+  /* 규칙: 필 위 문자는 항상 #FFFFFF · 큰 등급 문자 단독 사용 시 -text 값 ·
+     등급 정보는 색+문자(A~E)+램프 위치 3중 인코딩 (색 단독 금지) */
+
+  /* ── 간격 (3단 리듬: 요소 < 카드 내부 < 섹션) */
+  --sp-1: 8px;   /* 요소 간 */
+  --sp-2: 16px;  /* 카드 내부 */
+  --sp-3: 28px;  /* 섹션 간 */
+
+  /* ── 라운딩 (2~3단 통일, 큰 요소일수록 큰 반경) */
+  --r-sm: 12px;  /* 램프 칸·작은 타일 */
+  --r-md: 14px;  /* 버튼·인풋 */
+  --r-lg: 18px;  /* 카드 */
+  --r-sheet: 24px; /* 바텀시트 상단 */
+
+  /* ── 타이포 (Pretendard 웹폰트 정식 탑재 필요 — 시안은 로컬 참조) */
+  --font: 'Pretendard Variable', 'Pretendard', -apple-system, 'Apple SD Gothic Neo',
+          'Noto Sans KR', sans-serif;
+  --fs-title: 24px;   /* 화면 제목 (전 화면 통일) */
+  --fs-body: 15px;
+  --fs-caption: 12px;
+  --lh-body: 1.55;    /* 한글 행간 */
+  --ls: -0.01em;      /* 한글 자간 */
+  /* 위계는 크기보다 굵기: 400 / 600(강조) / 700(제목) / 800(등급·수치) */
+
+  /* ── 컴포넌트 규격 */
+  --btn-h: 54px;        /* 주요 버튼 */
+  --touch-min: 44px;    /* 최소 터치 타깃 (모든 인터랙티브 요소) */
+  --badge-hero: 84px;   /* 마커 히어로 배지 */
+  --badge-mini: 36px;   /* 리스트 미니 배지 */
+  --scan-fab: 62px;     /* 탭바 중앙 스캔 버튼 */
+}
+/* 전역 권장: body { background: var(--bg); color: var(--ink);
+   font-family: var(--font); letter-spacing: var(--ls); word-break: keep-all; } */
