@@ -11,6 +11,7 @@
 <h1>마이뉴티 프로토타입 배선</h1>
 <p>임포트한 40화면을 인식해 클릭 연결을 자동으로 만듭니다. 화면이 있는 페이지를 연 상태에서 실행하세요.</p>
 <label><input type="checkbox" id="rename" checked> 프레임 이름을 &laquo;01 스플래시&raquo; 식으로 정리</label>
+<label><input type="checkbox" id="promote" checked> <b>화면을 최상위로 승격 + 플로우 순서로 재배치</b> (연결에 필수)</label>
 <label><input type="checkbox" id="start" checked> 01 스플래시를 프로토타입 시작 화면으로</label>
 <button id="run">배선 실행</button>
 <button class="ghost" id="close">닫기</button>
@@ -19,7 +20,7 @@
  var $ = function (i) { return document.getElementById(i); };
  $('run').onclick = function () {
    $('log').textContent = '실행 중...';
-   parent.postMessage({ pluginMessage: { type: 'run', rename: $('rename').checked, setStart: $('start').checked } }, '*');
+   parent.postMessage({ pluginMessage: { type: 'run', rename: $('rename').checked, promote: $('promote').checked, setStart: $('start').checked } }, '*');
  };
  $('close').onclick = function () { parent.postMessage({ pluginMessage: { type: 'close' } }, '*'); };
  onmessage = function (e) { var m = e.data.pluginMessage; if (m && m.done) $('log').textContent = m.log.join('\n'); };
