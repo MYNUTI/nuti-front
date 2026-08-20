@@ -1,0 +1,15 @@
+{
+  "name": "마이뉴티 프로토타입 배선",
+  "id": "mynuti-proto-wiring",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": [
+    "figma"
+  ],
+  "networkAccess": {
+    "allowedDomains": [
+      "none"
+    ]
+  }
+}
