@@ -1,0 +1,26 @@
+<!doctype html><meta charset="utf-8">
+<style>
+ body{font:13px/1.5 -apple-system,'Pretendard',sans-serif;margin:0;padding:16px;color:#2E2A24;background:#FAF7F2}
+ h1{font-size:15px;margin:0 0 6px}
+ p{color:#8A8177;margin:0 0 14px;font-size:12px}
+ label{display:flex;gap:8px;align-items:center;margin:8px 0;font-size:12px}
+ button{width:100%;height:40px;border:0;border-radius:10px;background:#A03E68;color:#fff;font:inherit;font-weight:700;cursor:pointer;margin-top:12px}
+ button.ghost{background:#fff;color:#2E2A24;border:1px solid #E2D9CC;font-weight:600}
+ pre{background:#fff;border:1px solid #EFE9E0;border-radius:10px;padding:10px;font-size:11px;white-space:pre-wrap;max-height:170px;overflow:auto;margin-top:12px}
+</style>
+<h1>마이뉴티 프로토타입 배선</h1>
+<p>임포트한 40화면을 인식해 클릭 연결을 자동으로 만듭니다. 화면이 있는 페이지를 연 상태에서 실행하세요.</p>
+<label><input type="checkbox" id="rename" checked> 프레임 이름을 &laquo;01 스플래시&raquo; 식으로 정리</label>
+<label><input type="checkbox" id="start" checked> 01 스플래시를 프로토타입 시작 화면으로</label>
+<button id="run">배선 실행</button>
+<button class="ghost" id="close">닫기</button>
+<pre id="log">대기 중...</pre>
+<script>
+ var $ = function (i) { return document.getElementById(i); };
+ $('run').onclick = function () {
+   $('log').textContent = '실행 중...';
+   parent.postMessage({ pluginMessage: { type: 'run', rename: $('rename').checked, setStart: $('start').checked } }, '*');
+ };
+ $('close').onclick = function () { parent.postMessage({ pluginMessage: { type: 'close' } }, '*'); };
+ onmessage = function (e) { var m = e.data.pluginMessage; if (m && m.done) $('log').textContent = m.log.join('\n'); };
+</script>
