@@ -3,14 +3,20 @@
 :root {
   --app-max-width: 420px;
 
-  --backdrop: #f7f7f8;
-  --background: #ffffff;
-  --foreground: #171717;
+  --backdrop: #ece9e2;
+  --background: #faf7f1;
+  --foreground: #2f2d2a;
   --surface: #ffffff;
-  --border: #e5e5e5;
-  --muted: #737373;
-  --primary: #171717;
-  --primary-foreground: #ffffff;
+  --border: #e3ded4;
+  --muted: #8b8781;
+  --primary: #2f2d2a;
+  --primary-foreground: #faf7f1;
+
+  --grade-a: #34996b;
+  --grade-b: #8cbf4f;
+  --grade-c: #ddb13a;
+  --grade-d: #e08a47;
+  --grade-e: #c9505e;
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
@@ -29,6 +35,12 @@
   --color-muted: var(--muted);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+
+  --color-grade-a: var(--grade-a);
+  --color-grade-b: var(--grade-b);
+  --color-grade-c: var(--grade-c);
+  --color-grade-d: var(--grade-d);
+  --color-grade-e: var(--grade-e);
 
   --font-sans:
     var(--font-paperlogy), -apple-system, BlinkMacSystemFont, system-ui,
