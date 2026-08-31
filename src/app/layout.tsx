@@ -13,7 +13,10 @@ const paperlogy = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "마이뉴티",
+  title: {
+    default: "마이뉴티",
+    template: "%s · 마이뉴티",
+  },
   description: "",
 };
 
