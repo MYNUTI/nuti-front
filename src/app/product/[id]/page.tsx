@@ -12,7 +12,7 @@ export default async function ProductPage({
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-1">
       <p className="text-base font-bold">3-2 제품 결과</p>
-      <p className="text-sm text-muted">/product/{id}</p>
+      <p className="text-sm text-muted-foreground">/product/{id}</p>
     </main>
   );
 }

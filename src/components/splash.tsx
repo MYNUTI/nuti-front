@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const GRADES = [
@@ -12,21 +13,24 @@ const GRADES = [
 
 const SPLASH_MS = 3000;
 const FADE_MS = 400;
+const NEXT_PATH = "/onboarding/consent";
 
 export function Splash() {
+  const router = useRouter();
   const [fading, setFading] = useState(false);
-  const [gone, setGone] = useState(false);
 
   useEffect(() => {
+    router.prefetch(NEXT_PATH);
     const fadeTimer = setTimeout(() => setFading(true), SPLASH_MS);
-    const goneTimer = setTimeout(() => setGone(true), SPLASH_MS + FADE_MS);
+    const moveTimer = setTimeout(
+      () => router.replace(NEXT_PATH),
+      SPLASH_MS + FADE_MS,
+    );
     return () => {
       clearTimeout(fadeTimer);
-      clearTimeout(goneTimer);
+      clearTimeout(moveTimer);
     };
-  }, []);
-
-  if (gone) return null;
+  }, [router]);
 
   return (
     <div
@@ -47,7 +51,7 @@ export function Splash() {
       </div>
 
       <h1 className="mt-8 text-[34px] font-bold">마이뉴티</h1>
-      <p className="mt-3 text-base font-medium text-muted">
+      <p className="mt-3 text-base font-medium text-muted-foreground">
         찍으면 나오는, 내 목표 기준 영양 등급
       </p>
     </div>

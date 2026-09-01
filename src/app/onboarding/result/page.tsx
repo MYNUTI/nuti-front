@@ -8,7 +8,7 @@ export default function OnboardingResultPage() {
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-1">
       <p className="text-base font-bold">1-3 온보딩 결과</p>
-      <p className="text-sm text-muted">/onboarding/result</p>
+      <p className="text-sm text-muted-foreground">/onboarding/result</p>
     </main>
   );
 }
