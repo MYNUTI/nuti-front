@@ -12,7 +12,7 @@ export function Splash() {
         </p>
       </div>
 
-      <CtaButton asChild tone="neutral">
+      <CtaButton asChild>
         <Link href="/onboarding/consent">시작하기</Link>
       </CtaButton>
     </div>

@@ -20,7 +20,7 @@
   --card-foreground: #1f1f1e;
   --popover: #ffffff;
   --popover-foreground: #1f1f1e;
-  --primary: #8c3a5d;
+  --primary: #3a3a38;
   --primary-foreground: #ffffff;
   --secondary: #eceae6;
   --secondary-foreground: #1f1f1e;
@@ -31,12 +31,8 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: #e2e0dc;
   --input: #e2e0dc;
-  --ring: #8c3a5d;
+  --ring: #3a3a38;
   --radius: 0.625rem;
-
-  /* 무채색 강조 */
-  --neutral: #3a3a38;
-  --neutral-foreground: #ffffff;
 
   /* 영양 등급 */
   --grade-a: #34996b;
@@ -79,8 +75,6 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-neutral: var(--neutral);
-  --color-neutral-foreground: var(--neutral-foreground);
 
   --color-grade-a: var(--grade-a);
   --color-grade-b: var(--grade-b);

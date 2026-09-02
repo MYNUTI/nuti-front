@@ -1,13 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type Tone = "primary" | "neutral" | "outline";
+type Tone = "primary" | "secondary" | "outline";
 
-const TONES: Record<Tone, string> = {
-  primary: "",
-  neutral: "bg-neutral text-neutral-foreground hover:bg-neutral/85",
-  outline: "bg-card",
-};
+const VARIANTS = {
+  primary: "default",
+  secondary: "secondary",
+  outline: "outline",
+} as const;
 
 /** 화면 하단에 놓이는 주요 액션 버튼. asChild로 링크로도 쓴다. */
 export function CtaButton({
@@ -19,10 +19,10 @@ export function CtaButton({
 }) {
   return (
     <Button
-      variant={tone === "outline" ? "outline" : "default"}
+      variant={VARIANTS[tone]}
       className={cn(
         "h-14 w-full rounded-2xl text-base font-bold",
-        TONES[tone],
+        tone === "outline" && "bg-card",
         className,
       )}
       {...props}
