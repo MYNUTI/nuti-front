@@ -7,32 +7,36 @@
 :root {
   /* 앱 셸 */
   --app-max-width: 420px;
-  --backdrop: #ece9e2;
+  --backdrop: #e8e7e5;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
 
   /* 팔레트 — 시안 기준, Figma 확정 시 이 블록만 교체 */
-  --background: #faf7f1;
-  --foreground: #2f2d2a;
+  --background: #f4f3f1;
+  --foreground: #1f1f1e;
   --card: #ffffff;
-  --card-foreground: #2f2d2a;
+  --card-foreground: #1f1f1e;
   --popover: #ffffff;
-  --popover-foreground: #2f2d2a;
+  --popover-foreground: #1f1f1e;
   --primary: #8c3a5d;
   --primary-foreground: #ffffff;
-  --secondary: #efebe4;
-  --secondary-foreground: #2f2d2a;
-  --muted: #efebe4;
-  --muted-foreground: #8b8781;
-  --accent: #efebe4;
-  --accent-foreground: #2f2d2a;
+  --secondary: #eceae6;
+  --secondary-foreground: #1f1f1e;
+  --muted: #eceae6;
+  --muted-foreground: #6e6d6a;
+  --accent: #eceae6;
+  --accent-foreground: #1f1f1e;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: #e3ded4;
-  --input: #e3ded4;
+  --border: #e2e0dc;
+  --input: #e2e0dc;
   --ring: #8c3a5d;
   --radius: 0.625rem;
+
+  /* 무채색 강조 */
+  --neutral: #3a3a38;
+  --neutral-foreground: #ffffff;
 
   /* 영양 등급 */
   --grade-a: #34996b;
@@ -75,6 +79,8 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-neutral: var(--neutral);
+  --color-neutral-foreground: var(--neutral-foreground);
 
   --color-grade-a: var(--grade-a);
   --color-grade-b: var(--grade-b);

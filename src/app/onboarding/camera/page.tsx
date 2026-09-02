@@ -26,7 +26,7 @@ export default function CameraNoticePage() {
 
         <div className="flex flex-col gap-2.5">
           <CtaButton>허용하기</CtaButton>
-          <CtaButton variant="outline">나중에</CtaButton>
+          <CtaButton tone="outline">나중에</CtaButton>
         </div>
       </div>
     </main>
