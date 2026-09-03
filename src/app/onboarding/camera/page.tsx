@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { CtaButton } from "@/components/common/cta-button";
 import { IconCamera } from "@/components/icons";
 
@@ -24,8 +25,12 @@ export default function CameraNoticePage() {
         </p>
 
         <div className="mt-auto flex flex-col gap-2.5 pt-10">
-          <CtaButton>허용하기</CtaButton>
-          <CtaButton tone="outline">나중에</CtaButton>
+          <CtaButton asChild>
+            <Link href="/onboarding/scan">허용하기</Link>
+          </CtaButton>
+          <CtaButton asChild tone="outline">
+            <Link href="/onboarding/scan">나중에</Link>
+          </CtaButton>
         </div>
       </div>
     </main>
