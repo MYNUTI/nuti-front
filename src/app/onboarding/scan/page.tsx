@@ -1,34 +1,25 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { CtaButton } from "@/components/common/cta-button";
 import { IconCamera } from "@/components/icons";
 
 export const metadata: Metadata = {
-  title: "제품 스캔",
+  title: "바코드 스캔",
 };
 
 export default function OnboardingScanPage() {
   return (
     <main className="flex flex-1 flex-col pt-safe pb-safe">
       <div className="flex flex-1 flex-col px-5 pt-14 pb-6">
-        <h1 className="text-2xl leading-snug font-bold">
-          집에 있는 음식
-          <br />
-          하나만 찍어보세요
-        </h1>
-        <p className="mt-3 text-[15px] text-muted-foreground">
-          2분이면 내 목표에 맞는지 알 수 있어요.
-        </p>
-
-        <div className="mt-5 flex aspect-5/4 w-full items-center justify-center rounded-3xl bg-muted">
+        <div className="flex aspect-5/6 w-full items-center justify-center rounded-3xl bg-muted">
           <IconCamera className="size-14 text-muted-foreground" />
         </div>
 
-        <div className="mt-auto flex flex-col gap-2.5 pt-10">
-          <CtaButton>찍어보기</CtaButton>
-          <CtaButton asChild tone="outline">
-            <Link href="/onboarding/pick">지금 찍을 게 없어요</Link>
-          </CtaButton>
+        <p className="mt-5 text-[15px] font-bold">
+          셔터 없이 자동으로 인식돼요
+        </p>
+
+        <div className="mt-auto pt-10">
+          <CtaButton tone="secondary">직접 검색으로 찾기</CtaButton>
         </div>
       </div>
     </main>
