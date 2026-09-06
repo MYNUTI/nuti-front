@@ -1,25 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { GradeBadge, type Grade } from "@/components/common/grade";
 
 export const metadata: Metadata = {
   title: "샘플 제품 선택",
 };
 
-const SAMPLES = [
+const SAMPLES: { name: string; source: string; grade: Grade }[] = [
   { name: "더단백 라떼 350ml", source: "100ml당 · 식약처 공공DB", grade: "A" },
   { name: "그릭요거트 플레인", source: "100ml당 · 식약처 공공DB", grade: "B" },
   { name: "프로틴바 카카오", source: "100ml당 · 식약처 공공DB", grade: "C" },
   { name: "제로 스파클링", source: "100ml당 · 식약처 공공DB", grade: "D" },
   { name: "초코 웨이퍼", source: "100ml당 · 식약처 공공DB", grade: "E" },
-] as const;
-
-const GRADE_BG: Record<(typeof SAMPLES)[number]["grade"], string> = {
-  A: "bg-grade-a",
-  B: "bg-grade-b",
-  C: "bg-grade-c",
-  D: "bg-grade-d",
-  E: "bg-grade-e",
-};
+];
 
 export default function SamplePickerPage() {
   return (
@@ -45,11 +38,7 @@ export default function SamplePickerPage() {
                     {source}
                   </span>
                 </span>
-                <span
-                  className={`flex size-10 shrink-0 items-center justify-center rounded-xl text-base font-bold text-white ${GRADE_BG[grade]}`}
-                >
-                  {grade}
-                </span>
+                <GradeBadge grade={grade} />
               </Link>
             </li>
           ))}
