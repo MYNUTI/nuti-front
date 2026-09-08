@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { CtaButton } from "@/components/common/cta-button";
 import { GradeBadge, GradeBar, type Grade } from "@/components/common/grade";
 
@@ -43,7 +44,9 @@ export default function RecalcPage() {
         </div>
 
         <div className="mt-auto pt-10">
-          <CtaButton>홈으로</CtaButton>
+          <CtaButton asChild>
+            <Link href="/home">홈으로</Link>
+          </CtaButton>
         </div>
       </div>
     </main>

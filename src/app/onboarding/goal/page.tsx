@@ -39,7 +39,9 @@ export default function GoalPage() {
         </ul>
 
         <div className="mt-auto pt-10">
-          <CtaButton tone="secondary">건너뛰기 — 일반 기준으로</CtaButton>
+          <CtaButton asChild tone="secondary">
+            <Link href="/home">건너뛰기 — 일반 기준으로</Link>
+          </CtaButton>
         </div>
       </div>
     </main>

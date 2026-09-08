@@ -1,0 +1,65 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { GradeBadge, type Grade } from "@/components/common/grade";
+import { TabBar } from "@/components/common/tab-bar";
+
+export const metadata: Metadata = {
+  title: "홈",
+};
+
+const RECENT: { id: string; name: string; basis: string; grade: Grade }[] = [
+  { id: "1", name: "더단백 라떼 350ml", basis: "체중 감량 기준", grade: "D" },
+  { id: "2", name: "잇더핏 프로틴 190ml", basis: "체중 감량 기준", grade: "A" },
+];
+
+export default function HomePage() {
+  return (
+    <main className="flex flex-1 flex-col pt-safe">
+      <div className="flex flex-1 flex-col px-5 pt-14 pb-32">
+        <h1 className="text-2xl font-bold">오늘도 확인해 볼까요</h1>
+
+        <input
+          type="search"
+          placeholder="제품명·브랜드 검색"
+          className="mt-5 h-14 rounded-2xl border border-border bg-card px-4 text-[15px] placeholder:text-muted-foreground"
+        />
+
+        <button
+          type="button"
+          className="mt-2.5 flex flex-col gap-1 rounded-2xl border border-border bg-card p-4 text-left"
+        >
+          <span className="text-[15px] font-bold">
+            복사한 상품 링크 붙여넣기
+          </span>
+          <span className="text-[13px] text-muted-foreground">
+            쿠팡·컬리 링크를 붙여넣으면 제품을 찾아드려요
+          </span>
+        </button>
+
+        <h2 className="mt-7 text-[15px] font-bold">최근 본 제품</h2>
+
+        <ul className="mt-3 flex flex-col gap-2.5">
+          {RECENT.map(({ id, name, basis, grade }) => (
+            <li key={id}>
+              <Link
+                href={`/product/${id}`}
+                className="flex items-center gap-3.5 rounded-2xl border border-border bg-card p-3.5"
+              >
+                <span className="size-14 shrink-0 rounded-xl bg-muted" />
+                <span className="flex flex-1 flex-col gap-0.5">
+                  <span className="text-[15px] font-bold">{name}</span>
+                  <span className="text-[13px] text-muted-foreground">
+                    {basis}
+                  </span>
+                </span>
+                <GradeBadge grade={grade} />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <TabBar />
+    </main>
+  );
+}
