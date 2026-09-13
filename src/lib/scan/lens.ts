@@ -76,3 +76,27 @@ export function rankBackLenses(devices: readonly VideoInputLike[]): LensChoice {
   const tied = candidates.filter((c) => c.score === lowest.score).length > 1;
   return pick(lowest, tied ? "ambiguous-back" : "lowest-index");
 }
+
+/**
+ * 카메라 권한을 확보한 뒤 후면 렌즈를 고른다.
+ *
+ * 장치 라벨은 권한이 있어야 채워지므로 임시 스트림을 열어 권한만 얻고 즉시 닫는다.
+ * 스캔을 시작하기 **전에** 렌즈를 확정해야 한다 — 스트림을 연 뒤에 바꾸면 초광각으로
+ * 잠깐 열렸다 전환되면서 깜빡인다.
+ *
+ * `getUserMedia` 실패는 그대로 던진다. 호출자가 `toCameraErrorKind`로 분류한다.
+ */
+export async function pickMainLens(): Promise<LensChoice> {
+  const probe = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: "environment" },
+  });
+
+  try {
+    // 트랙이 살아 있는 동안 열거한다. Safari는 활성 캡처가 없으면 라벨을 비우는 것으로
+    // 알려져 있고, 라벨이 비면 후면을 하나도 못 찾아 초광각이 걸린다 — 플랜 §9가
+    // 블로커급으로 지목한 "iOS에서 그냥 안 읽힘"과 증상이 같다.
+    return rankBackLenses(await navigator.mediaDevices.enumerateDevices());
+  } finally {
+    probe.getTracks().forEach((track) => track.stop());
+  }
+}

@@ -1,36 +1,58 @@
 "use client";
 
 import { useState } from "react";
-import { IconCamera } from "@/components/icons";
-import {
-  ScanResultSheet,
-  type ScanResult,
-} from "@/components/scan/scan-result-sheet";
+import { CtaButton } from "@/components/common/cta-button";
+import { BarcodeScan } from "@/components/scan/barcode-scan";
+import type { Gtin, ScanSource } from "@/lib/scan/types";
 
-/** 뷰파인더 탭은 바코드 인식을 대신하는 임시 트리거다. */
-export function ScanStage({ results }: { results: ScanResult[] }) {
-  const [index, setIndex] = useState<number | null>(null);
-  const result = index === null ? null : results[index];
+/**
+ * 메인 탭 스캔 호스트.
+ *
+ * 스캐너는 GTIN만 주므로 상품 조회와 결과 시트는 여기가 소유한다. 조회를 붙이기 전까지는
+ * 확보한 GTIN을 그대로 보여준다 — 등급은 서버 값만 쓰기 때문에 임의로 만들지 않는다.
+ */
+export function ScanStage() {
+  const [scanned, setScanned] = useState<{
+    gtin: Gtin;
+    source: ScanSource;
+  } | null>(null);
 
   return (
     <>
-      <button
-        type="button"
-        aria-label="다음 제품 인식"
-        onClick={() =>
-          setIndex((prev) => (prev === null ? 0 : (prev + 1) % results.length))
+      <BarcodeScan
+        className="aspect-7/8"
+        onGtin={(gtin, source) => setScanned({ gtin, source })}
+        renderFallback={(state) =>
+          state.stage === "manual" && (
+            <p className="mt-4 text-[15px] text-muted-foreground">
+              바코드를 읽지 못했어요. 아래에서 직접 입력해 주세요.
+            </p>
+          )
         }
-        className="flex aspect-7/8 w-full flex-col items-center justify-center gap-3 rounded-3xl bg-muted"
-      >
-        <IconCamera className="size-14 text-muted-foreground" />
-        {result && (
-          <span className="text-[13px] text-muted-foreground">
-            카메라 계속 인식 중
-          </span>
-        )}
-      </button>
+      />
 
-      {result && <ScanResultSheet result={result} />}
+      <p className="mt-4 text-[15px] text-muted-foreground">
+        {scanned
+          ? `인식됨 · ${scanned.gtin}`
+          : "연속으로 찍으면 결과가 바로 바뀌어요"}
+      </p>
+
+      <div className="mt-4 flex gap-2.5">
+        <div className="flex-1">
+          {/* TODO(3단계 14): scan-image-input.tsx 연결 */}
+          <CtaButton tone="secondary" className="h-12">
+            앨범에서 선택
+          </CtaButton>
+        </div>
+        <div className="flex-1">
+          {/* TODO(3단계 15): scan-manual-input.tsx 연결 */}
+          <CtaButton tone="secondary" className="h-12">
+            직접 입력
+          </CtaButton>
+        </div>
+      </div>
+
+      {/* TODO(3단계 16): lookup.ts를 거쳐 ScanResultSheet를 띄운다. */}
     </>
   );
 }
