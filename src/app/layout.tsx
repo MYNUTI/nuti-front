@@ -18,6 +18,7 @@ export const metadata: Metadata = {
     template: "%s · 마이뉴티",
   },
   description: "",
+  robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = {
