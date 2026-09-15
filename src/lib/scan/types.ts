@@ -1,3 +1,5 @@
+import type { Grade } from "@/lib/grade";
+
 /** GTIN-14로 정규화된 바코드 값. */
 export type Gtin = string;
 
@@ -56,3 +58,12 @@ export type CameraErrorKind =
   /** WASM 로드 실패. 사진 폴백도 같은 WASM을 쓰므로 건너뛴다. */
   | "wasm-failed"
   | "unknown";
+
+/** 조회로 얻은 상품 요약. 등급은 서버에서 내려받은 값만 쓴다 — 클라이언트에서 계산하지 않는다. */
+export type ScanResult = {
+  /** 내부 상품 ID. `/product/[id]` 라우팅에 쓴다 — GTIN이 아니다. */
+  id: string;
+  name: string;
+  summary: string;
+  grade: Grade;
+};

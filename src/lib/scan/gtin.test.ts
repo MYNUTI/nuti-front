@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { gtinCheckDigit, isValidGtinChecksum, toGtin14 } from "@/lib/scan/gtin";
+import {
+  checkGtinInput,
+  gtinCheckDigit,
+  isValidGtinChecksum,
+  toGtin14,
+} from "@/lib/scan/gtin";
 
 /** [전체 코드, 포맷 이름] — 모두 실재하는 유효 GTIN이다. */
 const VALID = [
@@ -58,5 +63,23 @@ describe("toGtin14", () => {
 
   it("14자리를 넘으면 조용히 자르지 않고 던진다", () => {
     expect(() => toGtin14("123456789012345")).toThrow(RangeError);
+  });
+});
+
+describe("checkGtinInput", () => {
+  it("빈 값만 제출 불가로 본다 — toGtin14가 0 열네 개를 만들기 때문이다", () => {
+    expect(checkGtinInput("")).toBe("empty");
+  });
+
+  it.each(VALID)("%s (%s)는 valid", (code) => {
+    expect(checkGtinInput(code)).toBe("valid");
+  });
+
+  it("체크디짓이 틀리면 경고 대상이다", () => {
+    expect(checkGtinInput("8801062633028")).toBe("checksum-mismatch");
+  });
+
+  it("표준 자릿수가 아니면 체크섬보다 먼저 알린다", () => {
+    expect(checkGtinInput("880106")).toBe("nonstandard-length");
   });
 });

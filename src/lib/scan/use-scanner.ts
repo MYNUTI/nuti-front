@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useZxing } from "react-zxing";
+import { createConfirmGate } from "@/lib/scan/confirm-gate";
 import { toCameraErrorKind } from "@/lib/scan/errors";
 import { toGtin14 } from "@/lib/scan/gtin";
 import type { CameraErrorKind, Gtin, LensChoice } from "@/lib/scan/types";
@@ -14,6 +15,14 @@ import { scannerOptions } from "@/lib/scan/wasm";
  * 오독이 그대로 노출된다. 실기기 측정 후 2로 낮출 수 있다.
  */
 const CONFIRM_THRESHOLD = 3;
+
+/**
+ * 확정한 바코드가 이만큼 안 보이다 다시 나타나면 새로 확정한다.
+ *
+ * 한 사이클이 보통 150–400ms라, 계속 비추는 중 프레임 한두 개를 놓치는 것과 뗐다가 다시
+ * 비추는 것을 가를 수 있는 값으로 잡았다. 실기기에서 조정한다.
+ */
+const RELEASE_MS = 1000;
 
 /** 디코딩 *사이의* 휴식 시간. 프레임 레이트가 아니다 — 한 사이클 = detect 소요 + 이 값. */
 const TIME_BETWEEN_ATTEMPTS = 100;
@@ -43,10 +52,9 @@ type UseScannerOptions = {
 export function useScanner({ lens, onGtin, onCameraError }: UseScannerOptions) {
   const [facingModeFallback, setFacingModeFallback] = useState(false);
 
-  const lastValueRef = useRef<string | null>(null);
-  const streakRef = useRef(0);
-  /** 직전에 확정해 이미 방출한 값. 같은 상품을 들고 있는 동안 재발화를 막는다. */
-  const confirmedRef = useRef<string | null>(null);
+  const [gate] = useState(() =>
+    createConfirmGate({ threshold: CONFIRM_THRESHOLD, releaseMs: RELEASE_MS }),
+  );
 
   const deviceId = facingModeFallback ? null : lens.deviceId;
 
@@ -60,40 +68,17 @@ export function useScanner({ lens, onGtin, onCameraError }: UseScannerOptions) {
     [deviceId],
   );
 
-  /**
-   * 같은 상품을 다시 방출하게 한다. 결과 시트를 닫고 같은 바코드를 한 번 더 찍으려는
-   * 경우에만 필요하다 — 다른 바코드는 값이 달라 알아서 다시 발화한다.
-   */
-  const resume = useCallback(() => {
-    lastValueRef.current = null;
-    streakRef.current = 0;
-    confirmedRef.current = null;
-  }, []);
-
   const { ref, torch } = useZxing({
     ...scannerOptions,
     constraints,
     timeBetweenDecodingAttempts: TIME_BETWEEN_ATTEMPTS,
 
     onDecodeResult: (barcode) => {
-      const raw = barcode.rawValue;
+      const confirmed = gate.push(barcode.rawValue, performance.now());
+      if (!confirmed) return;
 
-      // 이미 방출한 값이면 삼킨다. 디코딩 루프는 계속 돌기 때문에, 카메라를 끄지 않고도
-      // 같은 상품이 매 프레임 재발화하는 것을 막을 수 있다. 다른 바코드가 들어오면
-      // 아래 분기에서 streak이 리셋되면서 자연히 다시 확정 대상이 된다.
-      if (raw === confirmedRef.current) return;
-
-      if (raw === lastValueRef.current) {
-        streakRef.current += 1;
-      } else {
-        lastValueRef.current = raw;
-        streakRef.current = 1;
-      }
-      if (streakRef.current < CONFIRM_THRESHOLD) return;
-
-      confirmedRef.current = raw;
       navigator.vibrate?.(30);
-      onGtin(toGtin14(raw), raw);
+      onGtin(toGtin14(confirmed), confirmed);
     },
 
     onError: (error) => {
@@ -108,5 +93,5 @@ export function useScanner({ lens, onGtin, onCameraError }: UseScannerOptions) {
     },
   });
 
-  return { ref, torch, resume, usingFacingModeFallback: facingModeFallback };
+  return { ref, torch, usingFacingModeFallback: facingModeFallback };
 }

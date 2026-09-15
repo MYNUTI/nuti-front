@@ -1,13 +1,16 @@
 import type { CameraErrorKind, LensChoice } from "@/lib/scan/types";
 
-/** 카메라가 열렸는데도 못 읽을 때 사진 폴백 버튼을 노출하기까지의 시간. */
+/** 카메라가 열렸는데도 못 읽을 때 안내 문구를 띄우기까지의 시간. */
 export const STUCK_TIMEOUT_MS = 15_000;
 
 /** 일시적이라 폴백 대신 재시도를 안내하는 에러. */
 type RetryableError = Extract<CameraErrorKind, "in-use">;
 
-export type PhotoReason = "camera-failed" | "user-chose";
-export type ManualReason = "photo-failed" | "wasm-failed" | "user-chose";
+/** 카메라를 못 연 원인 중 사진 디코딩은 여전히 가능한 것들. */
+export type CameraUnavailableReason = Exclude<
+  CameraErrorKind,
+  "in-use" | "wasm-failed"
+>;
 
 export type ScanState =
   /** 렌즈를 고르는 중. 스캐너를 아직 마운트하지 않는다. */
@@ -15,43 +18,30 @@ export type ScanState =
   | {
       stage: "camera";
       lens: LensChoice;
-      /** 오래 못 읽어 사진 폴백 버튼을 노출해야 하는 상태. */
+      /** 오래 못 읽어 다른 입력 방법을 안내해야 하는 상태. */
       stuck: boolean;
       retryable: RetryableError | null;
     }
-  /** 이 단계에서 나가는 길은 GO_MANUAL뿐이다. 실패해도 자동 전환하지 않는다. */
-  | { stage: "photo"; reason: PhotoReason; failed: boolean }
-  | { stage: "manual"; reason: ManualReason };
+  /** 카메라를 쓸 수 없다. 앨범·사진 선택과 직접 입력은 가능하다. */
+  | { stage: "photo"; reason: CameraUnavailableReason }
+  /** WASM을 못 불러와 사진도 읽을 수 없다. 직접 입력만 남는다. */
+  | { stage: "manual" };
 
 export type ScanEvent =
   | { type: "LENS_RESOLVED"; lens: LensChoice }
   /** OverconstrainedError는 facingMode 재시도를 소진한 뒤에만 올린다. */
   | { type: "CAMERA_ERROR"; kind: CameraErrorKind }
   | { type: "STUCK_TIMEOUT" }
-  | { type: "RETRY_CAMERA" }
-  | { type: "GO_PHOTO" }
-  /** 촬영한 사진에서 바코드를 못 찾았다. 단계는 유지하고 재촬영 경로를 연다. */
-  | { type: "PHOTO_FAILED" }
-  | { type: "RETRY_PHOTO" }
-  | { type: "GO_MANUAL" };
+  | { type: "RETRY_CAMERA" };
 
 export const initialState: ScanState = { stage: "probing", retryable: null };
 
 /**
- * WASM이 죽으면 사진 폴백도 같은 WASM을 쓰므로 건너뛴다.
- * 비보안 컨텍스트는 getUserMedia만 막으므로 사진은 여전히 동작한다.
- */
-function afterCameraError(kind: CameraErrorKind): ScanState {
-  if (kind === "wasm-failed") return { stage: "manual", reason: "wasm-failed" };
-  return { stage: "photo", reason: "camera-failed", failed: false };
-}
-
-/**
- * 폴백 흐름의 단일 판단 지점.
+ * 뷰파인더 자리에 무엇을 둘지 판단한다.
  *
- * **자동 전환은 카메라를 열지 못한 경우뿐이다.** 열렸는데 못 읽는 것도, 찍은 사진에서
- * 못 찾는 것도 사용자가 다시 시도하는 중일 수 있으므로 단계를 유지한 채 플래그만
- * 세우고 다음 경로는 사용자가 고르게 한다.
+ * `[앨범에서 선택]`·`[직접 입력]`은 단계와 무관하게 상시 노출이라 여기서 모델링하지
+ * 않는다 — 버튼을 누른다고 카메라를 끄지 않고, 사진에서 못 찾았다고 단계를 옮기지도
+ * 않는다. 이 머신이 옮기는 것은 **카메라를 열지 못한 경우**뿐이다.
  */
 export function reduce(state: ScanState, event: ScanEvent): ScanState {
   switch (event.type) {
@@ -69,7 +59,9 @@ export function reduce(state: ScanState, event: ScanEvent): ScanState {
       // 다른 앱이 점유 중인 것은 일시적이다. 프로브 중이었더라도 사진 경로에
       // 영구히 묶지 않는다 — 카메라를 놓아주면 그대로 이어갈 수 있어야 한다.
       if (event.kind === "in-use") return { ...state, retryable: "in-use" };
-      return afterCameraError(event.kind);
+      // 사진 디코딩도 같은 WASM을 쓰므로 WASM이 죽으면 직접 입력만 남는다.
+      if (event.kind === "wasm-failed") return { stage: "manual" };
+      return { stage: "photo", reason: event.kind };
 
     case "STUCK_TIMEOUT":
       if (state.stage !== "camera") return state;
@@ -80,28 +72,5 @@ export function reduce(state: ScanState, event: ScanEvent): ScanState {
       if (state.stage === "camera")
         return { ...state, stuck: false, retryable: null };
       return state;
-
-    case "GO_PHOTO":
-      if (state.stage !== "camera") return state;
-      return { stage: "photo", reason: "user-chose", failed: false };
-
-    case "PHOTO_FAILED":
-      if (state.stage !== "photo") return state;
-      return { ...state, failed: true };
-
-    case "RETRY_PHOTO":
-      if (state.stage !== "photo") return state;
-      return { ...state, failed: false };
-
-    case "GO_MANUAL":
-      if (state.stage === "manual") return state;
-      return {
-        stage: "manual",
-        // 사진에서 못 찾아 넘어온 것인지, 그냥 건너뛴 것인지를 보존한다.
-        reason:
-          state.stage === "photo" && state.failed
-            ? "photo-failed"
-            : "user-chose",
-      };
   }
 }

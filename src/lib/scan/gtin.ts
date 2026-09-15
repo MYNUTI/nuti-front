@@ -39,3 +39,24 @@ export function toGtin14(code: string): Gtin {
   }
   return digits.padStart(14, "0");
 }
+
+export type GtinInputCheck =
+  "empty" | "valid" | "checksum-mismatch" | "nonstandard-length";
+
+/**
+ * 직접 입력한 숫자열을 판정한다. 숫자만 들어온다고 가정한다.
+ *
+ * **UPC-E(8자리 압축형)는 지원하지 않는다.** 숫자만으로는 EAN-8과 구별할 수 없어 EAN-8
+ * 규칙으로 검사하므로, UPC-E 번호는 대부분 `checksum-mismatch`로, 약 10%는 우연히
+ * `valid`로 판정된다. 조회 시에도 UPC-A로 펼치지 않고 0을 채우므로 다른 GTIN이 된다.
+ * 카메라 경로는 `upc_e`를 포맷에서 빼서 같은 문제를 피한다. 국내 상품은 빈도가 낮다.
+ *
+ * **`empty`만 제출을 막는다.** 체크섬이 틀리거나 자릿수가 표준이 아니어도 사내 코드나
+ * 비표준 바코드일 수 있어 경고만 한다. 빈 값을 막는 이유는 `toGtin14("")`가
+ * `"00000000000000"`이라는 그럴듯한 값을 만들기 때문이다.
+ */
+export function checkGtinInput(digits: string): GtinInputCheck {
+  if (digits === "") return "empty";
+  if (!GTIN_LENGTHS.includes(digits.length)) return "nonstandard-length";
+  return isValidGtinChecksum(digits) ? "valid" : "checksum-mismatch";
+}

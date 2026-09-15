@@ -1,8 +1,7 @@
+import { GRADES, type Grade } from "@/lib/grade";
 import { cn } from "@/lib/utils";
 
-export const GRADES = ["A", "B", "C", "D", "E"] as const;
-
-export type Grade = (typeof GRADES)[number];
+export { GRADES, type Grade };
 
 const GRADE_BG: Record<Grade, string> = {
   A: "bg-grade-a",
