@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { isValidGtinChecksum, toGtin14 } from "@/lib/scan/gtin";
-import { lookupProduct, MOCK_PRODUCT_GTINS } from "@/lib/scan/lookup";
+import { MOCK_PRODUCT_GTINS } from "@/lib/product";
+import { lookupProduct } from "@/lib/scan/lookup";
 
 describe("lookupProduct (목)", () => {
   it.each(MOCK_PRODUCT_GTINS)("목 키 %s는 정규화된 유효 GTIN-14다", (gtin) => {

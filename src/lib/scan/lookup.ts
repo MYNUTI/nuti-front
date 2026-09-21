@@ -1,3 +1,4 @@
+import { findProductByGtin } from "@/lib/product";
 import type { Gtin, ScanResult } from "@/lib/scan/types";
 
 export type LookupOutcome =
@@ -19,32 +20,17 @@ export type LookupProduct = (
   signal?: AbortSignal,
 ) => Promise<LookupOutcome>;
 
-/**
- * 조회 API가 붙기 전까지 쓰는 목. 키는 정규화된 GTIN-14다.
- *
- * TODO: 공개 배포 전에 반드시 실 API로 교체한다. 등급은 서버 값만 쓴다는 원칙과 달리
- * 이 목은 실재할 수 있는 GTIN에 지어낸 등급을 붙인다. 환경으로 막지 않은 이유는 지금의
- * noindex 미리보기 배포에서 결과 화면을 시연할 수 있어야 하기 때문이다.
- */
-const MOCK_PRODUCTS: Readonly<Record<Gtin, ScanResult>> = {
-  "08801062633029": {
-    id: "1",
-    name: "더단백 라떼 350ml",
-    summary: "당류 21g — 감량 기준 초과",
-    grade: "D",
-  },
-  "04006381333931": {
-    id: "2",
-    name: "잇더핏 프로틴 190ml",
-    summary: "단백질 20g — 감량 기준 충족",
-    grade: "A",
-  },
-};
-
 export const lookupProduct: LookupProduct = async (gtin) => {
-  const result = MOCK_PRODUCTS[gtin];
-  return result ? { status: "found", result } : { status: "not-found", gtin };
-};
+  const product = findProductByGtin(gtin);
+  if (!product) return { status: "not-found", gtin };
 
-/** 테스트 전용 — 목 키가 정규화 규칙과 어긋나면 조회가 조용히 전부 not-found가 된다. */
-export const MOCK_PRODUCT_GTINS = Object.keys(MOCK_PRODUCTS);
+  return {
+    status: "found",
+    result: {
+      id: product.id,
+      name: product.name,
+      summary: product.summary,
+      grade: product.grade,
+    },
+  };
+};

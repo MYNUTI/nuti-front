@@ -1,16 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { GradeBadge, type Grade } from "@/components/common/grade";
+import { GradeBadge } from "@/components/common/grade";
 import { TabBar } from "@/components/common/tab-bar";
+import { findProductById } from "@/lib/product";
+
+/** TODO: 실제 열람 기록이 생기면 서버에서 받는다. 카탈로그 전체와 같지 않다. */
+const RECENT_IDS = ["1", "2"];
+
+/** TODO: 목표 설정(1-5) 상태가 생기면 사용자의 현재 목표로 바꾼다. */
+const GRADE_BASIS = "체중 감량 기준";
+
+const RECENT = RECENT_IDS.map(findProductById).filter(
+  (product) => product !== undefined,
+);
 
 export const metadata: Metadata = {
   title: "홈",
 };
-
-const RECENT: { id: string; name: string; basis: string; grade: Grade }[] = [
-  { id: "1", name: "더단백 라떼 350ml", basis: "체중 감량 기준", grade: "D" },
-  { id: "2", name: "잇더핏 프로틴 190ml", basis: "체중 감량 기준", grade: "A" },
-];
 
 export default function HomePage() {
   return (
@@ -39,7 +45,7 @@ export default function HomePage() {
         <h2 className="mt-7 text-[15px] font-bold">최근 본 제품</h2>
 
         <ul className="mt-3 flex flex-col gap-2.5">
-          {RECENT.map(({ id, name, basis, grade }) => (
+          {RECENT.map(({ id, name, grade }) => (
             <li key={id}>
               <Link
                 href={`/product/${id}`}
@@ -49,7 +55,7 @@ export default function HomePage() {
                 <span className="flex flex-1 flex-col gap-0.5">
                   <span className="text-[15px] font-bold">{name}</span>
                   <span className="text-[13px] text-muted-foreground">
-                    {basis}
+                    {GRADE_BASIS}
                   </span>
                 </span>
                 <GradeBadge grade={grade} />

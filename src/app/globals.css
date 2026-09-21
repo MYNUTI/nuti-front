@@ -34,6 +34,10 @@
   --ring: #3a3a38;
   --radius: 0.625rem;
 
+  /* 기준 초과 등 주의 표시 */
+  --warning: #fbede4;
+  --warning-foreground: #9c5321;
+
   /* 영양 등급 */
   --grade-a: #34996b;
   --grade-b: #8cbf4f;
@@ -75,6 +79,8 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
 
   --color-grade-a: var(--grade-a);
   --color-grade-b: var(--grade-b);
