@@ -75,7 +75,7 @@ export function ScanStage() {
       return (
         <ScanMessageSheet
           title="등록되지 않은 상품이에요"
-          description="다른 상품을 찍어 보세요"
+          description={`바코드 ${lookup.data.gtin} · 다른 상품을 찍어 보세요`}
         />
       );
     }
