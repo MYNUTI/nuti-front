@@ -1,6 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import {
+  APPLE_ICON,
+  IOS_SPLASH_SCREENS,
+  iosSplashMedia,
+  iosSplashPath,
+} from "@/lib/pwa";
 import Providers from "./providers";
 
 const paperlogy = localFont({
@@ -19,6 +25,14 @@ export const metadata: Metadata = {
   },
   description: "",
   robots: { index: false, follow: false },
+  icons: { apple: APPLE_ICON.path },
+  appleWebApp: {
+    title: "마이뉴티",
+    startupImage: IOS_SPLASH_SCREENS.map((screen) => ({
+      url: iosSplashPath(screen),
+      media: iosSplashMedia(screen),
+    })),
+  },
 };
 
 export const viewport: Viewport = {
