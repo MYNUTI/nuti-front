@@ -18,8 +18,8 @@ const SOURCE = path.join(ROOT, "public/common/logo.png");
 const PUBLIC_DIR = path.join(ROOT, "public");
 
 const ICON_LOGO_RATIO = 0.6;
-// 로고 대각 반지름이 약 0.33으로 maskable 안전영역(0.4) 안에 들어온다
-const MASKABLE_LOGO_RATIO = 0.5;
+// Android 12+ 스플래시는 maskable 아이콘을 240dp로 그린다. 로고가 시안의 104dp가 되도록 맞춘 값
+const MASKABLE_LOGO_RATIO = 0.43;
 // 시안 기준 로고 폭(pt). 기기 폭과 무관하게 같은 크기로 보이도록 배율만 곱한다
 const SPLASH_LOGO_PT = 104;
 
