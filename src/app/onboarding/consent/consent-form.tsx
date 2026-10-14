@@ -43,7 +43,7 @@ export function ConsentForm() {
                 onCheckedChange={(value) =>
                   setAgreed((prev) => ({ ...prev, [id]: value === true }))
                 }
-                className="mt-0.5 size-5 rounded-full"
+                className="mt-0.5"
               />
               <span className="flex flex-col gap-1">
                 <span className="text-[15px] font-bold">{label}</span>

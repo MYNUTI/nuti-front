@@ -4,7 +4,43 @@ import * as React from "react";
 import { Checkbox as CheckboxPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
-import { CheckIcon } from "lucide-react";
+
+/** 체크 상태 그림. group/checkbox 조상의 data-state를 따른다 */
+function CheckboxMark({ className }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      fill="none"
+      className={cn("size-6 shrink-0", className)}
+    >
+      <rect
+        x="3.11111"
+        y="3.11111"
+        width="17.7778"
+        height="17.7778"
+        rx="3.33333"
+        strokeWidth="2.22222"
+        className="stroke-grayscale-300 group-data-[state=checked]/checkbox:hidden"
+      />
+      <rect
+        x="2"
+        y="2"
+        width="20"
+        height="20"
+        rx="4.44444"
+        className="hidden fill-deep-green-700 group-data-[state=checked]/checkbox:inline"
+      />
+      <path
+        d="M16 9.3333L10.6666 14.6667L7.99992 12"
+        strokeWidth="2.66669"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="stroke-grayscale-300 group-data-[state=checked]/checkbox:stroke-white"
+      />
+    </svg>
+  );
+}
 
 function Checkbox({
   className,
@@ -14,19 +50,14 @@ function Checkbox({
     <CheckboxPrimitive.Root
       data-slot="checkbox"
       className={cn(
-        "peer relative flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-input transition-colors outline-none group-has-disabled/field:opacity-50 group-has-[:focus-visible]/field-label:ring-0 group-has-[:focus-visible]/field-label:not-data-checked:border-input after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 aria-invalid:aria-checked:border-primary dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground group-has-[:focus-visible]/field-label:data-checked:border-primary dark:data-checked:bg-primary",
+        "group/checkbox shrink-0 rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
       {...props}
     >
-      <CheckboxPrimitive.Indicator
-        data-slot="checkbox-indicator"
-        className="grid place-content-center text-current transition-none [&>svg]:size-3.5"
-      >
-        <CheckIcon />
-      </CheckboxPrimitive.Indicator>
+      <CheckboxMark />
     </CheckboxPrimitive.Root>
   );
 }
 
-export { Checkbox };
+export { Checkbox, CheckboxMark };

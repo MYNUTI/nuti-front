@@ -13,6 +13,16 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
 
+  /* Figma Primitive 컬렉션 중 컴포넌트가 직접 참조하는 것만 */
+  --deep-green-500: #258770;
+  /* Figma 컴포넌트는 같은 값의 Grove (수정필요)/100을 참조 중 */
+  --deep-green-700: #2f6758;
+  --grayscale-100: #f7f7f7;
+  --grayscale-300: #d4d4d4;
+  --grayscale-800: #333333;
+  --black-alpha-50: #1a1a1a80;
+  --black-alpha-80: #1a1a1acc;
+
   /* Figma Semantic 컬렉션 (Light). 값은 Primitive를 풀어 쓴 것 */
   --bg-default: #f8f9fa;
   --bg-surface: #ffffff;
@@ -84,8 +94,7 @@
   --card-foreground: var(--text-default);
   --popover: var(--bg-surface);
   --popover-foreground: var(--text-default);
-  /* TODO: Primary 버튼 색 확정 전까지 기존 값 유지 */
-  --primary: #3a3a38;
+  --primary: var(--deep-green-500);
   --primary-foreground: #ffffff;
   --secondary: var(--bg-neutral);
   --secondary-foreground: var(--text-default);
@@ -133,6 +142,14 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  --color-deep-green-500: var(--deep-green-500);
+  --color-deep-green-700: var(--deep-green-700);
+  --color-grayscale-100: var(--grayscale-100);
+  --color-grayscale-300: var(--grayscale-300);
+  --color-grayscale-800: var(--grayscale-800);
+  --color-black-alpha-50: var(--black-alpha-50);
+  --color-black-alpha-80: var(--black-alpha-80);
 
   --color-bg-default: var(--bg-default);
   --color-bg-surface: var(--bg-surface);
