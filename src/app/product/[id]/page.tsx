@@ -58,7 +58,7 @@ export default async function ProductPage({
                 <span className="flex items-center gap-2">
                   <span className="text-[15px] font-bold">{value}</span>
                   {note && (
-                    <span className="rounded-md bg-warning px-2 py-1 text-[11px] font-bold text-warning-foreground">
+                    <span className="rounded-md bg-bg-warning px-2 py-1 text-[11px] font-bold text-text-warning">
                       {note}
                     </span>
                   )}

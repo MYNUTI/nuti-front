@@ -13,43 +13,97 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
 
-  /* 팔레트 — 시안 기준, Figma 확정 시 이 블록만 교체 */
-  --background: #f4f3f1;
-  --foreground: #1f1f1e;
-  --card: #ffffff;
-  --card-foreground: #1f1f1e;
-  --popover: #ffffff;
-  --popover-foreground: #1f1f1e;
+  /* Figma Semantic 컬렉션 (Light). 값은 Primitive를 풀어 쓴 것 */
+  --bg-default: #f8f9fa;
+  --bg-surface: #ffffff;
+  --bg-disabled: #eaeaea;
+  --bg-neutral: #eaeaea;
+  --bg-info: #e8f4fb;
+  --bg-success: #e8fbf0;
+  --bg-warning: #fef8e8;
+  --bg-danger: #fbe8e8;
+  --bg-a-default: #3a7fb8;
+  --bg-a-light: #e8f3fb;
+  --bg-b-default: #3a956e;
+  --bg-b-light: #e8f8f0;
+  --bg-c-default: #a87a15;
+  --bg-c-light: #fbf6e8;
+  --bg-d-default: #c9652a;
+  --bg-d-light: #fbf0e8;
+  --bg-e-default: #c92a3f;
+  --bg-e-light: #fbe8ec;
+
+  --text-default: #1f1f1f;
+  --text-secondary: #4d4d4d;
+  --text-tertiary: #888888;
+  --text-neutral: #666666;
+  --text-disabled: #b0b0b0;
+  --text-on-color: #f8f9fa;
+  --text-info: #2a7fdc;
+  --text-success: #2fa86e;
+  --text-warning: #b57522;
+  --text-danger: #dc2a3f;
+  --text-a-default: #285a85;
+  --text-b-default: #287050;
+  --text-c-default: #7a5a10;
+  --text-d-default: #8f481a;
+  --text-e-default: #8f1a2a;
+
+  --icon-default: #1f1f1f;
+  --icon-secondary: #666666;
+  --icon-disabled: #b0b0b0;
+  --icon-on-color: #f8f9fa;
+  --icon-neutral: #666666;
+  --icon-info: #2a7fdc;
+  --icon-success: #2fa86e;
+  --icon-warning: #b57522;
+  --icon-danger: #dc2a3f;
+
+  --border-default: #eaeaea;
+  --border-focus: #4d4d4d;
+  --border-neutral-default: #888888;
+  --border-neutral-strong: #666666;
+  --border-info: #2a7fdc;
+  --border-warning: #b57522;
+  --border-danger: #dc2a3f;
+  --border-a-default: #3a7fb8;
+  --border-a-strong: #285a85;
+  --border-b-default: #3a956e;
+  --border-b-strong: #287050;
+  --border-c-default: #a87a15;
+  --border-c-strong: #7a5a10;
+  --border-d-default: #c9652a;
+  --border-d-strong: #8f481a;
+  --border-e-default: #c92a3f;
+  --border-e-strong: #8f1a2a;
+
+  /* shadcn 컴포넌트용 별칭 */
+  --background: var(--bg-default);
+  --foreground: var(--text-default);
+  --card: var(--bg-surface);
+  --card-foreground: var(--text-default);
+  --popover: var(--bg-surface);
+  --popover-foreground: var(--text-default);
+  /* TODO: Primary 버튼 색 확정 전까지 기존 값 유지 */
   --primary: #3a3a38;
   --primary-foreground: #ffffff;
-  --secondary: #eceae6;
-  --secondary-foreground: #1f1f1e;
-  --muted: #eceae6;
-  --muted-foreground: #6e6d6a;
-  --accent: #eceae6;
-  --accent-foreground: #1f1f1e;
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: #e2e0dc;
-  --input: #e2e0dc;
-  --ring: #3a3a38;
+  --secondary: var(--bg-neutral);
+  --secondary-foreground: var(--text-default);
+  --muted: var(--bg-neutral);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--bg-neutral);
+  --accent-foreground: var(--text-default);
+  --destructive: var(--text-danger);
+  --border: var(--border-default);
+  --input: var(--border-default);
+  --ring: var(--border-focus);
   --radius: 0.625rem;
 
-  /* 기준 초과 등 주의 표시 */
-  --warning: #fbede4;
-  --warning-foreground: #9c5321;
-
-  /* 영양 등급 */
-  --grade-a: #34996b;
-  --grade-b: #8cbf4f;
-  --grade-c: #ddb13a;
-  --grade-d: #e08a47;
-  --grade-e: #c9505e;
-
-  --chart-1: var(--grade-a);
-  --chart-2: var(--grade-b);
-  --chart-3: var(--grade-c);
-  --chart-4: var(--grade-d);
-  --chart-5: var(--grade-e);
+  --chart-1: var(--bg-a-default);
+  --chart-2: var(--bg-b-default);
+  --chart-3: var(--bg-c-default);
+  --chart-4: var(--bg-d-default);
+  --chart-5: var(--bg-e-default);
 }
 
 @theme inline {
@@ -79,14 +133,69 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
 
-  --color-grade-a: var(--grade-a);
-  --color-grade-b: var(--grade-b);
-  --color-grade-c: var(--grade-c);
-  --color-grade-d: var(--grade-d);
-  --color-grade-e: var(--grade-e);
+  --color-bg-default: var(--bg-default);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-disabled: var(--bg-disabled);
+  --color-bg-neutral: var(--bg-neutral);
+  --color-bg-info: var(--bg-info);
+  --color-bg-success: var(--bg-success);
+  --color-bg-warning: var(--bg-warning);
+  --color-bg-danger: var(--bg-danger);
+  --color-bg-a-default: var(--bg-a-default);
+  --color-bg-a-light: var(--bg-a-light);
+  --color-bg-b-default: var(--bg-b-default);
+  --color-bg-b-light: var(--bg-b-light);
+  --color-bg-c-default: var(--bg-c-default);
+  --color-bg-c-light: var(--bg-c-light);
+  --color-bg-d-default: var(--bg-d-default);
+  --color-bg-d-light: var(--bg-d-light);
+  --color-bg-e-default: var(--bg-e-default);
+  --color-bg-e-light: var(--bg-e-light);
+
+  --color-text-default: var(--text-default);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-neutral: var(--text-neutral);
+  --color-text-disabled: var(--text-disabled);
+  --color-text-on-color: var(--text-on-color);
+  --color-text-info: var(--text-info);
+  --color-text-success: var(--text-success);
+  --color-text-warning: var(--text-warning);
+  --color-text-danger: var(--text-danger);
+  --color-text-a-default: var(--text-a-default);
+  --color-text-b-default: var(--text-b-default);
+  --color-text-c-default: var(--text-c-default);
+  --color-text-d-default: var(--text-d-default);
+  --color-text-e-default: var(--text-e-default);
+
+  --color-icon-default: var(--icon-default);
+  --color-icon-secondary: var(--icon-secondary);
+  --color-icon-disabled: var(--icon-disabled);
+  --color-icon-on-color: var(--icon-on-color);
+  --color-icon-neutral: var(--icon-neutral);
+  --color-icon-info: var(--icon-info);
+  --color-icon-success: var(--icon-success);
+  --color-icon-warning: var(--icon-warning);
+  --color-icon-danger: var(--icon-danger);
+
+  --color-border-default: var(--border-default);
+  --color-border-focus: var(--border-focus);
+  --color-border-neutral-default: var(--border-neutral-default);
+  --color-border-neutral-strong: var(--border-neutral-strong);
+  --color-border-info: var(--border-info);
+  --color-border-warning: var(--border-warning);
+  --color-border-danger: var(--border-danger);
+  --color-border-a-default: var(--border-a-default);
+  --color-border-a-strong: var(--border-a-strong);
+  --color-border-b-default: var(--border-b-default);
+  --color-border-b-strong: var(--border-b-strong);
+  --color-border-c-default: var(--border-c-default);
+  --color-border-c-strong: var(--border-c-strong);
+  --color-border-d-default: var(--border-d-default);
+  --color-border-d-strong: var(--border-d-strong);
+  --color-border-e-default: var(--border-e-default);
+  --color-border-e-strong: var(--border-e-strong);
 
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);

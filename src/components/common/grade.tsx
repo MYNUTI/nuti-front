@@ -4,11 +4,11 @@ import { cn } from "@/lib/utils";
 export { GRADES, type Grade };
 
 const GRADE_BG: Record<Grade, string> = {
-  A: "bg-grade-a",
-  B: "bg-grade-b",
-  C: "bg-grade-c",
-  D: "bg-grade-d",
-  E: "bg-grade-e",
+  A: "bg-bg-a-default",
+  B: "bg-bg-b-default",
+  C: "bg-bg-c-default",
+  D: "bg-bg-d-default",
+  E: "bg-bg-e-default",
 };
 
 export function GradeBadge({
