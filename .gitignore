@@ -40,3 +40,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# docs: 개인 작업 문서는 로컬에만 두고 API 작업 플랜과 디자인 문서(design/ 브랜치)만 공유한다
+/docs/*
+!/docs/API-작업-플랜.md
+!/docs/design/
