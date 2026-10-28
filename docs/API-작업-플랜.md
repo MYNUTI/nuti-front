@@ -186,7 +186,7 @@
 - ~~목 서버 도구~~ — 정해짐: 새 의존성 없이 axios `adapter` 옵션에 끼우는 자체 목 어댑터를 쓴다. 인터셉터가 그대로 실행되고 서버 컴포넌트·브라우저·vitest에서 같은 핸들러를 쓴다. 핸들러는 메서드 + 경로 → 응답 형태로 만들어 나중에 MSW로 옮길 수 있게 한다
 - ~~타입 작성 방식~~ — 정해짐: 명세·Swagger·백엔드 소스를 보고 쓰는 필드만 직접 작성한다. 허용값은 유니온, null 여부는 소스 주석 기준이고 예전 필드는 넣지 않는다. 자동 생성은 Swagger에 enum·필수 정보가 없고 30개 API에 `actor`가 필수로 잘못 표시돼 쓰지 않는다. 개발 서버가 생기거나 Swagger에 enum·필수 표시가 들어오면 생성 결과를 변경 감지용으로 붙이는 것을 다시 검토한다
 - ~~토큰 저장 위치~~ — 정해짐: 토큰과 익명 ID를 스크립트로 읽을 수 있는 일반 쿠키에 둔다. 브라우저 요청은 인터셉터가 쿠키 값을 읽어 헤더에 붙이고, 서버 요청은 `cookies()`로 읽어 붙인다. 읽고 쓰는 코드는 한 파일에 모아, 보안 검토에서 httpOnly가 필요해지면 저장 부분만 바꾼다. 노션 명세는 익명 ID를 localStorage에 둔다고 적었지만 프론트 내부 구현이라 서버에는 영향이 없다. 액세스 토큰은 만료되기 전에 미리 갱신한다(JWT `exp` 확인). 만료 토큰은 401 없이 비로그인으로 처리되기 때문이다. 브라우저는 인터셉터가, 상세 경로는 렌더 전에 실행되는 `proxy.ts`가 갱신한다. 서버 컴포넌트는 렌더 중에 쿠키를 저장할 수 없다(Next 16 `cookies.md`). `proxy.ts`는 브라우저 갱신과 겹치지 않게 페이지 이동 요청에서만 갱신한다. `proxy.ts`는 새 토큰을 응답의 `Set-Cookie`와 `NextResponse.next({ request: { headers } })`의 요청 `cookie` 헤더 양쪽에 넣는다. 응답에만 넣으면 같은 요청에서 렌더되는 서버 컴포넌트의 `cookies()`가 만료된 토큰을 읽어 일반 기준 등급이 나오고, `HydrationBoundary`·`staleTime` 때문에 그 값이 화면에 남는다(Next 16 `proxy.md`). 바꾼 요청 쿠키를 `cookies()`가 읽는지는 04단계 구현 때 확인한다
-- ~~상세 페이지 조회 위치와 base URL~~ — 정해짐: 상세는 서버 컴포넌트에서 쿠키의 익명 ID·토큰을 붙여 개인 기준으로 한 번 조회한다. 백엔드가 조회마다 조회수를 올리고 서버의 axios 요청은 Next가 중복 제거하지 않으므로, 조회 함수를 React `cache()`로 감싸 `generateMetadata`와 페이지가 한 번만 부르게 한다. base URL은 브라우저가 `/api`(rewrites), 서버가 서버 전용 환경변수(예: `API_URL`)의 백엔드 주소를 쓴다. 쿠키를 읽으므로 상세 페이지는 요청마다 렌더링된다. 서버 조회 결과는 `HydrationBoundary`로 클라이언트 캐시에 넣고 `useProductDetail`과 같은 쿼리 키를 쓴다. 마운트 직후 다시 조회하지 않게 `staleTime`을 준다. 저장·해제는 `setQueryData`로 `saved`만 바꾸고(재조회 없음), 목표 변경은 무효화해서 다시 조회한다(조회수 1 증가는 감수)
+- ~~상세 페이지 조회 위치와 base URL~~ — 정해짐: 상세는 서버 컴포넌트에서 쿠키의 익명 ID·토큰을 붙여 개인 기준으로 한 번 조회한다. 백엔드가 조회마다 조회수를 올리고 서버의 axios 요청은 Next가 중복 제거하지 않으므로, 조회 함수를 React `cache()`로 감싸 `generateMetadata`와 페이지가 한 번만 부르게 한다. base URL은 브라우저가 `NEXT_PUBLIC_API_URL`(값은 `/api`, rewrites), 서버가 서버 전용 환경변수(예: `API_URL`)의 백엔드 주소를 쓴다. `NEXT_PUBLIC_API_URL`에는 백엔드 주소를 넣지 않는다. 브라우저가 백엔드를 직접 부르면 CORS에 막히고 주소가 번들에 들어간다. 쿠키를 읽으므로 상세 페이지는 요청마다 렌더링된다. 서버 조회 결과는 `HydrationBoundary`로 클라이언트 캐시에 넣고 `useProductDetail`과 같은 쿼리 키를 쓴다. 마운트 직후 다시 조회하지 않게 `staleTime`을 준다. 저장·해제는 `setQueryData`로 `saved`만 바꾸고(재조회 없음), 목표 변경은 무효화해서 다시 조회한다(조회수 1 증가는 감수)
 - ~~CORS 대응~~ — 정해짐: 실제 서버 연동은 Next.js rewrites로 중계한다. 프론트 페이지 경로와 겹치지 않게 `/api` 접두사를 쓴다(「진행 가정」)
 - ~~만들 파일 목록과 순서~~ — 정해짐: 아래 「파일 구조」
 
@@ -198,7 +198,7 @@
 
 | 파일                 | 역할                                                                                                                                                  |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `client.ts`          | 브라우저용 axios 인스턴스와 인터셉터. 기존 `src/lib/api.ts`를 옮겨 확장한다. baseURL은 `/api`로 고정하고 `NEXT_PUBLIC_API_URL`은 없앤다               |
+| `client.ts`          | 브라우저용 axios 인스턴스와 인터셉터. 기존 `src/lib/api.ts`를 옮겨 확장한다. baseURL은 `NEXT_PUBLIC_API_URL`(값은 `/api`)을 읽는다                    |
 | `server.ts`          | 서버 컴포넌트용 인스턴스. `server-only`, `API_URL`, `cookies()`로 헤더 첨부                                                                           |
 | `identity.ts`        | 쿠키 저장 모듈. 쿠키 이름 상수와 브라우저 쪽 토큰·익명 ID·세션 ID 읽기·쓰기                                                                           |
 | `identity.server.ts` | 서버 쪽 쿠키 읽기. `identity.ts`와 같은 쿠키 이름을 쓴다                                                                                              |
@@ -221,7 +221,7 @@
 그 밖에 바뀌는 파일:
 
 - `next.config.ts` — rewrites. 목적지는 `API_URL`을 읽는다. rewrites가 빌드할 때 평가되는지는 04단계에서 문서로 확인한다
-- `.env.example` — `API_URL`, 목 스위치(예: `NEXT_PUBLIC_API_MOCK`) 추가, `NEXT_PUBLIC_API_URL` 제거
+- `.env.example` — `API_URL`, 목 스위치(예: `NEXT_PUBLIC_API_MOCK`) 추가, `NEXT_PUBLIC_API_URL` 값을 `/api`로. rewrites의 `/api/:path*`와 값이 같아야 한다
 - `src/proxy.ts` — 상세 경로에서 렌더 전 토큰 갱신. 새 쿠키를 응답 `Set-Cookie`와 요청 `cookie` 헤더(`NextResponse.next({ request: { headers } })`) 양쪽에 넣는다
 - `src/app/providers.tsx` — QueryClient 기본 옵션
 - `src/hooks/` — 여러 도메인에 걸친 훅만 둔다(예: 403 동의 필요 처리). 도메인 훅은 도메인 폴더에 둔다
@@ -315,3 +315,4 @@
 | 2026-10-26 | 토큰·익명 ID는 일반 쿠키에 두고, 상세는 서버에서 개인 기준으로 한 번 조회한다(React `cache()`로 중복 방지)                                            |
 | 2026-10-26 | 파일 구조와 단계별 순서를 확정했다. 공통 타입은 04단계, 05단계는 상품 DTO만, 나머지 도메인 DTO는 08단계에서 만든다                                    |
 | 2026-10-26 | 액세스 토큰은 만료 전에 미리 갱신한다(브라우저 인터셉터 + 상세 경로 `proxy.ts`). 상세 서버 조회 결과는 `HydrationBoundary`로 클라이언트 캐시에 넣는다 |
+| 2026-10-28 | 브라우저 baseURL은 고정값 대신 `NEXT_PUBLIC_API_URL`을 읽고, 값은 rewrites 접두사 `/api`로 둔다. 백엔드 주소는 서버 전용 `API_URL`에만 둔다           |
