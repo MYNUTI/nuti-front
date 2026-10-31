@@ -205,6 +205,7 @@
 | `errors.ts`          | `ApiError`, 에러 코드 유니온, 에러 응답 정규화                                                                                                        |
 | `refresh.ts`         | 만료 전 토큰 갱신. JWT `exp`를 보고 요청 전에 `/auth/refresh`를 부르며, 동시 요청은 갱신 한 번을 공유한다. 브라우저 인터셉터와 `proxy.ts`가 같이 쓴다 |
 | `types.ts`           | 공통 타입: `{isSuccess, data}` 래퍼, 에러 응답, 페이지네이션                                                                                          |
+| `response.ts`        | 성공 응답에서 `data`를 꺼내는 `unwrap`. 브라우저·서버 인스턴스가 같이 쓴다                                                                            |
 | `mock/adapter.ts`    | 목 어댑터. 메서드 + 경로로 핸들러를 찾고 환경변수로 켜고 끈다                                                                                         |
 
 도메인 `src/lib/<도메인>/` — `product`, `onboarding`, `goal`, `search`, `saved`, `me`, `auth`, `contribution`, `logging`:
