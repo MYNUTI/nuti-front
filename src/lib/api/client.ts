@@ -1,5 +1,5 @@
 import axios from "axios";
-import { readIdentity } from "@/lib/api/identity";
+import { readIdentity, touchSessionId } from "@/lib/api/identity";
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -13,5 +13,7 @@ api.interceptors.request.use((config) => {
   const { accessToken, anonymousId } = readIdentity();
   if (accessToken) config.headers.set("Authorization", `Bearer ${accessToken}`);
   if (anonymousId) config.headers.set("X-Anonymous-Id", anonymousId);
+  // 세션 ID는 동의 전에도 보낸다. 방문 집계와 동의 전 사용자의 하루 한도(문의·제보·검색어 분석 요청)에 쓰인다
+  config.headers.set("X-Session-Id", touchSessionId());
   return config;
 });
