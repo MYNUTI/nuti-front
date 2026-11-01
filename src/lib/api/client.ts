@@ -1,10 +1,13 @@
 import axios from "axios";
+import { toApiError } from "@/lib/api/errors";
 import { readIdentity, touchSessionId } from "@/lib/api/identity";
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   // 응답 없는 요청이 무한정 걸려 있지 않게 하는 상한. 백엔드 API는 DB 조회 위주라 넉넉히 잡은 값
   timeout: 10_000,
+  // 타임아웃을 ETIMEDOUT으로 받아 요청이 끊긴 경우(ECONNABORTED)와 구분한다
+  transitional: { clarifyTimeoutError: true },
 });
 
 // 토큰과 익명 ID가 둘 다 있어도 함께 보낸다. 서버는 계정을 우선하고, 로그인(`POST /auth/oauth`)은
@@ -17,3 +20,7 @@ api.interceptors.request.use((config) => {
   config.headers.set("X-Session-Id", touchSessionId());
   return config;
 });
+
+api.interceptors.response.use(undefined, (error) =>
+  Promise.reject(toApiError(error)),
+);

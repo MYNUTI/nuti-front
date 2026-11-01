@@ -1,5 +1,6 @@
 import "server-only";
 import axios from "axios";
+import { toApiError } from "@/lib/api/errors";
 
 /**
  * 서버 컴포넌트용 axios 인스턴스. 서버에서는 CORS가 없으니 rewrites(`/api`)를 거치지 않고
@@ -7,6 +8,11 @@ import axios from "axios";
  */
 export const serverApi = axios.create({
   baseURL: process.env.API_URL,
-  // 상한 값과 근거는 client.ts와 같다
+  // 상한 값과 근거, 타임아웃 오류 구분은 client.ts와 같다
   timeout: 10_000,
+  transitional: { clarifyTimeoutError: true },
 });
+
+serverApi.interceptors.response.use(undefined, (error) =>
+  Promise.reject(toApiError(error)),
+);
