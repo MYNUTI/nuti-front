@@ -35,7 +35,7 @@ export function saveTokens(tokens: Tokens) {
   writeCookie(IDENTITY_COOKIES.refreshToken, tokens.refreshToken);
 }
 
-/** 로그아웃·갱신 실패용. 익명 ID는 남겨 둔다 */
+/** 로그아웃·갱신 실패용. 익명 ID는 건드리지 않는다 */
 export function clearTokens() {
   deleteCookie(IDENTITY_COOKIES.accessToken);
   deleteCookie(IDENTITY_COOKIES.refreshToken);
@@ -43,6 +43,10 @@ export function clearTokens() {
 
 export function saveAnonymousId(anonymousId: string) {
   writeCookie(IDENTITY_COOKIES.anonymousId, anonymousId);
+}
+
+export function clearAnonymousId() {
+  deleteCookie(IDENTITY_COOKIES.anonymousId);
 }
 
 /**
