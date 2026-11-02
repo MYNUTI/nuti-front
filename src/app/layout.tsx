@@ -9,12 +9,13 @@ import {
 } from "@/lib/pwa";
 import Providers from "./providers";
 
-const paperlogy = localFont({
+const pretendard = localFont({
   src: [
-    { path: "./fonts/Paperlogy-5Medium.woff2", weight: "500" },
-    { path: "./fonts/Paperlogy-7Bold.woff2", weight: "700" },
+    { path: "./fonts/Pretendard-Regular.subset.woff2", weight: "400" },
+    { path: "./fonts/Pretendard-Medium.subset.woff2", weight: "500" },
+    { path: "./fonts/Pretendard-Bold.subset.woff2", weight: "700" },
   ],
-  variable: "--font-paperlogy",
+  variable: "--font-pretendard",
   display: "swap",
 });
 
@@ -39,12 +40,12 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#f8f9fa",
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ko" className={`${paperlogy.variable} h-full`}>
+    <html lang="ko" className={`${pretendard.variable} h-full`}>
       <body className="min-h-dvh">
         <div className="mx-auto flex min-h-dvh w-full max-w-app flex-col bg-background">
           <Providers>{children}</Providers>
