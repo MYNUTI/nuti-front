@@ -66,7 +66,7 @@ describe("api (브라우저)", () => {
 
     await api.get("/app/bootstrap");
     expect(cookies.writes).toContain(
-      `${IDENTITY_COOKIES.sessionId}=session-1; Path=/; Max-Age=1800`,
+      `${IDENTITY_COOKIES.sessionId}=session-1; Path=/; Max-Age=1800; SameSite=lax`,
     );
   });
 

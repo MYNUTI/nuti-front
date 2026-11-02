@@ -1,12 +1,16 @@
 import { vi } from "vitest";
 
 /**
- * 테스트 환경(node)에 없는 `document.cookie`를 흉내 낸다. 쓰기는 `이름=값` 뒤의 속성 중 `Max-Age=0`
- * (삭제)만 해석한다. 쓴 원문은 `writes`에 쌓인다.
+ * 테스트 환경(node)에 없는 `document.cookie`와 `location.protocol`을 흉내 낸다. 쓰기는 `이름=값` 뒤의
+ * 속성 중 `Max-Age=0`(삭제)만 해석한다. 쓴 원문은 `writes`에 쌓인다.
  */
-export function stubDocumentCookie(initial: Record<string, string> = {}) {
+export function stubDocumentCookie(
+  initial: Record<string, string> = {},
+  { protocol = "http:" }: { protocol?: "http:" | "https:" } = {},
+) {
   const jar = new Map(Object.entries(initial));
   const writes: string[] = [];
+  vi.stubGlobal("location", { protocol });
   vi.stubGlobal("document", {
     get cookie() {
       return [...jar].map(([name, value]) => `${name}=${value}`).join("; ");

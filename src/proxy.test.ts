@@ -14,8 +14,11 @@ vi.mock("@/lib/api/refresh", async (importOriginal) => ({
 
 const mockedRefresh = vi.mocked(requestRefresh);
 
-function requestWith(cookies: Record<string, string>) {
-  const request = new NextRequest("https://nuti.example/product/1");
+function requestWith(
+  cookies: Record<string, string>,
+  origin = "https://nuti.example",
+) {
+  const request = new NextRequest(`${origin}/product/1`);
   for (const [name, value] of Object.entries(cookies))
     request.cookies.set(name, value);
   return request;
@@ -96,18 +99,43 @@ describe("proxy", () => {
     );
 
     expect(mockedRefresh).toHaveBeenCalledWith(expect.anything(), "refresh-1");
+    const attributes = {
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60,
+      sameSite: "lax",
+      secure: true,
+    };
     expect(response.cookies.get(IDENTITY_COOKIES.accessToken)).toMatchObject({
       value: fresh,
-      path: "/",
+      ...attributes,
     });
     expect(response.cookies.get(IDENTITY_COOKIES.refreshToken)).toMatchObject({
       value: "refresh-2",
-      path: "/",
+      ...attributes,
     });
     const cookie = forwardedCookie(response);
     expect(cookie).toContain(`${IDENTITY_COOKIES.accessToken}=${fresh}`);
     expect(cookie).toContain(`${IDENTITY_COOKIES.refreshToken}=refresh-2`);
     expect(cookie).toContain(`${IDENTITY_COOKIES.anonymousId}=anon-1`);
+  });
+
+  it("HTTP로 들어온 요청에는 Secure를 붙이지 않는다", async () => {
+    mockedRefresh.mockResolvedValue({
+      accessToken: jwtExpiringIn(600_000),
+      refreshToken: "refresh-2",
+    });
+
+    const response = await proxy(
+      requestWith(
+        { [IDENTITY_COOKIES.refreshToken]: "refresh-1" },
+        "http://localhost:3000",
+      ),
+    );
+
+    expect(
+      response.cookies.get(IDENTITY_COOKIES.refreshToken)?.secure,
+    ).toBeFalsy();
+    expect(response.headers.get("set-cookie")).not.toMatch(/secure/i);
   });
 
   it("갱신에 실패하면 쿠키를 건드리지 않고 그대로 통과시킨다", async () => {
