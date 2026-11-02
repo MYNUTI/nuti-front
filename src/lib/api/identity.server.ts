@@ -13,3 +13,9 @@ export async function readServerIdentity(): Promise<Identity> {
     anonymousId: store.get(IDENTITY_COOKIES.anonymousId)?.value ?? null,
   };
 }
+
+/** 쿠키의 세션 ID. 렌더 중에는 새로 만들거나 만료를 미룰 수 없어 없으면 null이다 */
+export async function readServerSessionId(): Promise<string | null> {
+  const store = await cookies();
+  return store.get(IDENTITY_COOKIES.sessionId)?.value ?? null;
+}
