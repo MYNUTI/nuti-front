@@ -341,10 +341,14 @@
   --radius-md: 12px;
   --radius-lg: var(--radius);
   --radius-sheet: 20px;
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  /*
+   * xl 이상은 피그마에 없는 값이다. 임시 화면이 예전 모양을 유지하도록 토큰 교체 전 값으로 고정했다.
+   * 새 코드에서는 쓰지 않고, 마지막 사용처가 바뀌면 지운다(UI 플랜 13단계).
+   */
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
+  --radius-3xl: 22px;
+  --radius-4xl: 26px;
 }
 
 @layer base {
