@@ -13,8 +13,8 @@ const nextConfig = (phase: string): NextConfig => ({
   rewrites: async () => {
     const apiUrl = process.env.API_URL?.replace(/\/+$/, "");
     if (!apiUrl) {
-      // 개발 중에는 운영 서버를 부르지 않으므로(「진행 가정」) API_URL 없이 기동되게 둔다.
-      // dev에 API_URL을 넣으면 운영 서버로 중계된다. next start는 이 함수를 다시 부르지 않고 routes-manifest를 쓴다
+      // dev는 화면만 볼 때를 위해 API_URL 없이도 기동되게 둔다. 이때 /api 요청은 404가 된다.
+      // next start는 이 함수를 다시 부르지 않고 routes-manifest를 쓴다
       if (phase !== PHASE_PRODUCTION_BUILD) return [];
       // 빈 문자열(.env.example 그대로)이면 목적지가 "/:path*"인 내부 rewrite가 되어 에러 없이
       // /api/onboarding/consent가 프론트 페이지로 가므로 여기서 막는다
