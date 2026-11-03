@@ -30,3 +30,10 @@ export type ApiErrorDetail = {
   value: string;
   reason: string;
 };
+
+/** 번호 페이지 목록(`totalCount`·`hasNext`). 시작 번호는 엔드포인트마다 다르다(저장 1, 검색 0) */
+export type OffsetPageDto<T> = {
+  items: T[];
+  totalCount: number;
+  hasNext: boolean;
+};
