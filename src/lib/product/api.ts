@@ -6,9 +6,9 @@ import {
   toProductDetail,
   toScannedProduct,
 } from "@/lib/product/mapper";
+import type { Goal } from "@/lib/goal/types";
 import type {
   BarcodeScanDto,
-  Goal,
   GradeReasonDto,
   ProductDetailDto,
 } from "@/lib/product/types";

@@ -1,5 +1,5 @@
 import type { Gtin } from "@/lib/scan/types";
-import type { Goal } from "@/lib/product/types";
+import type { Goal } from "@/lib/goal/types";
 
 // 등급 근거는 상세 키 아래에 둔다. 상세를 무효화하면(목표 변경 등) 근거도 함께 다시 불러온다
 export const productKeys = {

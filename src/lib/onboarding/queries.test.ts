@@ -6,6 +6,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "@/lib/api/client";
 import { IDENTITY_COOKIES } from "@/lib/api/identity";
+import { goalKeys } from "@/lib/goal/keys";
 import { onboardingKeys } from "@/lib/onboarding/keys";
 import {
   onboardingMutations,
@@ -117,11 +118,12 @@ describe("onboarding queries", () => {
     expect(cookies.get(IDENTITY_COOKIES.anonymousId)).toBeUndefined();
   });
 
-  it("건강정보 동의는 동의 상태를 바꾸고 bootstrap을 다시 부른다", async () => {
+  it("건강정보 동의는 동의 상태를 바꾸고 bootstrap·목표를 다시 부른다", async () => {
     reply(() =>
       success({ healthConsented: true, agreedAt: "2026-11-03T10:00:00" }),
     );
     queryClient.setQueryData(onboardingKeys.bootstrap(), bootstrap);
+    queryClient.setQueryData(goalKeys.mine(), {});
 
     await run(onboardingMutations.agreeHealth(queryClient), queryClient, {
       policyVersion: "h1",
@@ -134,11 +136,15 @@ describe("onboarding queries", () => {
     expect(
       queryClient.getQueryState(onboardingKeys.bootstrap())?.isInvalidated,
     ).toBe(true);
+    expect(queryClient.getQueryState(goalKeys.mine())?.isInvalidated).toBe(
+      true,
+    );
   });
 
-  it("건강정보 철회는 동의 상태를 바꾸고 등급이 보이는 상품 조회를 다시 부른다", async () => {
+  it("건강정보 철회는 동의 상태를 바꾸고 목표와 등급이 보이는 상품 조회를 다시 부른다", async () => {
     reply(() => success({ healthConsented: false }));
     queryClient.setQueryData(productKeys.detail("7"), {});
+    queryClient.setQueryData(goalKeys.mine(), {});
 
     await run(
       onboardingMutations.revokeHealth(queryClient),
@@ -153,6 +159,9 @@ describe("onboarding queries", () => {
     expect(
       queryClient.getQueryState(productKeys.detail("7"))?.isInvalidated,
     ).toBe(true);
+    expect(queryClient.getQueryState(goalKeys.mine())?.isInvalidated).toBe(
+      true,
+    );
   });
 
   it.each([

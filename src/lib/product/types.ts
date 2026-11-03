@@ -4,8 +4,7 @@
  * 상세 응답의 1차 웹 호환 필드(`id`, `name`, `pns`, `nutrients` 등)는 제거 예정이라 넣지 않는다.
  */
 
-// 목표는 여러 도메인이 같이 쓴다. 08단계 goal 도메인을 만들 때 그쪽으로 옮긴다
-export type Goal = "GENERAL" | "WEIGHT_LOSS" | "MUSCLE_GAIN";
+import type { Goal } from "@/lib/goal/types";
 
 export type ProductStatus = "ANALYZED" | "INSUFFICIENT";
 
@@ -40,8 +39,9 @@ export type GradeBadgeDto = {
   /** 0~100 */
   score: number;
   grade: GradeLetter;
-  /** 문구는 서버 DB에서 읽어 없으면 null이다 */
-  label: string | null;
+  /** DB 문구가 없으면 서버가 기본 문구로 채운다(`CalibrationService.label`) */
+  label: string;
+  /** 서버 DB 문구라 없으면 null이다 */
   badgeText: string | null;
   /** 식이섬유 값이 있었는지. 없으면 0으로 계산했다 */
   fiberIncluded: boolean;

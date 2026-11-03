@@ -18,6 +18,7 @@ import {
   postOnboardingComplete,
   postPrivacyConsent,
 } from "@/lib/onboarding/api";
+import { goalKeys } from "@/lib/goal/keys";
 import { onboardingKeys } from "@/lib/onboarding/keys";
 import {
   isOnboardingCompletedLocally,
@@ -66,8 +67,8 @@ export function useSamples(size?: number) {
   return useQuery(onboardingQueries.samples(size));
 }
 
-// 성공 후 다시 불러올 조회는 API 작업 플랜 「기능 → 엔드포인트 매핑」의 초안이다. 다른 도메인(목표 등)은
-// 그 도메인을 만들 때 넣고 09단계에서 확정한다. 옵션을 훅과 나눠 렌더 없이 테스트한다
+// 성공 후 다시 불러올 조회는 API 작업 플랜 「기능 → 엔드포인트 매핑」의 초안이고 09단계에서 확정한다.
+// 옵션을 훅과 나눠 렌더 없이 테스트한다
 
 export const onboardingMutations = {
   /** `policyVersion`은 `bootstrap.currentPolicyVersion`을 보낸다 */
@@ -103,9 +104,13 @@ export const onboardingMutations = {
         postHealthConsent(api, input),
       onSuccess: (healthConsent) => {
         queryClient.setQueryData(onboardingKeys.healthConsent(), healthConsent);
-        return queryClient.invalidateQueries({
-          queryKey: onboardingKeys.bootstrap(),
-        });
+        // 목표 조회도 건강정보 동의 여부를 담는다
+        return Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: onboardingKeys.bootstrap(),
+          }),
+          queryClient.invalidateQueries({ queryKey: goalKeys.all }),
+        ]);
       },
     }),
   revokeHealth: (queryClient: QueryClient) =>
@@ -118,6 +123,7 @@ export const onboardingMutations = {
           queryClient.invalidateQueries({
             queryKey: onboardingKeys.bootstrap(),
           }),
+          queryClient.invalidateQueries({ queryKey: goalKeys.all }),
           queryClient.invalidateQueries({ queryKey: productKeys.all }),
         ]);
       },

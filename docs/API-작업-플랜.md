@@ -266,6 +266,7 @@
 
 - 개인정보 동의 버튼은 `isPending` 동안 막는다. 익명 ID가 없을 때 두 번 보내면 서버가 익명 ID를 두 번 발급한다
 - bootstrap은 이 기기의 온보딩 완료 기록을 합치므로 서버에서 prefetch하지 않는다(hydration 불일치)
+- 동의 필요(403)가 올 수 있는 변경을 `useConsentGate`로 감쌀 때는 훅(`useUpdateGoal` 등) 대신 옵션을 펼쳐 표시를 붙인다: `useMutation({ ...goalMutations.update(queryClient), meta: { consentGate: true } })`. 목표 변경(`PUT /me/goal`)이 `HEALTH_CONSENT_REQUIRED`가 주로 나는 경로다
 
 ## 진행 가정
 

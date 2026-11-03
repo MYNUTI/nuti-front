@@ -2,7 +2,7 @@ import { queryOptions, skipToken, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
 import { fetchGradeReason, fetchProductDetail } from "@/lib/product/api";
 import { productKeys } from "@/lib/product/keys";
-import type { Goal } from "@/lib/product/types";
+import type { Goal } from "@/lib/goal/types";
 import { lookupBarcode } from "@/lib/scan/lookup";
 import type { Gtin } from "@/lib/scan/types";
 

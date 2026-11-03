@@ -3,7 +3,8 @@
  * 기준: 백엔드 커밋 c164ec0의 `BootstrapResponse`, `ConsentRequest`·`ConsentResponse`, `HealthConsentResponse`,
  * `SamplePickerResponse`, `OnboardingComplete*`. 날짜는 타임존 없는 ISO 문자열(`yyyy-MM-ddTHH:mm:ss`)이다.
  */
-import type { Goal, GradeLetter } from "@/lib/product/types";
+import type { Goal } from "@/lib/goal/types";
+import type { GradeLetter } from "@/lib/product/types";
 
 // 서버 설정 기본값(`app.consent.required-items`). 팀 확정 사항이라 바뀔 수 있다(API 작업 플랜 「진행 가정」)
 export const PRIVACY_CONSENT_ITEMS = ["PERSONAL_INFO", "AGE_OVER_14"] as const;
