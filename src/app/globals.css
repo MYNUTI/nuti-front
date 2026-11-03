@@ -56,6 +56,22 @@
   --grade-on: #111111;
 
   /*
+   * 점수 색(11-03 점수 링). 피그마 변수 모음 「점수 색」의 모드 ① 우리 색.
+   * 모드를 바꾸면 이 값만 바꾼다(② 중간 · ③ 노써치와 같게). 1 잘 맞음 ~ 5 안 맞음
+   */
+  --score-track: #eef0f2;
+  --score-ring-1: #40cf52;
+  --score-ring-2: #92d933;
+  --score-ring-3: #ffe438;
+  --score-ring-4: #ff914d;
+  --score-ring-5: #f73756;
+  --score-number-1: #111111;
+  --score-number-2: #111111;
+  --score-number-3: #111111;
+  --score-number-4: #111111;
+  --score-number-5: #111111;
+
+  /*
    * 예전 피그마 토큰. 아직 바꾸지 않은 임시 화면이 쓰고 있어 남겨 둔다.
    * 새 코드에서는 쓰지 않고, 마지막 사용처가 바뀌면 지운다(UI 플랜 13단계).
    * v3와 이름이 겹치는 text-disabled·text-danger·icon-default는 v3 값을 쓴다.
@@ -238,6 +254,18 @@
   --color-grade-d: var(--grade-d);
   --color-grade-e: var(--grade-e);
   --color-grade-on: var(--grade-on);
+
+  --color-score-track: var(--score-track);
+  --color-score-ring-1: var(--score-ring-1);
+  --color-score-ring-2: var(--score-ring-2);
+  --color-score-ring-3: var(--score-ring-3);
+  --color-score-ring-4: var(--score-ring-4);
+  --color-score-ring-5: var(--score-ring-5);
+  --color-score-number-1: var(--score-number-1);
+  --color-score-number-2: var(--score-number-2);
+  --color-score-number-3: var(--score-number-3);
+  --color-score-number-4: var(--score-number-4);
+  --color-score-number-5: var(--score-number-5);
 
   --color-backdrop: var(--backdrop);
   --color-background: var(--background);

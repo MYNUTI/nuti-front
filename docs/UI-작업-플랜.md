@@ -29,7 +29,7 @@
 - `globals.css`에 v3 CHIPS 토큰(색·등급 색·글자 스타일 11개·모서리)이 있다. 예전 토큰과 `rounded-xl` 이상은 임시 화면용으로 남아 있고 13단계에서 지운다
 - 글꼴은 Pretendard 서브셋(400·500·700)
 - 아이콘: `components/icons.tsx`에 피그마 v2/Icon 39개
-- v3 공통 부품: `components/common/`의 button, bottom-cta, top-bar, search-field, tab-bar, grade(GradeBadge·GradeTag, GradeBar 제외), status-tag, chip, select-card, check-row, check-mark, text-field, product-row, list-row, toggle, reason-row, section-header, thumb, category-tile, product-hero, camera-frame, sheet(BottomSheet·ConfirmSheet), empty-state(EmptyState·ErrorState), loading-state, skeleton. 그 밖의 `components/common/`(cta-button, layer, card-tutorial, choice-card)과 `components/ui/`(shadcn button, checkbox, radio-group)는 임시 화면용이다
+- v3 공통 부품: `components/common/`의 button, bottom-cta, top-bar, search-field, tab-bar, grade(GradeBadge·GradeTag, GradeBar 제외), status-tag, chip, select-card, check-row, check-mark, text-field, product-row, list-row, toggle, reason-row, section-header, thumb, category-tile, product-hero, camera-frame, sheet(BottomSheet·ConfirmSheet), empty-state(EmptyState·ErrorState), loading-state, skeleton, step-dots, score-ring. 그 밖의 `components/common/`(cta-button, layer, card-tutorial, choice-card)과 `components/ui/`(shadcn button, checkbox, radio-group)는 임시 화면용이다
 - 스캔: `components/scan/`가 `lib/scan` 상태 기계·lookup에 붙어 있다. UI 작업은 겉모양만 바꾸고 이 연결은 유지한다
 - 라우트는 임시본이다(`home`, `scan`, `history`, `settings`, `product/[id]`, `onboarding/*` 9개). v3 화면 구성과 맞지 않는다
 
@@ -128,29 +128,29 @@ API 연결은 API 브랜치 08·09단계 이후에 붙인다. 그 전까지 화�
 
 ### 라우트
 
-| 화면             | 경로                   | 비고                                                                                                               |
-| ---------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| 0-1              | `/`                    | 앱 안 화면 없음. `/intro`로 보낸다(0-4가 생기기 전까지는 `/onboarding`). 설치한 PWA는 운영체제 스플래시가 대신한다 |
-| 0-4·0-4b         | `/intro`               | 지금 `/onboarding`(onboarding-intro) 대체                                                                          |
-| 1-5              | `/intro/goal`          |                                                                                                                    |
-| 2-1g             | `/home` 위 레이어      |                                                                                                                    |
-| 2-1              | `/home`                |                                                                                                                    |
-| 0-3·3-1·3-2 시트 | `/scan`                | 권한 안내·시트는 같은 화면의 상태                                                                                  |
-| 3-2              | `/product/[id]`        |                                                                                                                    |
-| 3-4              | `/product/[id]/better` |                                                                                                                    |
-| 3-5              | `/compare`             |                                                                                                                    |
-| 5-4              | `/grade-guide`         |                                                                                                                    |
-| 2-3·2-4          | `/search`              | 검색어는 쿼리스트링                                                                                                |
-| 2-2              | `/ranking`             | 2-5 필터·2-5f 분류는 시트                                                                                          |
-| 3-6 ~ 3-9        | `/contribute/*`        |                                                                                                                    |
-| 4-1·4-2·4-4      | `/history`             | 탭은 쿼리스트링                                                                                                    |
-| 5-1              | `/my`                  |                                                                                                                    |
-| 5-2              | `/my/goal`             |                                                                                                                    |
-| 5-3              | `/my/requests`         |                                                                                                                    |
-| 5-7              | `/my/body`             |                                                                                                                    |
-| 5-5              | `/settings`            |                                                                                                                    |
-| 5-6a·5-6·5-6b    | `/login`               | OAuth 콜백 경로는 API 플랜 11단계 답변 후                                                                          |
-| 5-9·5-10         | `/terms`, `/privacy`   |                                                                                                                    |
+| 화면             | 경로                   | 비고                                                                                        |
+| ---------------- | ---------------------- | ------------------------------------------------------------------------------------------- |
+| 0-1              | `/`                    | 앱 안 화면 없음. `/intro`로 보낸다. 설치한 PWA는 운영체제 스플래시가 대신한다               |
+| 0-4·0-4b         | `/intro`, `/intro/2`   | 지금 `/onboarding`(onboarding-intro) 대체. 0-4b를 따로 둬서 브라우저 뒤로 가기가 0-4로 간다 |
+| 1-5              | `/intro/goal`          |                                                                                             |
+| 2-1g             | `/home` 위 레이어      |                                                                                             |
+| 2-1              | `/home`                |                                                                                             |
+| 0-3·3-1·3-2 시트 | `/scan`                | 권한 안내·시트는 같은 화면의 상태                                                           |
+| 3-2              | `/product/[id]`        |                                                                                             |
+| 3-4              | `/product/[id]/better` |                                                                                             |
+| 3-5              | `/compare`             |                                                                                             |
+| 5-4              | `/grade-guide`         |                                                                                             |
+| 2-3·2-4          | `/search`              | 검색어는 쿼리스트링                                                                         |
+| 2-2              | `/ranking`             | 2-5 필터·2-5f 분류는 시트                                                                   |
+| 3-6 ~ 3-9        | `/contribute/*`        |                                                                                             |
+| 4-1·4-2·4-4      | `/history`             | 탭은 쿼리스트링                                                                             |
+| 5-1              | `/my`                  |                                                                                             |
+| 5-2              | `/my/goal`             |                                                                                             |
+| 5-3              | `/my/requests`         |                                                                                             |
+| 5-7              | `/my/body`             |                                                                                             |
+| 5-5              | `/settings`            |                                                                                             |
+| 5-6a·5-6·5-6b    | `/login`               | OAuth 콜백 경로는 API 플랜 11단계 답변 후                                                   |
+| 5-9·5-10         | `/terms`, `/privacy`   |                                                                                             |
 
 ## 다른 브랜치와 겹치는 곳
 
@@ -180,3 +180,4 @@ API 연결은 API 브랜치 08·09단계 이후에 붙인다. 그 전까지 화�
 | 2026-11-04 | 0-1 스플래시는 앱 안 화면으로 만들지 않는다. 브라우저에서는 `/`가 바로 0-4로 가고, 설치한 PWA는 운영체제 스플래시만 쓴다(스플래시가 두 번 뜨지 않게)                                                                                                                  |
 | 2026-11-04 | 운영체제 스플래시는 피그마 0-1처럼 흰 바탕(`SPLASH_COLOR`) + 초록(`brand/link`) 「마이뉴티」 글자만(`public/common/splash-wordmark.png`, Pretendard Bold로 그린 이미지). 앱 아이콘은 초록 바탕 + 흰 로고 그대로 두고, 그래서 생성 스크립트의 아이콘 배경색을 분리했다 |
 | 2026-11-04 | Android 12 이상은 운영체제가 흰 배경(`background_color`) + 앱 아이콘(초록 바탕)으로 스플래시를 만든다. 「마이뉴티」 글자만 나오는 건 iOS뿐이고, Android 쪽은 바꿀 수 없어 그대로 둔다                                                                                 |
+| 2026-11-04 | 피그마가 등급 배지(A–E)에서 점수 링(0–100, v3/ScoreRing)으로 바뀌었다(11-03). 점수 색은 「점수 색」 모드 ① 우리 색을 쓴다. 기존 GradeBadge·GradeTag는 일단 두고 필요 없어지면 정리한다                                                                                |
