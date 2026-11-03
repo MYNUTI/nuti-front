@@ -7,7 +7,7 @@
 피그마 「Design v3 · 새로 (2026-10-22)」 페이지의 화면을 코드로 옮긴다.
 
 - 만드는 것: 디자인 토큰, 공통 부품, 화면(라우트)과 화면 안 상태(로딩·에러·빈 상태·분기)
-- 건드리지 않는 것: `src/lib/` 안쪽 전부. API 작업 브랜치(`feat/api`)와 겹친다. 이미 있는 `lib/scan`·`lib/utils`·`lib/grade`는 import만 한다. 예외는 `src/lib/pwa.ts`의 `SPLASH_COLOR` 한 줄뿐이다(「결정 기록」)
+- 건드리지 않는 것: `src/lib/` 안쪽 전부. API 작업 브랜치(`feat/api`)와 겹친다. 이미 있는 `lib/scan`·`lib/utils`·`lib/grade`는 import만 한다. 예외는 `src/lib/pwa.ts`의 `SPLASH_COLOR`와 `src/lib/utils.ts`의 `cn` 설정뿐이다(「결정 기록」)
 - 피그마에 없거나 메모에 「안 정함」으로 남은 부분은 추측해서 채우지 않는다. 「남은 질문」으로 남긴다
 
 ## 기준 문서
@@ -24,11 +24,12 @@
 
 `design/tokens` 브랜치(2026-08-20, `src/styles/tokens.css`)는 v3 이전 토큰이라 쓰지 않는다.
 
-## 현재 코드 (2026-11-02 확인)
+## 현재 코드 (2026-11-03 확인)
 
-- `globals.css` 토큰은 예전 피그마 Primitive·Semantic 값이다(딥그린 주색, 파랑~빨강 등급색). v3 CHIPS 토큰(라임 `#84F01C` 주색, 등급 A `#40CF52` ~ E `#F73756`)과 이름·값이 모두 다르다
-- 글꼴은 Paperlogy(로컬 woff2 2종). 피그마는 Noto Sans KR이고, 메모상 원래 의도는 Pretendard다(피그마 도구에 없어 대체)
-- 공통 부품: `components/common/`(grade, tab-bar, cta-button, layer, card-tutorial, choice-card), `components/ui/`(shadcn button, checkbox, radio-group)
+- `globals.css`에 v3 CHIPS 토큰(색·등급 색·글자 스타일 11개·모서리)이 있다. 예전 토큰과 `rounded-xl` 이상은 임시 화면용으로 남아 있고 13단계에서 지운다
+- 글꼴은 Pretendard 서브셋(400·500·700)
+- 아이콘: `components/icons.tsx`에 피그마 v2/Icon 39개
+- v3 공통 부품: `components/common/`의 button, bottom-cta. 그 밖의 `components/common/`(grade, tab-bar, cta-button, layer, card-tutorial, choice-card)과 `components/ui/`(shadcn button, checkbox, radio-group)는 임시 화면용이다
 - 스캔: `components/scan/`가 `lib/scan` 상태 기계·lookup에 붙어 있다. UI 작업은 겉모양만 바꾸고 이 연결은 유지한다
 - 라우트는 임시본이다(`home`, `scan`, `history`, `settings`, `product/[id]`, `onboarding/*` 9개). v3 화면 구성과 맞지 않는다
 
@@ -168,9 +169,10 @@ API 연결은 API 브랜치 08·09단계 이후에 붙인다. 그 전까지 화�
 
 ## 결정 기록
 
-| 날짜       | 결정                                                                                                                  |
-| ---------- | --------------------------------------------------------------------------------------------------------------------- |
-| 2026-11-03 | 글꼴은 Pretendard. 피그마의 Noto Sans KR은 도구에 Pretendard가 없어서 쓴 대체 글꼴이다                                |
-| 2026-11-03 | API 연결 전까지 화면 데이터는 화면 폴더 옆 `_fixtures.ts`로 채운다                                                    |
-| 2026-11-03 | 라우트는 「라우트」 표대로 만들고, 대체된 `/onboarding/*` 9개는 13단계에서 지운다(목록은 그때 확인)                   |
-| 2026-11-03 | `src/lib/` 금지의 예외로 `src/lib/pwa.ts`의 `SPLASH_COLOR`만 UI 브랜치에서 바꾼다. `public/pwa/` 이미지도 다시 만든다 |
+| 날짜       | 결정                                                                                                                                                                                                          |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-03 | 글꼴은 Pretendard. 피그마의 Noto Sans KR은 도구에 Pretendard가 없어서 쓴 대체 글꼴이다                                                                                                                        |
+| 2026-11-03 | API 연결 전까지 화면 데이터는 화면 폴더 옆 `_fixtures.ts`로 채운다                                                                                                                                            |
+| 2026-11-03 | 라우트는 「라우트」 표대로 만들고, 대체된 `/onboarding/*` 9개는 13단계에서 지운다(목록은 그때 확인)                                                                                                           |
+| 2026-11-03 | `src/lib/` 금지의 예외로 `src/lib/pwa.ts`의 `SPLASH_COLOR`만 UI 브랜치에서 바꾼다. `public/pwa/` 이미지도 다시 만든다                                                                                         |
+| 2026-11-03 | `src/lib/utils.ts`의 `cn`도 예외로 둔다. tailwind-merge가 글자 스타일(`text-body1` 등)을 글자 색으로 보고 색 클래스를 지워서 글자 스타일 이름과 `rounded-sheet`를 알려 준다. 테스트는 `src/lib/utils.test.ts` |
