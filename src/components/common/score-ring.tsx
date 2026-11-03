@@ -47,7 +47,9 @@ export function ScoreRing({
   const r = (box - stroke) / 2;
   const length = 2 * Math.PI * r;
   // 링·숫자·화면 읽기 글이 항상 같은 값을 보이게 0~100 정수로 맞춘다
-  const shown = Math.round(Math.min(Math.max(score, 0), 100));
+  const shown = Number.isFinite(score)
+    ? Math.round(Math.min(Math.max(score, 0), 100))
+    : 0;
   const filled = (shown / 100) * length;
 
   return (
