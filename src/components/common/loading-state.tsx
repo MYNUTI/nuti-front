@@ -31,17 +31,16 @@ export function LoadingState({
     };
   }, []);
 
-  if (phase === "hidden") return null;
-
+  // 라이브 영역은 처음부터 두고 안쪽만 바꾼다. 내용과 함께 나중에 생기면 화면 읽기 프로그램이 읽지 않을 수 있다
   return (
     <div role="status">
-      <span className="sr-only">불러오는 중</span>
+      {phase !== "hidden" && <span className="sr-only">불러오는 중</span>}
       {phase === "slow" && slowMessage && (
         <p className="px-5 py-3 text-center text-body2 text-text-sub">
           {slowMessage}
         </p>
       )}
-      {skeleton}
+      {phase !== "hidden" && skeleton}
     </div>
   );
 }
