@@ -56,7 +56,12 @@ export function Chip({
     >
       {children}
       {kind === "dropdown" && <IconChevronDown />}
-      {kind === "removable" && <IconClose />}
+      {kind === "removable" && (
+        <>
+          <span className="sr-only"> 빼기</span>
+          <IconClose aria-hidden />
+        </>
+      )}
     </button>
   );
 }
