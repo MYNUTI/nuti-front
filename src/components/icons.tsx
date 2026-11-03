@@ -1,11 +1,14 @@
+import { cn } from "@/lib/utils";
+
 /*
  * 피그마 v3 디자인 시스템 「v2/Icon」 24px 선 아이콘(선 1.75).
  * 경로는 피그마에서 내보낸 SVG 그대로이고, 색만 currentColor로 바꿔 글자 색(text-*)을 따르게 했다.
+ * 피그마는 아이콘을 16·20·28px로 써도 선을 1.75px로 유지해서 non-scaling-stroke로 맞춘다.
  */
 
 type IconProps = React.ComponentProps<"svg">;
 
-function SvgIcon({ children, ...props }: IconProps) {
+function SvgIcon({ children, className, ...props }: IconProps) {
   return (
     <svg
       width={24}
@@ -16,6 +19,7 @@ function SvgIcon({ children, ...props }: IconProps) {
       strokeWidth={1.75}
       strokeLinecap="round"
       strokeLinejoin="round"
+      className={cn("[&_path]:[vector-effect:non-scaling-stroke]", className)}
       {...props}
     >
       {children}
