@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CtaButton } from "@/components/common/cta-button";
 import { GradeBadge, GradeBar } from "@/components/common/grade";
-import { findProductById } from "@/lib/product";
+import { findProductById } from "@/lib/mock-catalog";
 
 export async function generateMetadata({
   params,

@@ -3,7 +3,7 @@ import {
   ALL_PRODUCTS,
   findProductById,
   findProductByGtin,
-} from "@/lib/product";
+} from "@/lib/mock-catalog";
 
 const PROTOTYPE_KEYS = [
   "toString",

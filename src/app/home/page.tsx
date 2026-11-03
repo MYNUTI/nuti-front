@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { GradeBadge } from "@/components/common/grade";
 import { TabBar } from "@/components/common/tab-bar";
-import { findProductById } from "@/lib/product";
+import { findProductById } from "@/lib/mock-catalog";
 
 /** TODO: 실제 열람 기록이 생기면 서버에서 받는다. 카탈로그 전체와 같지 않다. */
 const RECENT_IDS = ["1", "2"];
