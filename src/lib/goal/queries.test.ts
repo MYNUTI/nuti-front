@@ -9,6 +9,7 @@ import { goalKeys } from "@/lib/goal/keys";
 import { goalMutations } from "@/lib/goal/queries";
 import { onboardingKeys } from "@/lib/onboarding/keys";
 import { productKeys } from "@/lib/product/keys";
+import { searchKeys } from "@/lib/search/keys";
 import { stubDocumentCookie, stubWebLocks } from "@/test/browser";
 import { mockAdapter, success } from "@/test/http";
 
@@ -38,7 +39,7 @@ describe("goalMutations.update", () => {
     vi.unstubAllGlobals();
   });
 
-  it("재계산 상품 ID를 숫자로 보내고, 목표·상품·bootstrap을 다시 부른다", async () => {
+  it("재계산 상품 ID를 숫자로 보내고, 목표·상품·검색·bootstrap을 다시 부른다", async () => {
     const mock = mockAdapter(() =>
       success({
         goal: "MUSCLE_GAIN",
@@ -52,6 +53,7 @@ describe("goalMutations.update", () => {
       goalKeys.mine(),
       productKeys.detail("7"),
       onboardingKeys.bootstrap(),
+      searchKeys.result("두유"),
     ])
       queryClient.setQueryData(key, {});
 
@@ -68,6 +70,7 @@ describe("goalMutations.update", () => {
     expect(isInvalidated(queryClient, goalKeys.mine())).toBe(true);
     expect(isInvalidated(queryClient, productKeys.detail("7"))).toBe(true);
     expect(isInvalidated(queryClient, onboardingKeys.bootstrap())).toBe(true);
+    expect(isInvalidated(queryClient, searchKeys.result("두유"))).toBe(true);
   });
 
   it("재계산 상품이 없으면 키를 보내지 않는다", async () => {

@@ -8,6 +8,8 @@ import { api } from "@/lib/api/client";
 import { productKeys } from "@/lib/product/keys";
 import { savedKeys } from "@/lib/saved/keys";
 import { savedMutations, savedQueries } from "@/lib/saved/queries";
+import { searchKeys } from "@/lib/search/keys";
+import type { SearchResult } from "@/lib/search/types";
 import { stubDocumentCookie, stubWebLocks } from "@/test/browser";
 import { mockAdapter, success } from "@/test/http";
 
@@ -47,7 +49,7 @@ describe("savedMutations", () => {
     ["save", true, { saved: true, savedCount: 1 }],
     ["remove", false, { saved: false }],
   ] as const)(
-    "%s는 상세 캐시의 saved만 바꾸고 상세는 다시 부르지 않는다",
+    "%s는 상세·검색 캐시의 saved만 바꾸고 다시 부르지 않는다",
     async (name, saved, response) => {
       api.defaults.adapter = mockAdapter(() => success(response)).adapter;
       queryClient.setQueryData(productKeys.detail("7"), {
@@ -55,6 +57,31 @@ describe("savedMutations", () => {
         saved: !saved,
       });
       queryClient.setQueryData(savedKeys.list(), { pages: [], pageParams: [] });
+      const searchPage: SearchResult = {
+        query: "두유",
+        appliedGoal: "GENERAL",
+        exactMatches: {
+          total: 1,
+          items: [
+            {
+              id: "7",
+              name: "두유",
+              brandName: null,
+              imageUrl: null,
+              saved: !saved,
+              status: "INSUFFICIENT",
+            },
+          ],
+        },
+        similarProducts: { total: 0, items: [] },
+        didYouMean: null,
+        sameCategoryTop: [],
+        canRequestAnalysis: false,
+      };
+      queryClient.setQueryData(searchKeys.result("두유"), {
+        pages: [searchPage],
+        pageParams: [0],
+      });
 
       await run(savedMutations[name](queryClient), queryClient, "7");
 
@@ -68,6 +95,10 @@ describe("savedMutations", () => {
       expect(queryClient.getQueryState(savedKeys.list())?.isInvalidated).toBe(
         true,
       );
+      const search = queryClient.getQueryData<{ pages: SearchResult[] }>(
+        searchKeys.result("두유"),
+      )!;
+      expect(search.pages[0].exactMatches.items[0].saved).toBe(saved);
     },
   );
 

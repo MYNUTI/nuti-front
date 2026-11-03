@@ -29,6 +29,7 @@ import {
   type OnboardingCompleteRequestDto,
 } from "@/lib/onboarding/types";
 import { productKeys } from "@/lib/product/keys";
+import { searchKeys } from "@/lib/search/keys";
 
 export const onboardingQueries = {
   bootstrap: () =>
@@ -118,13 +119,14 @@ export const onboardingMutations = {
       mutationFn: () => deleteHealthConsent(api),
       onSuccess: (healthConsent) => {
         queryClient.setQueryData(onboardingKeys.healthConsent(), healthConsent);
-        // 목표가 GENERAL로 돌아가 등급이 바뀐다
+        // 목표가 GENERAL로 돌아가 상품·검색 결과의 등급이 바뀐다
         return Promise.all([
           queryClient.invalidateQueries({
             queryKey: onboardingKeys.bootstrap(),
           }),
           queryClient.invalidateQueries({ queryKey: goalKeys.all }),
           queryClient.invalidateQueries({ queryKey: productKeys.all }),
+          queryClient.invalidateQueries({ queryKey: searchKeys.results() }),
         ]);
       },
     }),

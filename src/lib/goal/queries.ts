@@ -12,6 +12,7 @@ import { goalKeys } from "@/lib/goal/keys";
 import type { Goal } from "@/lib/goal/types";
 import { onboardingKeys } from "@/lib/onboarding/keys";
 import { productKeys } from "@/lib/product/keys";
+import { searchKeys } from "@/lib/search/keys";
 
 export const goalQueries = {
   mine: () =>
@@ -40,11 +41,12 @@ export const goalMutations = {
               ? undefined
               : Number(input.recalcProductId),
         }),
-      // 등급은 목표 기준이라 상품 조회를 전부 다시 부른다. 열려 있는 상세는 조회수가 1 오른다(플랜에서 감수)
+      // 등급은 목표 기준이라 상품·검색 결과를 전부 다시 부른다. 열려 있는 상세는 조회수가 1 오른다(플랜에서 감수)
       onSuccess: () =>
         Promise.all([
           queryClient.invalidateQueries({ queryKey: goalKeys.all }),
           queryClient.invalidateQueries({ queryKey: productKeys.all }),
+          queryClient.invalidateQueries({ queryKey: searchKeys.results() }),
           queryClient.invalidateQueries({
             queryKey: onboardingKeys.bootstrap(),
           }),

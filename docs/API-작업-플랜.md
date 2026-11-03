@@ -268,6 +268,8 @@
 - bootstrap은 이 기기의 온보딩 완료 기록을 합치므로 서버에서 prefetch하지 않는다(hydration 불일치)
 - 동의 필요(403)가 올 수 있는 변경을 `useConsentGate`로 감쌀 때는 훅(`useUpdateGoal` 등) 대신 옵션을 펼쳐 표시를 붙인다: `useMutation({ ...goalMutations.update(queryClient), meta: { consentGate: true } })`. 목표 변경(`PUT /me/goal`)이 `HEALTH_CONSENT_REQUIRED`가 주로 나는 경로다. 저장(`POST /me/saved-products/{id}`)은 「403 → 동의 → 이어서 저장」의 대표 경로라 감싼다
 - 저장·해제 버튼은 `isPending` 동안 막는다. 저장과 해제의 응답 순서가 뒤바뀌면 상세 캐시의 `saved`가 서버와 어긋난다
+- 검색 자동완성은 입력마다 키가 바뀌어 요청이 나간다. 디바운스와 `placeholderData: keepPreviousData`는 화면이 붙인다(`searchQueries.suggestions`를 펼쳐 쓴다)
+- 검색어는 30자를 넘으면 서버가 400으로 답한다. 입력 단계에서 30자로 막는다
 
 ## 진행 가정
 
@@ -282,7 +284,7 @@
 | 동의 항목 코드       | 개인정보 동의 `agreedItems`는 `PERSONAL_INFO`, `AGE_OVER_14`를 상수로 둔다. 건강정보 동의는 서버가 필수 항목을 검사하지 않고 보낸 코드를 그대로 저장한다. 코드는 「남은 질문」                                                | 백엔드 설정 기본값과 소스. 팀 확정 사항이라 바뀔 수 있음      |
 | null 여부            | 명세·소스로 확인되지 않은 응답 필드는 null이 올 수 있다고 보고 타입을 만든다                                                                                                                                                  | Swagger에 필수 표시가 거의 없음                               |
 | 상품 상세 예전 필드  | DTO에 넣지 않는다. 새 필드(`status`, `product`, `nutrition`, `grade`, `topReason`, `appliedGoal`, `saved`)만 쓴다                                                                                                             | 백엔드 소스에 「1차 웹 호환, 2차 화면 전환 후 제거」로 표시됨 |
-| 검색 페이지네이션    | 백엔드 소스의 `Section` 구조를 기준으로 한다. 08단계에서 백엔드 소스로 확인한다                                                                                                                                               | 백엔드 소스                                                   |
+| 검색 페이지네이션    | 확인됨(08단계): 두 섹션(`exactMatches`·`similarProducts`)이 같은 `page`(0부터)·`size`로 함께 넘어오고 `total`은 섹션마다 따로다                                                                                               | 백엔드 소스 `ProductSearchService`                            |
 | 탈퇴 사유            | Swagger대로 query로 보낸다                                                                                                                                                                                                    | Swagger                                                       |
 | 온보딩 완료          | 식별이 있으면 서버에 저장하고, 없으면 localStorage에 둔다. 나중에 동기화하는 방식은 미정                                                                                                                                      | 노션 명세                                                     |
 | 노션 「수정」 페이지 | 받은 명세와 같은 내용이다                                                                                                                                                                                                     | 팀 확인 (2026-10-25)                                          |
@@ -341,3 +343,4 @@
 | 2026-11-03 | 06단계는 데이터 레이어(상품 `api`·`keys`·`queries`·서버 조회 `getProductDetail`·`lookupBarcode`, 목 카탈로그를 `mock-catalog.ts`로 이름 변경)까지만 한다. 스캔 시트·상세 페이지는 화면 필드와 분기를 바꿔야 해 UI 브랜치와 겹치므로 연결을 미루고, 그때까지 목을 쓴다. 상세 쿼리는 서버 조회 결과를 이어 쓰고 조회수가 다시 오르지 않게 `staleTime: Infinity`로 둔다. 체크섬 오류는 다시 보내도 같아 실패가 아닌 결과로 돌려준다. 상품 ID는 Long을 넘는 값에 서버가 500으로 답해 18자리까지만 보낸다                                              |
 | 2026-11-03 | QueryClient 기본 옵션: 조회는 응답 없음(취소 제외)·5xx만 1회 재시도하고, 변경은 재시도하지 않는다. 배포 서버라 조회에도 부수 효과가 있어 포커스·재연결 재조회는 끈다. 서버 렌더는 요청마다 새로 만들고 브라우저는 하나를 쓴다.                                                                                                                                                                                                                                                                                                                    |
 | 2026-11-03 | 로딩·에러·빈 데이터는 훅 상태(`isPending`·`isError`·`data`)로 컴포넌트가 분기하고, 0건은 에러가 아닌 정상 결과다. 에러 알림은 문구 함수(`toErrorMessage`)와 변경 실패 리스너(`setMutationErrorListener`)까지 만들고 토스트 UI는 화면에서 붙인다. 동의 필요(403)는 `useConsentGate`가 필요한 동의와 `resume()`을 주고, 감싼 변경은 `meta.consentGate`로 표시해 공통 알림에서 뺀다. 인자를 컴포넌트가 들고 있어 동의 화면은 시트·모달로 띄운다                                                                                                      |
+| 2026-11-03 | 저장·해제 뒤 검색 결과는 다시 부르지 않고 캐시의 저장 표시만 바꾼다(매핑표 초안의 「검색 다시 부르기」를 대신한다). 무한 목록이라 다시 부르면 불러 둔 페이지를 모두 다시 받고, 저장 여부는 정렬에 영향이 없다. 목표 변경·건강정보 철회 뒤에는 등급이 바뀌어 검색 결과도 무효화한다                                                                                                                                                                                                                                                                |

@@ -15,6 +15,7 @@ import {
 import { rememberOnboardingCompleted } from "@/lib/onboarding/storage";
 import type { Bootstrap } from "@/lib/onboarding/types";
 import { productKeys } from "@/lib/product/keys";
+import { searchKeys } from "@/lib/search/keys";
 import {
   stubDocumentCookie,
   stubLocalStorage,
@@ -141,10 +142,11 @@ describe("onboarding queries", () => {
     );
   });
 
-  it("건강정보 철회는 동의 상태를 바꾸고 목표와 등급이 보이는 상품 조회를 다시 부른다", async () => {
+  it("건강정보 철회는 동의 상태를 바꾸고 목표와 등급이 보이는 상품·검색 조회를 다시 부른다", async () => {
     reply(() => success({ healthConsented: false }));
     queryClient.setQueryData(productKeys.detail("7"), {});
     queryClient.setQueryData(goalKeys.mine(), {});
+    queryClient.setQueryData(searchKeys.result("두유"), {});
 
     await run(
       onboardingMutations.revokeHealth(queryClient),
@@ -158,6 +160,9 @@ describe("onboarding queries", () => {
     });
     expect(
       queryClient.getQueryState(productKeys.detail("7"))?.isInvalidated,
+    ).toBe(true);
+    expect(
+      queryClient.getQueryState(searchKeys.result("두유"))?.isInvalidated,
     ).toBe(true);
     expect(queryClient.getQueryState(goalKeys.mine())?.isInvalidated).toBe(
       true,
