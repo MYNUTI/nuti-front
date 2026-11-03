@@ -29,7 +29,7 @@
 - `globals.css`에 v3 CHIPS 토큰(색·등급 색·글자 스타일 11개·모서리)이 있다. 예전 토큰과 `rounded-xl` 이상은 임시 화면용으로 남아 있고 13단계에서 지운다
 - 글꼴은 Pretendard 서브셋(400·500·700)
 - 아이콘: `components/icons.tsx`에 피그마 v2/Icon 39개
-- v3 공통 부품: `components/common/`의 button, bottom-cta, top-bar, search-field, tab-bar, grade(GradeBadge·GradeTag, GradeBar 제외), status-tag. 그 밖의 `components/common/`(cta-button, layer, card-tutorial, choice-card)과 `components/ui/`(shadcn button, checkbox, radio-group)는 임시 화면용이다
+- v3 공통 부품: `components/common/`의 button, bottom-cta, top-bar, search-field, tab-bar, grade(GradeBadge·GradeTag, GradeBar 제외), status-tag, chip, select-card, check-row, check-mark, text-field, product-row, list-row, toggle, reason-row, section-header, thumb, category-tile, product-hero, camera-frame. 그 밖의 `components/common/`(cta-button, layer, card-tutorial, choice-card)과 `components/ui/`(shadcn button, checkbox, radio-group)는 임시 화면용이다
 - 스캔: `components/scan/`가 `lib/scan` 상태 기계·lookup에 붙어 있다. UI 작업은 겉모양만 바꾸고 이 연결은 유지한다
 - 라우트는 임시본이다(`home`, `scan`, `history`, `settings`, `product/[id]`, `onboarding/*` 9개). v3 화면 구성과 맞지 않는다
 
@@ -120,8 +120,8 @@ API 연결은 API 브랜치 08·09단계 이후에 붙인다. 그 전까지 화�
    - TopBar(back·close, light·dark) · SearchField · TabBar(홈·랭킹·스캔·기록·내 정보, 가운데 스캔 강조)
    - GradeBadge(sm·md) · GradeTag(A~E 문구) · StatusTag(분석 전·확인 중)
    - Chip(filter·removable·dropdown) · SelectCard · Checkbox · TextField
-   - ProductRow · ProductItem(격자) · ListRow(none·toggle·chevron) · ReasonRow(good·bad) · SectionHeader
-   - Thumb · CategoryTile · CameraFrame(barcode·label)
+   - ProductRow · ListRow(none·value·toggle·chevron) · Toggle · ReasonRow(good·bad) · SectionHeader
+   - Thumb · CategoryTile · ProductHero · CameraFrame(barcode·label)
    - 바텀시트·확인 대화상자(5-5 계정 삭제, 5-7c 등에서 씀)
 5. **공통 상태** — 불러오는 중·불러오지 못함·0건 패턴
 6. **PWA 색** — `SPLASH_COLOR`를 새 주색으로 바꾸고 `pnpm pwa:assets`로 `public/pwa/`를 다시 만든다
