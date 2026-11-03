@@ -19,6 +19,7 @@ import {
   postPrivacyConsent,
 } from "@/lib/onboarding/api";
 import { goalKeys } from "@/lib/goal/keys";
+import { meKeys } from "@/lib/me/keys";
 import { onboardingKeys } from "@/lib/onboarding/keys";
 import {
   isOnboardingCompletedLocally,
@@ -119,12 +120,14 @@ export const onboardingMutations = {
       mutationFn: () => deleteHealthConsent(api),
       onSuccess: (healthConsent) => {
         queryClient.setQueryData(onboardingKeys.healthConsent(), healthConsent);
-        // 목표가 GENERAL로 돌아가 상품·검색 결과의 등급이 바뀐다
+        // 목표가 GENERAL로 돌아가 상품·검색 결과의 등급과 마이·설정의 목표가 바뀐다
         return Promise.all([
           queryClient.invalidateQueries({
             queryKey: onboardingKeys.bootstrap(),
           }),
           queryClient.invalidateQueries({ queryKey: goalKeys.all }),
+          queryClient.invalidateQueries({ queryKey: meKeys.summary() }),
+          queryClient.invalidateQueries({ queryKey: meKeys.settings() }),
           queryClient.invalidateQueries({ queryKey: productKeys.all }),
           queryClient.invalidateQueries({ queryKey: searchKeys.results() }),
         ]);

@@ -5,6 +5,7 @@ import {
 } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "@/lib/api/client";
+import { meKeys } from "@/lib/me/keys";
 import { productKeys } from "@/lib/product/keys";
 import { savedKeys } from "@/lib/saved/keys";
 import { savedMutations, savedQueries } from "@/lib/saved/queries";
@@ -57,6 +58,7 @@ describe("savedMutations", () => {
         saved: !saved,
       });
       queryClient.setQueryData(savedKeys.list(), { pages: [], pageParams: [] });
+      queryClient.setQueryData(meKeys.summary(), {});
       const searchPage: SearchResult = {
         query: "두유",
         appliedGoal: "GENERAL",
@@ -93,6 +95,9 @@ describe("savedMutations", () => {
         queryClient.getQueryState(productKeys.detail("7"))?.isInvalidated,
       ).toBe(false);
       expect(queryClient.getQueryState(savedKeys.list())?.isInvalidated).toBe(
+        true,
+      );
+      expect(queryClient.getQueryState(meKeys.summary())?.isInvalidated).toBe(
         true,
       );
       const search = queryClient.getQueryData<{ pages: SearchResult[] }>(
