@@ -1,6 +1,6 @@
 # API 연동 작업 플랜
 
-> 상태: **04단계 완료** (2026-11-03). 이 문서는 범위·순서·결정만 기록한다. 항목별 진행 체크는 개인 체크리스트(리포 밖)에서 한다.
+> 상태: **07단계 완료** (2026-11-03). 06단계의 화면 연결은 디자인 확정 뒤로 미뤘다(아래 「06단계 상세」). 이 문서는 범위·순서·결정만 기록한다. 항목별 진행 체크는 개인 체크리스트(리포 밖)에서 한다.
 
 ## 목적
 
@@ -206,6 +206,7 @@
 | `refresh.ts`         | 만료 전 토큰 갱신. JWT `exp`를 보고 요청 전에 `/auth/refresh`를 부르며, 동시 요청은 갱신 한 번을 공유한다. 브라우저 인터셉터와 `proxy.ts`가 같이 쓴다 |
 | `types.ts`           | 공통 타입: `{isSuccess, data}` 래퍼, 에러 응답, 페이지네이션                                                                                          |
 | `response.ts`        | 성공 응답에서 `data`를 꺼내는 `unwrap`. 브라우저·서버 인스턴스가 같이 쓴다                                                                            |
+| `query-client.ts`    | QueryClient 기본 옵션(재시도·재조회)과 변경 실패 리스너. `getQueryClient`는 서버 렌더마다 새로, 브라우저는 하나를 쓴다                                |
 
 도메인 `src/lib/<도메인>/` — `product`, `onboarding`, `goal`, `search`, `saved`, `me`, `auth`, `contribution`, `logging`:
 
@@ -222,7 +223,7 @@
 - `next.config.ts` — rewrites. 목적지는 `API_URL`을 읽는다. rewrites가 빌드할 때 평가되는지는 04단계에서 문서로 확인한다
 - `.env.example` — `API_URL` 추가, `NEXT_PUBLIC_API_URL` 값을 `/api`로. rewrites의 `/api/:path*`와 값이 같아야 한다
 - `src/proxy.ts` — 상세 경로에서 렌더 전 토큰 갱신. 새 쿠키를 응답 `Set-Cookie`와 요청 `cookie` 헤더(`NextResponse.next({ request: { headers } })`) 양쪽에 넣는다
-- `src/app/providers.tsx` — QueryClient 기본 옵션
+- `src/app/providers.tsx` — `getQueryClient()`로 받은 QueryClient를 제공한다. 기본 옵션·변경 실패 리스너는 `src/lib/api/query-client.ts`
 - `src/test/` — 테스트 헬퍼. 테스트용 axios `adapter`, `document.cookie`·`location`·Web Locks 흉내
 - `src/hooks/` — 여러 도메인에 걸친 훅만 둔다(예: 403 동의 필요 처리). 도메인 훅은 도메인 폴더에 둔다
 
@@ -254,6 +255,10 @@
 - path 값은 `encodeURIComponent`로 넣고, 이상한 id로 상세에 들어오면 `notFound()`
 - 등급 없음 응답(200 + `INSUFFICIENT`, grade·topReason 없음) 처리
 - 테스트: mapper, lookup. 기존 테스트로 고정한 성질(프로토타입 키 방어, not-found 계약)이 유지되는지 확인
+- 화면 연결은 미뤘다(2026-11-03). 디자인 확정·UI 브랜치 머지 뒤에 아래를 한다
+  - `scan-stage.tsx`를 `useProductByBarcode`로 옮기고 등급 없음·미등록·체크섬 오류 분기를 넣는다. 앞자리가 0이 아닌 14자리 직접 입력(400 `BAD_REQUEST`)을 입력 단계에서 막을지 정한다. 목 `lookupProduct`와 `ScanResult`를 지운다
+  - 상세 페이지를 `getProductDetail`·`notFound()`·`HydrationBoundary`로 바꾼다. 서버 prefetch용 QueryClient는 `retry`를 끈다. 기본 옵션의 `retry` 함수가 TanStack의 서버 기본값(0)을 덮어 조회수가 두 번 오를 수 있다
+  - 실제 서버로 `cache()` 중복 제거, 스캔 → 상세, proxy 갱신 뒤 개인 기준 렌더를 확인한다
 
 ## 진행 가정
 
@@ -324,3 +329,6 @@
 | 2026-11-02 | `proxy.ts`는 `/product/:id` 페이지 이동에서만 갱신하고 프리페치는 matcher에서 뺀다. 갱신에 실패해도 쿠키를 지우지 않는다. 브라우저의 Web Locks 밖이라 다른 탭이 방금 교체한 것과 구분할 수 없어서다. 정리는 브라우저 인터셉터가 맡고 그 렌더만 비로그인 기준이 된다. 브라우저 갱신이 거절되면 쿠키를 다시 읽어 refresh 토큰이 바뀌었으면(proxy가 교체) 그 토큰을 쓴다. 거절이 proxy의 `Set-Cookie`보다 먼저 오면 토큰은 다시 써지지만 익명 ID는 지워지는 한계는 감수한다                                                                          |
 | 2026-11-03 | 식별 쿠키 속성은 `SameSite=Lax`, HTTPS에서만 `Secure`, 만료는 토큰 7일(refresh 수명 가정)·익명 ID 400일(Chrome 상한)·세션 ID 30분으로 한다. Strict는 외부 링크로 들어온 첫 렌더가 비로그인 기준이 되어 쓰지 않는다. 백엔드는 헤더로 인증해 Lax의 CSRF 부담은 없다. 세션 쿠키로 두면 PWA를 다시 열 때 로그인이 풀린다                                                                                                                                                                                                                              |
 | 2026-11-03 | 상품 화면 모델은 등급 유무를 `status` 판별 유니온으로 나눈다. 등급·감점 이유는 `ANALYZED`로 좁혀야 꺼낼 수 있어 등급 없음 처리를 빠뜨릴 수 없다. `ANALYZED`인데 `grade`가 빠져 오면 등급을 지어낼 수 없어 `INSUFFICIENT`로 보인다. 응답에서 빠진 키는 mapper가 `null`로 채우고, `productId`는 상세 경로·스캔 결과에 맞춰 문자열로 바꾼다                                                                                                                                                                                                          |
+| 2026-11-03 | 06단계는 데이터 레이어(상품 `api`·`keys`·`queries`·서버 조회 `getProductDetail`·`lookupBarcode`, 목 카탈로그를 `mock-catalog.ts`로 이름 변경)까지만 한다. 스캔 시트·상세 페이지는 화면 필드와 분기를 바꿔야 해 UI 브랜치와 겹치므로 연결을 미루고, 그때까지 목을 쓴다. 상세 쿼리는 서버 조회 결과를 이어 쓰고 조회수가 다시 오르지 않게 `staleTime: Infinity`로 둔다. 체크섬 오류는 다시 보내도 같아 실패가 아닌 결과로 돌려준다. 상품 ID는 Long을 넘는 값에 서버가 500으로 답해 18자리까지만 보낸다                                              |
+| 2026-11-03 | QueryClient 기본 옵션: 조회는 응답 없음(취소 제외)·5xx만 1회 재시도하고, 변경은 재시도하지 않는다. 배포 서버라 조회에도 부수 효과가 있어 포커스·재연결 재조회는 끈다. 서버 렌더는 요청마다 새로 만들고 브라우저는 하나를 쓴다.                                                                                                                                                                                                                                                                                                                    |
+| 2026-11-03 | 로딩·에러·빈 데이터는 훅 상태(`isPending`·`isError`·`data`)로 컴포넌트가 분기하고, 0건은 에러가 아닌 정상 결과다. 에러 알림은 문구 함수(`toErrorMessage`)와 변경 실패 리스너(`setMutationErrorListener`)까지 만들고 토스트 UI는 화면에서 붙인다. 동의 필요(403)는 `useConsentGate`가 필요한 동의와 `resume()`을 주고, 감싼 변경은 `meta.consentGate`로 표시해 공통 알림에서 뺀다. 인자를 컴포넌트가 들고 있어 동의 화면은 시트·모달로 띄운다                                                                                                      |
