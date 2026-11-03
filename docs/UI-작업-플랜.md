@@ -1,6 +1,6 @@
 # UI 작업 플랜
 
-> 상태: **00단계 진행 전** (2026-11-03). 이 문서는 범위·순서·결정만 기록한다. 화면 하나가 끝날 때마다 확인받고 다음 화면으로 넘어간다.
+> 상태: **00단계 진행 중** (2026-11-03). 이 문서는 범위·순서·결정만 기록한다. 화면 하나가 끝날 때마다 확인받고 다음 화면으로 넘어간다.
 
 ## 목적
 
@@ -29,7 +29,7 @@
 - `globals.css`에 v3 CHIPS 토큰(색·등급 색·글자 스타일 11개·모서리)이 있다. 예전 토큰과 `rounded-xl` 이상은 임시 화면용으로 남아 있고 13단계에서 지운다
 - 글꼴은 Pretendard 서브셋(400·500·700)
 - 아이콘: `components/icons.tsx`에 피그마 v2/Icon 39개
-- v3 공통 부품: `components/common/`의 button, bottom-cta. 그 밖의 `components/common/`(grade, tab-bar, cta-button, layer, card-tutorial, choice-card)과 `components/ui/`(shadcn button, checkbox, radio-group)는 임시 화면용이다
+- v3 공통 부품: `components/common/`의 button, bottom-cta, top-bar, search-field, tab-bar, grade(GradeBadge·GradeTag, GradeBar 제외), status-tag. 그 밖의 `components/common/`(cta-button, layer, card-tutorial, choice-card)과 `components/ui/`(shadcn button, checkbox, radio-group)는 임시 화면용이다
 - 스캔: `components/scan/`가 `lib/scan` 상태 기계·lookup에 붙어 있다. UI 작업은 겉모양만 바꾸고 이 연결은 유지한다
 - 라우트는 임시본이다(`home`, `scan`, `history`, `settings`, `product/[id]`, `onboarding/*` 9개). v3 화면 구성과 맞지 않는다
 
