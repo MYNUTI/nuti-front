@@ -50,3 +50,14 @@ export function stubWebLocks() {
   });
   return { requests };
 }
+
+/** 테스트 환경(node)에 없는 `localStorage`를 흉내 낸다 */
+export function stubLocalStorage(initial: Record<string, string> = {}) {
+  const store = new Map(Object.entries(initial));
+  vi.stubGlobal("localStorage", {
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => store.set(key, String(value)),
+    removeItem: (key: string) => store.delete(key),
+  });
+  return store;
+}
