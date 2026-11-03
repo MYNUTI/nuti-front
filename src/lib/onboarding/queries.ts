@@ -18,8 +18,8 @@ import {
   postOnboardingComplete,
   postPrivacyConsent,
 } from "@/lib/onboarding/api";
+import { invalidateGoalDependents } from "@/lib/goal/invalidate";
 import { goalKeys } from "@/lib/goal/keys";
-import { meKeys } from "@/lib/me/keys";
 import { onboardingKeys } from "@/lib/onboarding/keys";
 import {
   isOnboardingCompletedLocally,
@@ -29,8 +29,6 @@ import {
   PRIVACY_CONSENT_ITEMS,
   type OnboardingCompleteRequestDto,
 } from "@/lib/onboarding/types";
-import { productKeys } from "@/lib/product/keys";
-import { searchKeys } from "@/lib/search/keys";
 
 export const onboardingQueries = {
   bootstrap: () =>
@@ -69,7 +67,7 @@ export function useSamples(size?: number) {
   return useQuery(onboardingQueries.samples(size));
 }
 
-// 성공 후 다시 불러올 조회는 API 작업 플랜 「기능 → 엔드포인트 매핑」의 초안이고 09단계에서 확정한다.
+// 성공 후 다시 불러올 조회는 API 작업 플랜 「기능 → 엔드포인트 매핑」을 따른다(09단계 확정).
 // 옵션을 훅과 나눠 렌더 없이 테스트한다
 
 export const onboardingMutations = {
@@ -120,17 +118,8 @@ export const onboardingMutations = {
       mutationFn: () => deleteHealthConsent(api),
       onSuccess: (healthConsent) => {
         queryClient.setQueryData(onboardingKeys.healthConsent(), healthConsent);
-        // 목표가 GENERAL로 돌아가 상품·검색 결과의 등급과 마이·설정의 목표가 바뀐다
-        return Promise.all([
-          queryClient.invalidateQueries({
-            queryKey: onboardingKeys.bootstrap(),
-          }),
-          queryClient.invalidateQueries({ queryKey: goalKeys.all }),
-          queryClient.invalidateQueries({ queryKey: meKeys.summary() }),
-          queryClient.invalidateQueries({ queryKey: meKeys.settings() }),
-          queryClient.invalidateQueries({ queryKey: productKeys.all }),
-          queryClient.invalidateQueries({ queryKey: searchKeys.results() }),
-        ]);
+        // 목표가 GENERAL로 돌아간다
+        return invalidateGoalDependents(queryClient);
       },
     }),
   complete: (queryClient: QueryClient) =>

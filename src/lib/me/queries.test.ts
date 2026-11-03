@@ -10,6 +10,7 @@ import { meKeys } from "@/lib/me/keys";
 import { meMutations } from "@/lib/me/queries";
 import { onboardingKeys } from "@/lib/onboarding/keys";
 import { productKeys } from "@/lib/product/keys";
+import { savedKeys } from "@/lib/saved/keys";
 import { searchKeys } from "@/lib/search/keys";
 import { stubDocumentCookie, stubWebLocks } from "@/test/browser";
 import { mockAdapter, success } from "@/test/http";
@@ -29,6 +30,7 @@ const goalDependent = [
   meKeys.summary(),
   productKeys.detail("7"),
   searchKeys.result("두유"),
+  savedKeys.list(),
 ];
 
 describe("meMutations.updateSettings", () => {

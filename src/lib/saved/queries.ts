@@ -42,7 +42,7 @@ export function useSavedProducts({ enabled = true } = {}) {
   return useInfiniteQuery({ ...savedQueries.list(), enabled });
 }
 
-// 성공 후 다시 불러올 조회는 API 작업 플랜 「기능 → 엔드포인트 매핑」의 초안이고 09단계에서 확정한다.
+// 성공 후 다시 불러올 조회는 API 작업 플랜 「기능 → 엔드포인트 매핑」을 따른다(09단계 확정).
 // 마이는 저장 수(`recordCount`)를 보여 준다
 
 // 상품 상세는 다시 조회하면 조회수가 올라 캐시의 `saved`만 바꾼다(플랜 03단계 결정)

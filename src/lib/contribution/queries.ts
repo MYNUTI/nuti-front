@@ -10,7 +10,7 @@ import type { AnalysisRequestInput } from "@/lib/contribution/types";
 import { meKeys } from "@/lib/me/keys";
 
 // 조회 API가 없어 쿼리 키를 두지 않는다. 성공 후 다시 불러올 조회는 API 작업 플랜 「기능 → 엔드포인트
-// 매핑」의 초안이고 09단계에서 확정한다
+// 매핑」을 따른다(09단계 확정)
 
 export const contributionMutations = {
   requestAnalysis: (queryClient: QueryClient) =>

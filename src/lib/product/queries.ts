@@ -11,6 +11,10 @@ export const productQueries = {
     queryOptions({
       queryKey: productKeys.barcode(gtin),
       queryFn: gtin ? ({ signal }) => lookupBarcode(gtin, signal) : skipToken,
+      // 서버는 미등록·영양정보 부족 바코드를 조회할 때마다 분석 대기의 요청 수를 올린다. 캐시가 남아 있는
+      // 동안(기본 gcTime 5분) 스캔 화면에 다시 들어와도 같은 바코드를 또 부르지 않게 한다. 목표가 바뀌면
+      // 무효화로 다시 부른다
+      staleTime: Infinity,
     }),
   detail: (productId: string) =>
     queryOptions({
