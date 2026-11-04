@@ -24,14 +24,23 @@ export function CheckboxMark({ className }: { className?: string }) {
   );
 }
 
-export function RadioMark({ className }: { className?: string }) {
+/** soft: 11-04 회의 반영 화면(1-5)의 모양. 고르면 초록 대신 라임 동그라미 */
+export function RadioMark({
+  tone = "default",
+  className,
+}: {
+  tone?: "default" | "soft";
+  className?: string;
+}) {
   return (
     <span
       aria-hidden
       className={cn(
         "flex size-6 shrink-0 items-center justify-center",
         "*:flex *:size-[22px] *:items-center *:justify-center *:rounded-full *:border-[1.5px] *:border-line-strong *:bg-bg-page",
-        "peer-checked:*:border-brand-link peer-checked:*:bg-brand-link",
+        tone === "soft"
+          ? "peer-checked:*:border-brand-primary peer-checked:*:bg-brand-primary"
+          : "peer-checked:*:border-brand-link peer-checked:*:bg-brand-link",
         className,
       )}
     >
