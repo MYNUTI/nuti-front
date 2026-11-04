@@ -41,7 +41,10 @@ export function TabBar() {
                   aria-current={active ? "page" : undefined}
                   className="flex h-full flex-col items-center justify-end pb-2 text-caption text-text-sub"
                 >
-                  <span className="absolute -top-6 left-1/2 flex size-14 -translate-x-1/2 items-center justify-center rounded-full bg-brand-primary text-brand-on-lime shadow-[0_4px_12px_0_rgba(31,122,99,0.28)]">
+                  <span
+                    data-guide="scan"
+                    className="absolute -top-6 left-1/2 flex size-14 -translate-x-1/2 items-center justify-center rounded-full bg-brand-primary text-brand-on-lime shadow-[0_4px_12px_0_rgba(31,122,99,0.28)]"
+                  >
                     <Icon className="size-7" />
                   </span>
                   {label}
