@@ -22,6 +22,7 @@ export default function Page() {
           height={638}
           sizes="276px"
           alt=""
+          loading="eager"
           fetchPriority="high"
           className="h-auto w-69"
         />

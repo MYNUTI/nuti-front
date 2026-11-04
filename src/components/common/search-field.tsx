@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { IconClose, IconSearch } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
@@ -40,5 +42,29 @@ export function SearchField({
         </button>
       )}
     </div>
+  );
+}
+
+/** 홈처럼 누르면 검색 화면(2-3)으로 가는 검색칸. 모양은 SearchField와 같고 입력은 받지 않는다 */
+export function SearchFieldLink({
+  href,
+  placeholder,
+  className,
+}: {
+  href: string;
+  placeholder: string;
+  className?: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "flex h-12 items-center gap-2 rounded-md bg-bg-field pr-3 pl-3.5",
+        className,
+      )}
+    >
+      <IconSearch className="size-5 shrink-0 text-icon-sub" />
+      <span className="text-body1 text-text-hint">{placeholder}</span>
+    </Link>
   );
 }
