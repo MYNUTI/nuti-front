@@ -52,7 +52,7 @@ describe("toApiError", () => {
     await expect(
       errorFrom(failure(401, "LOGIN_FAILED", "invalid_grant")),
     ).resolves.toMatchObject({
-      message: "아이디 또는 비밀번호가 일치하지 않습니다.",
+      message: "로그인에 실패했어요. 다시 시도해 주세요.",
     });
   });
 

@@ -3,10 +3,8 @@
  * 기준: 백엔드 커밋 c164ec0의 `MeSummaryResponse`, `MeSettingsResponse`·`MeSettingsUpdateRequest`,
  * `UserResponse`, `PoliciesResponse`. 날짜는 타임존 없는 ISO 문자열이다.
  */
+import type { LoginProvider } from "@/lib/auth/types";
 import type { Goal } from "@/lib/goal/types";
-
-// 로그인 흐름(11단계)의 auth 도메인을 만들 때 그쪽으로 옮긴다. APPLE은 서버 enum에만 있다(API 작업 플랜 「진행 가정」)
-export type LoginProvider = "GOOGLE" | "KAKAO" | "NAVER" | "APPLE";
 
 // ── DTO ──────────────────────────────────────────────────────────────────────
 

@@ -12,7 +12,8 @@ const SERVER_ERROR_MESSAGES = {
   UNAUTHORIZED: "인증이 필요합니다.",
   TOKEN_EXPIRED: "토큰이 만료되었습니다.",
   INVALID_TOKEN: "유효하지 않은 토큰입니다.",
-  LOGIN_FAILED: "아이디 또는 비밀번호가 일치하지 않습니다.",
+  // 서버 기본 문구는 「아이디 또는 비밀번호가 일치하지 않습니다.」인데 소셜 로그인뿐이라 바꿔 쓴다
+  LOGIN_FAILED: "로그인에 실패했어요. 다시 시도해 주세요.",
   FORBIDDEN: "접근 권한이 없습니다.",
   CONSENT_REQUIRED: "개인정보 수집·이용 동의가 필요합니다.",
   HEALTH_CONSENT_REQUIRED: "건강정보 수집·이용 동의가 필요합니다.",

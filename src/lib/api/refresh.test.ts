@@ -6,6 +6,7 @@ import {
   getFreshAccessToken,
   isExpiringSoon,
   needsRefresh,
+  onSessionExpired,
 } from "@/lib/api/refresh";
 import { stubDocumentCookie, stubWebLocks } from "@/test/browser";
 import {
@@ -212,5 +213,23 @@ describe("getFreshAccessToken", () => {
     await expect(getFreshAccessToken(http)).rejects.toBeInstanceOf(ApiError);
     await expect(getFreshAccessToken(http)).resolves.toBe(fresh);
     expect(requests).toHaveLength(2);
+  });
+
+  it("갱신이 거절돼 토큰을 지우면 세션 만료를 알리고, 5xx면 알리지 않는다", async () => {
+    stubDocumentCookie({ [IDENTITY_COOKIES.refreshToken]: "refresh-1" });
+    const listener = vi.fn();
+    const release = onSessionExpired(listener);
+
+    await getFreshAccessToken(
+      refreshHttp(() => failure(503, "INTERNAL_SERVER_ERROR")).http,
+    ).catch(() => undefined);
+    expect(listener).not.toHaveBeenCalled();
+
+    await getFreshAccessToken(
+      refreshHttp(() => failure(401, "TOKEN_EXPIRED")).http,
+    );
+    expect(listener).toHaveBeenCalledOnce();
+
+    release();
   });
 });

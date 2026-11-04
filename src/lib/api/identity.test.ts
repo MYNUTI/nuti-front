@@ -5,6 +5,7 @@ import {
   readIdentity,
   saveAnonymousId,
   saveTokens,
+  subscribeTokens,
 } from "@/lib/api/identity";
 import { stubDocumentCookie } from "@/test/browser";
 
@@ -46,5 +47,26 @@ describe("identity 쿠키 속성", () => {
     });
     clearTokens();
     expect(readIdentity().accessToken).toBeNull();
+  });
+});
+
+describe("subscribeTokens", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("토큰을 쓰거나 지울 때 알리고, 해제하면 그친다", () => {
+    stubDocumentCookie();
+    const listener = vi.fn();
+    const release = subscribeTokens(listener);
+
+    saveTokens({ accessToken: "a", refreshToken: "r" });
+    clearTokens();
+    saveAnonymousId("anon-1");
+    expect(listener).toHaveBeenCalledTimes(2);
+
+    release();
+    clearTokens();
+    expect(listener).toHaveBeenCalledTimes(2);
   });
 });

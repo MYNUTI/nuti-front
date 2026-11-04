@@ -26,8 +26,8 @@ export function fetchUser(http: AxiosInstance, signal?: AbortSignal) {
 }
 
 /**
- * 로그인 전용. 사유는 Swagger대로 query로 보낸다(노션 명세의 body와 다르다). 성공 뒤 처리(토큰 정리,
- * 캐시 비우기)는 로그아웃과 같아 11단계 인증 흐름에서 정한다
+ * 로그인 전용. 사유는 Swagger대로 query로 보낸다(노션 명세의 body와 다르다). 성공 뒤 처리(토큰·익명 ID
+ * 정리, 사용자 캐시 비우기)는 `authMutations.withdraw`가 한다
  */
 export function deleteUser(http: AxiosInstance, reason?: string) {
   return http

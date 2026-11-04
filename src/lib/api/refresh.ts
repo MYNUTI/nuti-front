@@ -19,6 +19,31 @@ const REFRESH_LOCK = "nuti-token-refresh";
 
 let pendingRefresh: Promise<string | null> | null = null;
 
+const sessionExpiredListeners = new Set<() => void>();
+
+/**
+ * 갱신이 거절돼 토큰을 지웠을 때(자동 로그아웃) 알린다. 사용자 캐시 정리와 화면 알림이 각자 등록한다.
+ * 해제 함수를 돌려준다
+ */
+export function onSessionExpired(listener: () => void) {
+  sessionExpiredListeners.add(listener);
+  return () => {
+    sessionExpiredListeners.delete(listener);
+  };
+}
+
+/**
+ * 로그아웃·탈퇴 뒤 토큰을 갱신 락 안에서 지운다. 다른 탭에서 진행 중인 갱신이 끝난 뒤 지워, 그 갱신 응답이
+ * 지운 토큰을 다시 써 넣지 않게 한다. `then`도 락 안에서 실행한다. 요청 인터셉터가 같은 락을 기다리므로
+ * 요청 중에는 부르지 않는다(락은 재진입되지 않는다)
+ */
+export function clearTokensAfterRefresh(then?: () => void): Promise<void> {
+  return navigator.locks.request(REFRESH_LOCK, () => {
+    clearTokens();
+    then?.();
+  });
+}
+
 /** 액세스 토큰이 여유분 안에 만료되는지. `exp`를 읽을 수 없는 토큰도 갱신 대상으로 본다 */
 export function isExpiringSoon(accessToken: string, now = Date.now()): boolean {
   const exp = readExp(accessToken);
@@ -75,6 +100,7 @@ async function refreshInLock(http: AxiosInstance): Promise<string | null> {
       // 인정하지 않으므로 함께 지운다. 정상 로그아웃과 달리 토큰이 없어 새 익명 ID를 받을 수 없다
       clearTokens();
       clearAnonymousId();
+      sessionExpiredListeners.forEach((listener) => listener());
       return null;
     }
   });

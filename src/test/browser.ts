@@ -61,3 +61,42 @@ export function stubLocalStorage(initial: Record<string, string> = {}) {
   });
   return store;
 }
+
+const channels = new Map<string, Set<FakeBroadcastChannel>>();
+const posted: { name: string; data: unknown }[] = [];
+
+// 실제처럼 같은 이름의 다른 객체에만 전달하고 보낸 객체에는 돌려주지 않는다. 모듈에 남아 있는 채널도
+// 받게 테스트 사이에 목록을 비우지 않는다
+class FakeBroadcastChannel extends EventTarget {
+  constructor(readonly name: string) {
+    super();
+    if (!channels.has(name)) channels.set(name, new Set());
+    channels.get(name)!.add(this);
+  }
+  postMessage(data: unknown) {
+    posted.push({ name: this.name, data });
+    for (const other of channels.get(this.name) ?? [])
+      if (other !== this)
+        other.dispatchEvent(new MessageEvent("message", { data }));
+  }
+  close() {
+    channels.get(this.name)?.delete(this);
+  }
+}
+
+/** 테스트 환경(node)의 실제 `BroadcastChannel`은 프로세스를 붙잡아 흉내 낸 것으로 바꾼다 */
+export function stubBroadcastChannel() {
+  posted.length = 0;
+  vi.stubGlobal("BroadcastChannel", FakeBroadcastChannel);
+  return {
+    /** 이 탭이 보낸 메시지 */
+    posted,
+    /** 다른 탭이 보낸 것처럼 전달한다 */
+    fromOtherTab(name: string, data: unknown) {
+      const other = new FakeBroadcastChannel(name);
+      other.postMessage(data);
+      other.close();
+      posted.pop();
+    },
+  };
+}

@@ -41,6 +41,24 @@ export function readIdentity(): Identity {
   };
 }
 
+const tokenListeners = new Set<() => void>();
+
+/**
+ * 토큰 쿠키를 쓰거나 지울 때 알린다. 쿠키는 바뀌어도 이벤트가 없어, 로그인 상태를 쿠키로 판단하는 화면이
+ * 이걸로 다시 읽는다. 해제 함수를 돌려준다
+ */
+export function subscribeTokens(listener: () => void) {
+  tokenListeners.add(listener);
+  return () => {
+    tokenListeners.delete(listener);
+  };
+}
+
+/** 다른 탭이 공유 쿠키를 바꿨다는 소식(`auth/session.ts`)을 받았을 때 이 탭의 구독자를 깨운다 */
+export function notifyTokensChanged() {
+  tokenListeners.forEach((listener) => listener());
+}
+
 export function saveTokens(tokens: Tokens) {
   writeCookie(
     IDENTITY_COOKIES.accessToken,
@@ -52,12 +70,14 @@ export function saveTokens(tokens: Tokens) {
     tokens.refreshToken,
     TOKEN_MAX_AGE_SECONDS,
   );
+  notifyTokensChanged();
 }
 
 /** 로그아웃·갱신 실패용. 익명 ID는 건드리지 않는다 */
 export function clearTokens() {
   deleteCookie(IDENTITY_COOKIES.accessToken);
   deleteCookie(IDENTITY_COOKIES.refreshToken);
+  notifyTokensChanged();
 }
 
 export function saveAnonymousId(anonymousId: string) {
