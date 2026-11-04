@@ -47,17 +47,13 @@ export function SearchField({
 
 /** 홈처럼 누르면 검색 화면(2-3)으로 가는 검색칸. 모양은 SearchField와 같고 입력은 받지 않는다 */
 export function SearchFieldLink({
-  href,
   placeholder,
   className,
-}: {
-  href: string;
-  placeholder: string;
-  className?: string;
-}) {
+  ...props
+}: React.ComponentProps<typeof Link> & { placeholder: string }) {
   return (
     <Link
-      href={href}
+      {...props}
       className={cn(
         "flex h-12 items-center gap-2 rounded-md bg-bg-field pr-3 pl-3.5",
         className,
