@@ -4,9 +4,9 @@ import { Button } from "@/components/common/button";
 import { cn } from "@/lib/utils";
 
 /*
- * 피그마 컴포넌트 v2/EmptyState — 빈 화면 3요소: 지금 상태 · 여기에 생기는 것 한 줄 · 채우는 버튼.
- * 피그마 공통 상태: 0건과 불러오기 실패도 이 구성을 쓰고 문장과 버튼만 다르다(⑩ 상태표가 문장의 정본).
- * 피그마 메모: 탭 화면 안이면 주 버튼 대신 secondary를 쓴다 — 버튼 종류는 넘기는 쪽이 정한다.
+ * v2/EmptyState — 빈 화면 3요소: 지금 상태 · 여기에 생기는 것 한 줄 · 채우는 버튼.
+ * 공통 상태: 0건과 불러오기 실패도 이 구성을 쓰고 문장과 버튼만 다르다(⑩ 상태표가 문장의 정본).
+ * 디자인 메모: 탭 화면 안이면 주 버튼 대신 secondary를 쓴다 — 버튼 종류는 넘기는 쪽이 정한다.
  */
 export function EmptyState({
   title,
@@ -54,7 +54,7 @@ export function EmptyState({
 }
 
 /*
- * 피그마 공통 상태 「불러오지 못했을 때」. 화면마다 제목만 다르다
+ * 공통 상태 「불러오지 못했을 때」. 화면마다 제목만 다르다
  * (「제품 정보를 / 검색 결과를 / 기록을 / 최근 본 제품을 불러오지 못했어요」).
  * 「이름으로 찾기」는 3-2처럼 메모에 있는 화면에서만 켠다.
  */
@@ -68,7 +68,7 @@ export function ErrorState({
   title: React.ReactNode;
   onRetry: () => void;
   searchLink?: boolean;
-  /** 탭 화면 안이면 secondary(피그마 메모) */
+  /** 탭 화면 안이면 secondary(디자인 메모) */
   retryKind?: "primary" | "secondary";
   className?: string;
 }) {

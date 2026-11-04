@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import type { Goal, PopularProduct } from "./_fixtures";
 
 /*
- * 2-1 홈의 칸들. 피그마 2-1 홈(첫 방문)과 11-04 회의 반영 메모를 따른다.
+ * 2-1 홈의 칸들. 디자인 2-1 홈(첫 방문)과 11-04 회의 반영 메모를 따른다.
  * 이동할 화면이 아직 없는 링크는 플랜 라우트 표의 경로만 걸어 둔다.
  */
 
@@ -18,15 +18,16 @@ const GOAL_CARD = {
   diet: {
     title: "다이어트 목표로 보고 있어요",
     image: { src: "/home/goal-diet.png", width: 1446, height: 1087 },
-    // 피그마: 200×150, 왼쪽 203·위 29, 꽉 채움
-    imageClass: "top-[29px] left-[203px] h-[150px] w-[200px] object-cover",
+    // 디자인(카드 폭 370): 200×150, 왼쪽 203, 카드 아래에서 26 위
+    imageClass:
+      "bottom-[26px] left-[54.86%] aspect-[4/3] w-[54.05%] object-cover",
   },
   muscle: {
     title: "근육 증가 목표로 보고 있어요",
     image: { src: "/home/goal-muscle.png", width: 1358, height: 1159 },
-    // 피그마: 248×192, 왼쪽 175·위 0에서 그림을 6.29% 내려 놓음
+    // 디자인(카드 폭 370): 248×192, 왼쪽 175, 카드 아래에 붙음
     imageClass:
-      "top-[12px] left-[175px] h-[192px] w-[248px] object-cover object-top",
+      "bottom-px left-[47.3%] aspect-[248/192] w-[67.03%] object-cover object-top",
   },
 } as const;
 
@@ -41,19 +42,23 @@ export function GoalCardEmpty({ goal }: { goal: Goal }) {
           src={card.image.src}
           width={card.image.width}
           height={card.image.height}
-          sizes="248px"
+          sizes="260px"
           alt=""
           loading="eager"
           fetchPriority="high"
-          className={cn("absolute max-w-none opacity-90", card.imageClass)}
+          // 카드 폭에 비례해 커지고 줄도록 위치·크기를 디자인 비율(%)로 둔다
+          className={cn(
+            "absolute h-auto max-w-none opacity-90",
+            card.imageClass,
+          )}
         />
         <div className="absolute top-[18px] left-[18px] flex flex-col items-start">
-          {/* 피그마는 「›」만 있고 갈 곳이 메모에 없다. 목표를 바꾸는 5-2로 걸어 둔다 */}
+          {/* 디자인은 「›」만 있고 갈 곳이 메모에 없다. 목표를 바꾸는 5-2로 걸어 둔다 */}
           <Link
             href="/my/goal"
             className="text-[15px] leading-[22px] font-bold text-text-strong"
           >
-            {card.title} ›
+            {card.title} <span aria-hidden>›</span>
           </Link>
           <p className="mt-3.5 text-[14px] leading-5 font-medium text-text-strong">
             최근 본 제품이 아직 없어요
@@ -92,7 +97,7 @@ const CATEGORIES = [
 export function CategorySection() {
   return (
     <section>
-      {/* 피그마 메모: 「전체 15」 → 2-3 검색(어디로 갈지 안 정함, SRCH_006) */}
+      {/* 디자인 메모: 「전체 15」 → 2-3 검색(어디로 갈지 안 정함, SRCH_006) */}
       <SectionHeader
         title="카테고리로 찾기"
         actionLabel="전체 15"
@@ -149,7 +154,7 @@ export function PopularSection({ products }: { products: PopularProduct[] }) {
               <span className="min-w-0 flex-1 truncate text-[12px] leading-4 text-text-sub">
                 {p.brand}
               </span>
-              {/* 피그마는 S(32) 링을 30으로 줄여 놓았다. 부품 크기 S를 그대로 쓴다 */}
+              {/* 디자인은 S(32) 링을 30으로 줄여 놓았다. 부품 크기 S를 그대로 쓴다 */}
               <ScoreRing score={p.score} band={p.band} size="S" />
             </span>
             <span className="line-clamp-2 h-9 text-[13px] leading-[18px] font-medium break-keep text-text-strong">
@@ -216,7 +221,7 @@ export function SellerSection() {
 
 export function RequestSection() {
   return (
-    // 11-04 회의: 연한 민트 바탕(모든 화면 같음). 피그마 변수 없이 직접 넣은 색
+    // 11-04 회의: 연한 민트 바탕(모든 화면 같음). 디자인 변수 없이 직접 넣은 색
     <section className="flex items-center gap-2 bg-[#f3fcfb] pt-5 pr-3 pb-7 pl-5">
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <h2 className="text-body1-bold text-text-strong">

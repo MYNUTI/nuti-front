@@ -4,7 +4,7 @@ import { Slot } from "radix-ui";
 import { cn } from "@/lib/utils";
 
 /*
- * 피그마 v2/Button. 원본 컴포넌트는 기본 모드(초록)라 primary 글자가 흰색이지만,
+ * v2/Button. 원본 컴포넌트는 기본 모드(초록)라 primary 글자가 흰색이지만,
  * v3 화면(CHIPS 모드)에서는 라임 위 글자를 on-lime, 옅은 면·글자 버튼의 글자를 link 색으로 덮어 쓴다.
  * 여기서는 v3 화면에 쓰인 색을 따른다.
  */

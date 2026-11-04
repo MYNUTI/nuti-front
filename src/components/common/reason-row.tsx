@@ -2,7 +2,7 @@ import { IconMinusCircle, IconPlusCircle } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 /*
- * 피그마 v2/ReasonRow — 좋은 점(+ 초록) / 걸리는 점(− 핫핑크).
+ * v2/ReasonRow — 좋은 점(+ 초록) / 걸리는 점(− 핫핑크).
  * 색만이 아니라 + / − 모양으로도 구분한다(WCAG 1.4.1). 아이콘 뜻은 화면 읽기용 글자로 같이 알린다.
  */
 export function ReasonRow({

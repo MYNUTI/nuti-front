@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 /*
- * 피그마 컴포넌트 v2/ProductHero — 결과 계열 화면의 제품 머리.
+ * v2/ProductHero — 결과 계열 화면의 제품 머리.
  * 흰 바탕 큰 사진(256) + 브랜드·종류 / 이름(22) / 기준량.
  */
 export function ProductHero({

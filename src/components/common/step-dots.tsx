@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-/* 피그마 컴포넌트 v2/StepDots — 지금 단계만 길게 + 진한 색(v3에서는 brand/on-lime) */
+/* v2/StepDots — 지금 단계만 길게 + 진한 색(v3에서는 brand/on-lime) */
 export function StepDots({
   count,
   current,

@@ -6,7 +6,7 @@ import { useLayoutEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 /*
- * 피그마 컴포넌트 v2/Coachmark — 튜토리얼 말풍선.
+ * v2/Coachmark — 튜토리얼 말풍선.
  * 화면 위에 검정(#111418) 60% 막을 깔고 가리킬 곳만 뚫어 밝게 둔다. 꼬리는 가리킬 곳 쪽.
  * 가리킬 곳은 data-guide 속성으로 찾아 실제 위치를 잰다.
  * 막이 떠 있는 동안 뒤 화면은 스크롤·누르기가 막히고, 밝힌 자리도 눌리지 않는다(가이드 중 다른 화면으로 넘어가지 않게).
@@ -66,8 +66,13 @@ export function Coachmark({
       });
     };
     measure();
+    // 열리면서 스크롤이 잠겨 PC 스크롤바가 사라지면 화면에 고정된 요소가 옆으로 움직여서, 한 프레임 뒤에 다시 잰다
+    const frame = requestAnimationFrame(measure);
     window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("resize", measure);
+    };
   }, [target, padding]);
 
   if (!layout) return null;
@@ -79,7 +84,7 @@ export function Coachmark({
     viewport.width - EDGE - bubbleWidth,
   );
   const tailLeft = tailOffset ?? hole.left + hole.width / 2 - bubbleLeft - 10;
-  // 피그마: 구멍 위 말풍선은 꼬리 끝과 구멍 사이 18px, 구멍 아래 말풍선은 8px
+  // 디자인: 구멍 위 말풍선은 꼬리 끝과 구멍 사이 18px, 구멍 아래 말풍선은 8px
   const bubbleStyle: React.CSSProperties = {
     left: bubbleLeft,
     width: bubbleWidth,

@@ -6,8 +6,8 @@ import { Thumb } from "@/components/common/thumb";
 import { cn } from "@/lib/utils";
 
 /*
- * 피그마 v2/ProductRow — [순위] 사진 64 · 브랜드 / 이름(2줄까지) / 메타 · 등급 배지 M.
- * 행 사이는 선 없이 여백으로 나눈다. 피그마 trailing과의 대응:
+ * v2/ProductRow — [순위] 사진 64 · 브랜드 / 이름(2줄까지) / 메타 · 등급 배지 M.
+ * 행 사이는 선 없이 여백으로 나눈다. 디자인 trailing과의 대응:
  *   badge → grade · button → grade + action · select → select(비교할 제품 고르기)
  */
 export function ProductRow({

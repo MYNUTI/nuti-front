@@ -5,8 +5,8 @@ import { IconChevronRight } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 /*
- * 피그마 v2/CheckRow — 체크 + 이름 + 「보기 ›」(약관·동의).
- * 피그마 메모: 필수/선택은 머리 글로 나누고, 미리 체크해 두지 않는다.
+ * v2/CheckRow — 체크 + 이름 + 「보기 ›」(약관·동의).
+ * 디자인 메모: 필수/선택은 머리 글로 나누고, 미리 체크해 두지 않는다.
  */
 export function CheckRow({
   label,

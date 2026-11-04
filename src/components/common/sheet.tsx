@@ -7,8 +7,8 @@ import { IconClose } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 /*
- * 피그마 컴포넌트 v2/BottomSheet — 짧은 작업만. 위 모서리 20, 뒤 화면은 검정 40%.
- * 피그마 메모: 닫기 버튼과 뒤로 가기로 닫히고, 시트 위에 시트를 띄우지 않는다.
+ * v2/BottomSheet — 짧은 작업만. 위 모서리 20, 뒤 화면은 검정 40%.
+ * 디자인 메모: 닫기 버튼과 뒤로 가기로 닫히고, 시트 위에 시트를 띄우지 않는다.
  * 초점 가두기·Esc·바깥 누르기 닫기는 Radix Dialog가 맡는다.
  */
 
