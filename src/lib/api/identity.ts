@@ -13,6 +13,17 @@ export const IDENTITY_COOKIES = {
 // 30분이 지나면 클라이언트가 새 ID를 써야 한다
 const SESSION_MAX_AGE_SECONDS = 30 * 60;
 
+// 토큰 쿠키는 둘 다 refresh 토큰 수명(API 작업 플랜 「진행 가정」 7일)에 맞춘다. 액세스 토큰 만료는
+// 쿠키 만료가 아니라 JWT `exp`로 판단한다. 세션 쿠키로 두면 PWA를 다시 열 때 로그인이 풀린다
+export const TOKEN_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
+
+// 브라우저가 허용하는 쿠키 만료 상한(Chrome 400일). 익명 ID가 사라지면 동의 전 익명 기록과 연결이 끊긴다
+const ANONYMOUS_ID_MAX_AGE_SECONDS = 400 * 24 * 60 * 60;
+
+// 외부 링크로 상세에 들어와도 첫 요청에 쿠키가 실려 서버 렌더가 개인 기준이 되도록 Strict가 아닌 Lax다.
+// 백엔드는 쿠키가 아니라 헤더로 인증해 CSRF 부담은 없다
+export const COOKIE_SAME_SITE = "lax";
+
 export type Identity = {
   accessToken: string | null;
   refreshToken: string | null;
@@ -30,19 +41,51 @@ export function readIdentity(): Identity {
   };
 }
 
+const tokenListeners = new Set<() => void>();
+
+/**
+ * 토큰 쿠키를 쓰거나 지울 때 알린다. 쿠키는 바뀌어도 이벤트가 없어, 로그인 상태를 쿠키로 판단하는 화면이
+ * 이걸로 다시 읽는다. 해제 함수를 돌려준다
+ */
+export function subscribeTokens(listener: () => void) {
+  tokenListeners.add(listener);
+  return () => {
+    tokenListeners.delete(listener);
+  };
+}
+
+/** 다른 탭이 공유 쿠키를 바꿨다는 소식(`auth/session.ts`)을 받았을 때 이 탭의 구독자를 깨운다 */
+export function notifyTokensChanged() {
+  tokenListeners.forEach((listener) => listener());
+}
+
 export function saveTokens(tokens: Tokens) {
-  writeCookie(IDENTITY_COOKIES.accessToken, tokens.accessToken);
-  writeCookie(IDENTITY_COOKIES.refreshToken, tokens.refreshToken);
+  writeCookie(
+    IDENTITY_COOKIES.accessToken,
+    tokens.accessToken,
+    TOKEN_MAX_AGE_SECONDS,
+  );
+  writeCookie(
+    IDENTITY_COOKIES.refreshToken,
+    tokens.refreshToken,
+    TOKEN_MAX_AGE_SECONDS,
+  );
+  notifyTokensChanged();
 }
 
 /** 로그아웃·갱신 실패용. 익명 ID는 건드리지 않는다 */
 export function clearTokens() {
   deleteCookie(IDENTITY_COOKIES.accessToken);
   deleteCookie(IDENTITY_COOKIES.refreshToken);
+  notifyTokensChanged();
 }
 
 export function saveAnonymousId(anonymousId: string) {
-  writeCookie(IDENTITY_COOKIES.anonymousId, anonymousId);
+  writeCookie(
+    IDENTITY_COOKIES.anonymousId,
+    anonymousId,
+    ANONYMOUS_ID_MAX_AGE_SECONDS,
+  );
 }
 
 export function clearAnonymousId() {
@@ -76,11 +119,11 @@ function readCookie(name: string): string | null {
   return null;
 }
 
-// Secure·SameSite와 토큰·익명 ID의 만료는 API 작업 플랜 04단계 「쿠키 속성」에서 정한다
-function writeCookie(name: string, value: string, maxAgeSeconds?: number) {
-  const maxAge =
-    maxAgeSeconds === undefined ? "" : `; Max-Age=${maxAgeSeconds}`;
-  document.cookie = `${name}=${encodeURIComponent(value)}; Path=/${maxAge}`;
+// 속성은 `identity.server.ts`의 `nextWithTokens`와 같아야 한다. Secure는 HTTPS에서만 붙여
+// http://localhost 개발에서도 쿠키가 저장되게 한다
+function writeCookie(name: string, value: string, maxAgeSeconds: number) {
+  const secure = location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=${COOKIE_SAME_SITE}${secure}`;
 }
 
 function deleteCookie(name: string) {

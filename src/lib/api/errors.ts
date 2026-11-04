@@ -12,7 +12,8 @@ const SERVER_ERROR_MESSAGES = {
   UNAUTHORIZED: "인증이 필요합니다.",
   TOKEN_EXPIRED: "토큰이 만료되었습니다.",
   INVALID_TOKEN: "유효하지 않은 토큰입니다.",
-  LOGIN_FAILED: "아이디 또는 비밀번호가 일치하지 않습니다.",
+  // 서버 기본 문구는 「아이디 또는 비밀번호가 일치하지 않습니다.」인데 소셜 로그인뿐이라 바꿔 쓴다
+  LOGIN_FAILED: "로그인에 실패했어요. 다시 시도해 주세요.",
   FORBIDDEN: "접근 권한이 없습니다.",
   CONSENT_REQUIRED: "개인정보 수집·이용 동의가 필요합니다.",
   HEALTH_CONSENT_REQUIRED: "건강정보 수집·이용 동의가 필요합니다.",
@@ -152,4 +153,31 @@ function isFailureBody(value: unknown): value is ApiFailure {
   )
     return false;
   return "code" in value.data && typeof value.data.code === "string";
+}
+
+/** 화면에 띄울 문구. `ApiError`의 message는 이미 화면용으로 골라 두었다(`toApiError`) */
+export function toErrorMessage(error: unknown): string {
+  return error instanceof ApiError
+    ? error.message
+    : CLIENT_ERROR_MESSAGES.UNKNOWN;
+}
+
+/** 다시 보내면 성공할 수 있는 실패인지. 응답이 없었거나(취소 제외) 서버 오류(5xx)일 때만이다 */
+export function isRetryable(error: unknown): boolean {
+  if (!(error instanceof ApiError)) return false;
+  if (error.status === null) return error.code !== "CANCELED";
+  return error.status >= 500;
+}
+
+export type ConsentCode = "CONSENT_REQUIRED" | "HEALTH_CONSENT_REQUIRED";
+
+/** 동의가 없어 거절된 요청인지. 개인정보 동의 전 개인 귀속 변경, 건강정보 동의 없이 감량·근육증가 목표 */
+export function isConsentRequired(
+  error: unknown,
+): error is ApiError & { code: ConsentCode } {
+  return (
+    error instanceof ApiError &&
+    (error.code === "CONSENT_REQUIRED" ||
+      error.code === "HEALTH_CONSENT_REQUIRED")
+  );
 }
