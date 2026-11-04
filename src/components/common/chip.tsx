@@ -4,7 +4,7 @@ import { IconChevronDown, IconClose } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 /*
- * 피그마 v2/Chip — 칩 36 · 알약. filter = 거르기 · dropdown = 고르는 시트를 연다 · removable = 적용된 조건(누르면 뺀다).
+ * v2/Chip — 칩 36 · 알약. filter = 거르기 · dropdown = 고르는 시트를 연다 · removable = 적용된 조건(누르면 뺀다).
  * 원본 컴포넌트의 filter 선택은 초록 테두리가 있지만, v3 화면(CHIPS 모드)에서는 테두리 없이 옅은 면 + link 글자로 쓰여 그쪽을 따른다.
  */
 const chipVariants = cva(

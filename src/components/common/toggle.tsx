@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 /*
- * 피그마 v2/Toggle — 48×28. 끔 = line/strong 바탕, 켬 = brand/primary(라임) 바탕, 손잡이는 흰 원.
+ * v2/Toggle — 48×28. 끔 = line/strong 바탕, 켬 = brand/primary(라임) 바탕, 손잡이는 흰 원.
  * 실제 checkbox(role="switch")를 숨겨 두고 겉모양만 그린다. 나머지 props는 input으로 간다.
  */
 export function Toggle({

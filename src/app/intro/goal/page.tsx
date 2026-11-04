@@ -7,7 +7,7 @@ import { GoalForm } from "./goal-form";
 
 export const metadata: Metadata = { title: "목표 선택" };
 
-// 1-5 목표 선택. 피그마 메모: 0-4 「건너뛰기」 또는 0-4b 「목표 고르기」에서 온다
+// 1-5 목표 선택. 디자인 메모: 0-4 「건너뛰기」 또는 0-4b 「목표 고르기」에서 온다
 export default function Page() {
   return (
     <div className="flex min-h-dvh flex-col bg-bg-page pt-safe">

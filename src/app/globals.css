@@ -13,7 +13,7 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
 
-  /* 피그마 v3 디자인 시스템(CHIPS 기준, 변수 모드 「CHIPS ④-3 밝게」) */
+  /* v3 디자인 시스템(CHIPS 기준, 변수 모드 「CHIPS ④-3 밝게」) */
   --brand-primary: #84f01c;
   --brand-primary-pressed: #72d612;
   --brand-primary-weak: #f0ffe0;
@@ -56,7 +56,7 @@
   --grade-on: #111111;
 
   /*
-   * 점수 색(11-03 점수 링). 피그마 변수 모음 「점수 색」의 모드 ① 우리 색.
+   * 점수 색(11-03 점수 링). 디자인 변수 모음 「점수 색」의 모드 ① 우리 색.
    * 모드를 바꾸면 이 값만 바꾼다(② 중간 · ③ 노써치와 같게). 1 잘 맞음 ~ 5 안 맞음
    */
   --score-track: #eef0f2;
@@ -72,7 +72,7 @@
   --score-number-5: #111111;
 
   /*
-   * 예전 피그마 토큰. 아직 바꾸지 않은 임시 화면이 쓰고 있어 남겨 둔다.
+   * 예전 디자인 토큰. 아직 바꾸지 않은 임시 화면이 쓰고 있어 남겨 둔다.
    * 새 코드에서는 쓰지 않고, 마지막 사용처가 바뀌면 지운다(UI 플랜 13단계).
    * v3와 이름이 겹치는 text-disabled·text-danger·icon-default는 v3 값을 쓴다.
    */
@@ -183,7 +183,7 @@
     "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   --font-heading: var(--font-sans);
 
-  /* 피그마 글자 스타일 v2/ 11개. text-display처럼 쓰면 크기·줄높이·굵기가 같이 붙는다 */
+  /* 디자인 글자 스타일 v2/ 11개. text-display처럼 쓰면 크기·줄높이·굵기가 같이 붙는다 */
   --text-display: 28px;
   --text-display--line-height: 36px;
   --text-display--font-weight: 700;
@@ -364,13 +364,13 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
 
-  /* 피그마 radius/ — sm 8 · md 12 · lg 16 · sheet 20. pill은 rounded-full */
+  /* 디자인 radius/ — sm 8 · md 12 · lg 16 · sheet 20. pill은 rounded-full */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: var(--radius);
   --radius-sheet: 20px;
   /*
-   * xl 이상은 피그마에 없는 값이다. 임시 화면이 예전 모양을 유지하도록 토큰 교체 전 값으로 고정했다.
+   * xl 이상은 디자인에 없는 값이다. 임시 화면이 예전 모양을 유지하도록 토큰 교체 전 값으로 고정했다.
    * 새 코드에서는 쓰지 않고, 마지막 사용처가 바뀌면 지운다(UI 플랜 13단계).
    */
   --radius-xl: 14px;
@@ -382,6 +382,12 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+
+  /* 브라우저 기본값은 버튼이 화살표 커서라, 링크처럼 누를 수 있는 모든 버튼을 손가락 커서로 맞춘다 */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
   }
 
   html {

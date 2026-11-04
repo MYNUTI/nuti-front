@@ -3,7 +3,7 @@ import { Slot } from "radix-ui";
 import { cn } from "@/lib/utils";
 
 /*
- * 피그마 v2/TopBar — 상단 막대 52. 피그마 type과의 대응:
+ * v2/TopBar — 상단 막대 52. 디자인 type과의 대응:
  *   back · close · back-action → title + left/right에 TopBarButton
  *   root → root(왼쪽 큰 제목)
  *   search → left + children(SearchField)

@@ -5,7 +5,7 @@ import { IconChevronRight } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 /*
- * 피그마 v2/ListRow — 설정·메뉴 한 줄(최소 56). 피그마 trailing과의 대응:
+ * v2/ListRow — 설정·메뉴 한 줄(최소 56). 디자인 trailing과의 대응:
  *   chevron → href · value → value · toggle → toggle · none → 아무것도 넘기지 않음
  */
 export function ListRow({

@@ -4,8 +4,8 @@ import { IconChevronRight } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 /*
- * 피그마 v2/SectionHeader — 구역 제목 18 + 기준 한 줄(누구·무엇 기준·모수) + 「전체 보기」.
- * 피그마 메모: 주어 없는 형용사 제목은 쓰지 않는다.
+ * v2/SectionHeader — 구역 제목 18 + 기준 한 줄(누구·무엇 기준·모수) + 「전체 보기」.
+ * 디자인 메모: 주어 없는 형용사 제목은 쓰지 않는다.
  */
 export function SectionHeader({
   title,

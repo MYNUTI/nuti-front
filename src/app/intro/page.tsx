@@ -20,7 +20,7 @@ export default function Page() {
         </div>
       }
       visual={
-        // 피그마 메모: 임시 그림(AI 생성, 10-30). 정식 그림이 오면 public/intro/scan.png를 바꾼다
+        // 디자인 메모: 임시 그림(AI 생성, 10-30). 정식 그림이 오면 public/intro/scan.png를 바꾼다
         <Image
           src="/intro/scan.png"
           width={1024}
@@ -29,7 +29,8 @@ export default function Page() {
           alt=""
           loading="eager"
           fetchPriority="high"
-          className="size-65"
+          // 디자인 402px 화면에서 260px. 좁은 화면에서는 같은 비율로 줄인다
+          className="aspect-square h-auto w-[64.7vw] max-w-65"
         />
       }
       title={

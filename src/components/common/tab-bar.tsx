@@ -13,8 +13,8 @@ import {
 import { cn } from "@/lib/utils";
 
 /*
- * 피그마 v2/TabBar — 탭 4곳 + 가운데 돌출 스캔 버튼(탭은 이동, 찍기는 동작이라 따로 튀어나온다).
- * 선택 탭만 tab/active 색 + 굵게. 피그마의 홈 인디케이터 34px 자리는 기기 safe area로 대신한다.
+ * v2/TabBar — 탭 4곳 + 가운데 돌출 스캔 버튼(탭은 이동, 찍기는 동작이라 따로 튀어나온다).
+ * 선택 탭만 tab/active 색 + 굵게. 디자인의 홈 인디케이터 34px 자리는 기기 safe area로 대신한다.
  */
 const TABS = [
   { href: "/home", label: "홈", Icon: IconHome },

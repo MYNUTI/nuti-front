@@ -1,13 +1,13 @@
 import { cn } from "@/lib/utils";
 
 /*
- * 피그마 v2/BottomCTA — 흐름 화면 하단 주 버튼 띠. 주 버튼은 화면에 하나.
- * 피그마 type과의 대응:
+ * v2/BottomCTA — 흐름 화면 하단 주 버튼 띠. 주 버튼은 화면에 하나.
+ * 디자인 type과의 대응:
  *   single · double · icon-single → children(버튼 줄)만, icon-single은 note도
  *   note-single → note + 버튼 하나
  *   filter → chips + 버튼 줄
  *   stack → 버튼 하나 + textAction
- * 피그마의 홈 인디케이터 34px 자리는 기기 safe area로 대신한다.
+ * 디자인의 홈 인디케이터 34px 자리는 기기 safe area로 대신한다.
  * 화면에 고정하는 위치(fixed·sticky)는 쓰는 화면이 정한다.
  */
 export function BottomCta({

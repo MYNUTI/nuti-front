@@ -1,7 +1,7 @@
 /**
  * PWA 아이콘과 iOS 스플래시 이미지를 만든다.
  * - 아이콘: 초록 바탕 + public/common/logo.png(투명 배경 흰 로고)
- * - 스플래시: 흰 바탕(SPLASH_COLOR) + public/common/splash-wordmark.png(피그마 0-1처럼 「마이뉴티」 글자만)
+ * - 스플래시: 흰 바탕(SPLASH_COLOR) + public/common/splash-wordmark.png(디자인 0-1처럼 「마이뉴티」 글자만)
  * 실행: pnpm pwa:assets
  */
 import { mkdir } from "node:fs/promises";
@@ -18,7 +18,7 @@ import {
 const ROOT = path.resolve(import.meta.dirname, "..");
 const LOGO = path.join(ROOT, "public/common/logo.png");
 /*
- * Pretendard Bold 84px(피그마 Display 28pt의 3배), brand/link 색, 투명 배경으로 그린 글자 이미지.
+ * Pretendard Bold 84px(디자인 Display 28pt의 3배), brand/link 색, 투명 배경으로 그린 글자 이미지.
  * sharp의 글자 그리기는 이 환경에서 글꼴 지정이 먹지 않아, 앱 글꼴로 한 번 그려 둔 이미지를 쓴다.
  * 글자·색·글꼴이 바뀌면 이 이미지를 다시 만든다.
  */

@@ -4,7 +4,7 @@ import { IconClose, IconSearch } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 /*
- * 피그마 v2/SearchField — 검색칸 48 · 회색 면. 상단 막대 안(search)에서는 className으로 h-11을 준다.
+ * v2/SearchField — 검색칸 48 · 회색 면. 상단 막대 안(search)에서는 className으로 h-11을 준다.
  * 지우기 버튼은 값이 있고 onClear를 넘겼을 때만 보인다.
  */
 export function SearchField({

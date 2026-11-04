@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
 
 /*
- * 피그마 v2/StatusTag — 요청·제보 상태 알약.
- * 색은 피그마 변수가 아니라 컴포넌트에 직접 넣은 값이라 토큰 없이 그대로 옮겼다(글자 대비 4.5 이상).
+ * v2/StatusTag — 요청·제보 상태 알약.
+ * 색은 디자인 변수가 아니라 컴포넌트에 직접 넣은 값이라 토큰 없이 그대로 옮겼다(글자 대비 4.5 이상).
  */
 const STATUS = {
   analyzing: { label: "분석 중", className: "bg-[#fff1c7] text-[#6b4e00]" },

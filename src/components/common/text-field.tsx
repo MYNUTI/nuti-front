@@ -3,7 +3,7 @@ import { useId } from "react";
 import { cn } from "@/lib/utils";
 
 /*
- * 피그마 v2/TextField — 입력칸 52 · 회색 면 · 모서리 12.
+ * v2/TextField — 입력칸 52 · 회색 면 · 모서리 12.
  * 초점 = 흰 면 + 초록 테두리 · error = 빨간 테두리 + 칸 바로 아래 문장 · warn = 핫핑크 테두리 + 문장.
  * 초점 테두리는 원본이 brand/primary(v3에서는 라임)인데, v3 화면의 다른 「초록 테두리」(칩·선택 카드)처럼 link 색을 쓴다.
  */

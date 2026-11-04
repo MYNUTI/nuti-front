@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 export { GRADES, type Grade };
 
-/** 등급 기준 화면과 같은 말. 피그마 v3 「유지한 결정」의 등급 이름 */
+/** 등급 기준 화면과 같은 말. v3 「유지한 결정」의 등급 이름 */
 export const GRADE_LABEL: Record<Grade, string> = {
   A: "잘 맞음",
   B: "맞는 편",
@@ -36,7 +36,7 @@ const badgeVariants = cva(
   },
 );
 
-/** 피그마 v2/GradeBadge. S 24(작은 자리) · M 32(목록 오른쪽) · L 56(결과 화면). 색만으로 구분하지 않게 글자를 같이 쓴다 */
+/** v2/GradeBadge. S 24(작은 자리) · M 32(목록 오른쪽) · L 56(결과 화면). 색만으로 구분하지 않게 글자를 같이 쓴다 */
 export function GradeBadge({
   grade,
   size,
@@ -49,7 +49,7 @@ export function GradeBadge({
   );
 }
 
-/** 피그마 v2/GradeTag. M 배지 + 등급 이름 */
+/** v2/GradeTag. M 배지 + 등급 이름 */
 export function GradeTag({
   grade,
   className,
