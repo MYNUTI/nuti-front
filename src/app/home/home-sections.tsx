@@ -7,78 +7,12 @@ import { ScoreRing } from "@/components/common/score-ring";
 import { SectionHeader } from "@/components/common/section-header";
 import { cn } from "@/lib/utils";
 
-import type { Goal, PopularProduct } from "./_fixtures";
+import type { PopularProduct } from "./_fixtures";
 
 /*
  * 2-1 홈의 칸들. 디자인 2-1 홈(첫 방문)과 11-04 회의 반영 메모를 따른다.
  * 이동할 화면이 아직 없는 링크는 플랜 라우트 표의 경로만 걸어 둔다.
  */
-
-const GOAL_CARD = {
-  diet: {
-    title: "다이어트 목표로 보고 있어요",
-    image: { src: "/home/goal-diet.png", width: 1446, height: 1087 },
-    // 디자인(카드 폭 370): 200×150, 왼쪽 203, 카드 아래에서 26 위
-    imageClass:
-      "bottom-[26px] left-[54.86%] aspect-[4/3] w-[54.05%] object-cover",
-  },
-  muscle: {
-    title: "근육 증가 목표로 보고 있어요",
-    image: { src: "/home/goal-muscle.png", width: 1358, height: 1159 },
-    // 디자인(카드 폭 370): 248×192, 왼쪽 175, 카드 아래에 붙음
-    imageClass:
-      "bottom-px left-[47.3%] aspect-[248/192] w-[67.03%] object-cover object-top",
-  },
-} as const;
-
-/** 내 목표 카드(빈 상태). 최근 본 제품이 없을 때 */
-export function GoalCardEmpty({ goal }: { goal: Goal }) {
-  const card = GOAL_CARD[goal];
-
-  return (
-    <div className="px-4 pt-1 pb-4">
-      <div className="relative h-[205px] overflow-hidden rounded-lg bg-gradient-to-r from-[rgba(229,245,254,0.6)] to-[rgba(205,223,254,0.6)]">
-        <Image
-          src={card.image.src}
-          width={card.image.width}
-          height={card.image.height}
-          sizes="260px"
-          alt=""
-          loading="eager"
-          fetchPriority="high"
-          // 카드 폭에 비례해 커지고 줄도록 위치·크기를 디자인 비율(%)로 둔다
-          className={cn(
-            "absolute h-auto max-w-none opacity-90",
-            card.imageClass,
-          )}
-        />
-        <div className="absolute top-[18px] left-[18px] flex flex-col items-start">
-          {/* 디자인은 「›」만 있고 갈 곳이 메모에 없다. 목표를 바꾸는 5-2로 걸어 둔다 */}
-          <Link
-            href="/my/goal"
-            className="text-[15px] leading-[22px] font-bold text-text-strong"
-          >
-            {card.title} <span aria-hidden>›</span>
-          </Link>
-          <p className="mt-3.5 text-[14px] leading-5 font-medium text-text-strong">
-            최근 본 제품이 아직 없어요
-          </p>
-          <p className="mt-1 text-[12px] leading-[18px] text-text-body">
-            바코드를 찍으면 등급과 함께
-            <br />
-            여기에 기록이 쌓여요.
-          </p>
-          <Link
-            href="/scan"
-            className="mt-4 rounded-full bg-bg-page px-3.5 py-2 text-[13px] leading-[18px] font-bold text-brand-link"
-          >
-            바코드 찍어 보기
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* 대분류 15개 중 앞 10개(10-29 확정). 그림은 10-29 받은 실사 사진 */
 const CATEGORIES = [

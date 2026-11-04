@@ -1,6 +1,6 @@
 /*
  * 홈 임시 데이터. API 연결 전까지 쓰고, 연결할 때 이 import를 쿼리 훅으로 바꾼다(UI 플랜 「데이터」).
- * 값은 디자인 2-1 홈(첫 방문) 그대로다.
+ * 값은 디자인 2-1 홈(첫 방문·사용 중) 그대로다.
  */
 import type { ScoreBand } from "@/components/common/score-ring";
 
@@ -18,6 +18,21 @@ export type PopularProduct = {
 };
 
 export const FIXTURE_GOAL: Goal = "diet";
+
+/** 최근 본 제품 요약(사용 중 목표 카드). bands는 점수 구간별 개수 */
+export type RecentSummary = {
+  total: number;
+  matched: number;
+  bands: Record<ScoreBand, number>;
+  requests: number;
+};
+
+export const FIXTURE_RECENT: RecentSummary = {
+  total: 12,
+  matched: 8,
+  bands: { 1: 5, 2: 3, 3: 2, 4: 1, 5: 1 },
+  requests: 3,
+};
 
 export const FIXTURE_POPULAR: PopularProduct[] = [
   {

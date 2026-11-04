@@ -3,11 +3,17 @@ import type { Metadata } from "next";
 import { SearchFieldLink } from "@/components/common/search-field";
 import { TabBar } from "@/components/common/tab-bar";
 
-import { FIXTURE_GOAL, FIXTURE_POPULAR, type Goal } from "./_fixtures";
+import {
+  FIXTURE_GOAL,
+  FIXTURE_POPULAR,
+  FIXTURE_RECENT,
+  type Goal,
+} from "./_fixtures";
+import { GoalCardEmpty, GoalCardUsing } from "./goal-card";
 import { HomeGuide } from "./home-guide";
+import { RecentError } from "./recent-error";
 import {
   CategorySection,
-  GoalCardEmpty,
   PopularSection,
   RequestSection,
   SellerSection,
@@ -19,10 +25,14 @@ function Band() {
   return <div aria-hidden className="h-2 bg-bg-band" />;
 }
 
-// 2-1 홈(첫 방문). 사용 중·비교함·로그인 상태는 이어지는 화면 작업에서 더한다
+// 2-1 홈. 비교함·로그인 상태는 이어지는 화면 작업에서 더한다
 export default async function HomePage({ searchParams }: PageProps<"/home">) {
-  // 목표 저장은 API 연결 때 붙인다. 그 전까지 1-5에서 넘긴 ?goal=로 목표 카드를 바꿔 볼 수 있게 한다
-  const { goal: goalParam, guide } = await searchParams;
+  /*
+   * API 연결 전 미리보기용 주소 값. 연결하면 목표·최근 본 제품을 서버에서 받아 정한다.
+   *   ?goal=diet|muscle — 1-5에서 넘긴 목표
+   *   ?state=using|loading|error — 목표 카드 상태(없으면 첫 방문)
+   */
+  const { goal: goalParam, guide, state } = await searchParams;
   const goal: Goal =
     goalParam === "muscle" || goalParam === "diet" ? goalParam : FIXTURE_GOAL;
 
@@ -37,7 +47,15 @@ export default async function HomePage({ searchParams }: PageProps<"/home">) {
             data-guide="search"
           />
         </div>
-        <GoalCardEmpty goal={goal} />
+        {state === "using" ? (
+          <GoalCardUsing goal={goal} summary={FIXTURE_RECENT} />
+        ) : state === "loading" ? (
+          <GoalCardUsing goal={goal} />
+        ) : state === "error" ? (
+          <RecentError />
+        ) : (
+          <GoalCardEmpty goal={goal} />
+        )}
         <Band />
         <CategorySection />
         <Band />

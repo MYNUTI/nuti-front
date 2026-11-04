@@ -9,6 +9,15 @@ import { cn } from "@/lib/utils";
  */
 export type ScoreBand = 1 | 2 | 3 | 4 | 5;
 
+/** 점수 구간 이름. 링 옆에는 쓰지 않고 막대의 화면 읽기용 글 등에 쓴다 */
+export const SCORE_BAND_LABEL: Record<ScoreBand, string> = {
+  1: "잘 맞음",
+  2: "맞는 편",
+  3: "보통",
+  4: "안 맞는 편",
+  5: "안 맞음",
+};
+
 const SIZE = {
   L: { box: 60, stroke: 6, text: "text-[22px]" },
   M: { box: 40, stroke: 4, text: "text-[15px]" },
