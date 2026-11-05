@@ -12,7 +12,8 @@ import type { Goal, RecentSummary } from "./_fixtures";
 
 /*
  * 2-1 홈의 내 목표 카드. 틀(바탕·사람 그림·목표 제목)은 같고 안쪽만 상태에 따라 바뀐다.
- *   첫 방문: 최근 본 제품이 없을 때 · 사용 중: 1개 이상일 때 · 불러오는 중: 숫자 자리만 회색 막대
+ *   첫 방문: 최근 본 제품이 없을 때 · 사용 중: 1개 이상일 때 · 로그인 안 함: 1개 이상인데 로그인 전
+ *   불러오는 중: 숫자 자리만 회색 막대
  */
 
 const GOAL_CARD = {
@@ -73,25 +74,70 @@ function GoalCard({
   );
 }
 
-/** 첫 방문: 최근 본 제품이 없을 때 */
-export function GoalCardEmpty({ goal }: { goal: Goal }) {
+/** 첫 방문·로그인 안 함 카드의 같은 모양: 안내 한 줄, 설명 두 줄, 흰 알약 버튼 */
+function GoalCardPrompt({
+  goal,
+  heading,
+  body,
+  action,
+}: {
+  goal: Goal;
+  heading: string;
+  body: React.ReactNode;
+  action: { href: string; label: string };
+}) {
   return (
     <GoalCard goal={goal}>
       <p className="mt-3.5 text-[14px] leading-5 font-medium text-text-strong">
-        최근 본 제품이 아직 없어요
+        {heading}
       </p>
-      <p className="mt-1 text-[12px] leading-[18px] text-text-body">
-        바코드를 찍으면 등급과 함께
-        <br />
-        여기에 기록이 쌓여요.
-      </p>
+      <p className="mt-1 text-[12px] leading-[18px] text-text-body">{body}</p>
       <Link
-        href="/scan"
+        href={action.href}
         className="mt-4 rounded-full bg-bg-page px-3.5 py-2 text-[13px] leading-[18px] font-bold text-brand-link"
       >
-        바코드 찍어 보기
+        {action.label}
       </Link>
     </GoalCard>
+  );
+}
+
+/** 첫 방문: 최근 본 제품이 없을 때 */
+export function GoalCardEmpty({ goal }: { goal: Goal }) {
+  return (
+    <GoalCardPrompt
+      goal={goal}
+      heading="최근 본 제품이 아직 없어요"
+      body={
+        <>
+          바코드를 찍으면 등급과 함께
+          <br />
+          여기에 기록이 쌓여요.
+        </>
+      }
+      action={{ href: "/scan", label: "바코드 찍어 보기" }}
+    />
+  );
+}
+
+/**
+ * 로그인 안 함: 최근 본 제품이 1개 이상일 때(0개면 첫 방문 카드).
+ * 11-05 회의: 기록 숫자·막대·분석 요청은 로그인한 사람 카드에만 두고, 카드 아래 로그인 권유 줄은 숨긴다.
+ */
+export function GoalCardGuest({ goal }: { goal: Goal }) {
+  return (
+    <GoalCardPrompt
+      goal={goal}
+      heading="로그인하면 기록이 계속 남아요"
+      body={
+        <>
+          폰을 바꿔도 본 제품과
+          <br />
+          점수를 그대로 볼 수 있어요.
+        </>
+      }
+      action={{ href: "/login", label: "로그인하기" }}
+    />
   );
 }
 
