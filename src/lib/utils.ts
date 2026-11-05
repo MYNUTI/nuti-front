@@ -15,6 +15,7 @@ const twMerge = extendTailwindMerge({
         "display",
         "title1",
         "title2",
+        "section",
         "body1",
         "body1-medium",
         "body1-bold",

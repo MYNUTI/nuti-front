@@ -4,7 +4,7 @@ import { IconChevronRight } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 /*
- * v2/SectionHeader — 구역 제목 18 + 기준 한 줄(누구·무엇 기준·모수) + 「전체 보기」.
+ * v2/SectionHeader — 구역 제목(v3/Section 17, 11-05 회의) + 기준 한 줄(누구·무엇 기준·모수) + 「전체 보기」.
  * 디자인 메모: 주어 없는 형용사 제목은 쓰지 않는다.
  */
 export function SectionHeader({
@@ -24,7 +24,9 @@ export function SectionHeader({
   return (
     <div className={cn("flex flex-col gap-0.5 px-5 pt-6 pb-2", className)}>
       <div className="flex items-center gap-2">
-        <h2 className="min-w-0 flex-1 text-title2 text-text-strong">{title}</h2>
+        <h2 className="min-w-0 flex-1 text-section text-text-strong">
+          {title}
+        </h2>
         {actionLabel && actionHref && (
           <Link
             href={actionHref}

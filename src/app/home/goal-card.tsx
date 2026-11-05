@@ -43,7 +43,7 @@ function GoalCard({
 
   return (
     <div className="px-4 pt-1 pb-4">
-      <div className="relative h-[205px] overflow-hidden rounded-lg bg-gradient-to-r from-[rgba(229,245,254,0.6)] to-[rgba(205,223,254,0.6)]">
+      <div className="@container relative h-[205px] overflow-hidden rounded-lg bg-gradient-to-r from-[rgba(229,245,254,0.6)] to-[rgba(205,223,254,0.6)]">
         <Image
           src={card.image.src}
           width={card.image.width}
@@ -140,8 +140,9 @@ export function GoalCardUsing({
         <Skeleton className="mt-0.5 h-3.5 w-48" />
       )}
       {summary ? (
-        <div className="mt-3 flex h-2 w-52 gap-0.5 overflow-hidden rounded-[4px]">
-          {/* 디자인 메모: 범례 없이 5구간 비율만. 개수가 0인 구간은 그리지 않는다 */}
+        <div className="mt-3 flex h-2 w-[56.2cqw] gap-0.5 overflow-hidden rounded-[4px]">
+          {/* 디자인 메모: 범례 없이 5구간 비율만. 개수가 0인 구간은 그리지 않는다.
+              폭은 좁은 화면에서 그림을 덜 가리도록 카드 폭에 비례(370 기준 208) */}
           {BANDS.filter((b) => summary.bands[b] > 0).map((b) => (
             <span
               key={b}
@@ -156,7 +157,7 @@ export function GoalCardUsing({
           </span>
         </div>
       ) : (
-        <Skeleton className="mt-3 h-2 w-52" />
+        <Skeleton className="mt-3 h-2 w-[56.2cqw]" />
       )}
       <div className="mt-4 flex items-center gap-2.5">
         <Link

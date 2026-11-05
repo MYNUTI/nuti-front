@@ -7,12 +7,37 @@ import { ScoreRing } from "@/components/common/score-ring";
 import { SectionHeader } from "@/components/common/section-header";
 import { cn } from "@/lib/utils";
 
-import type { PopularProduct } from "./_fixtures";
+import type { CompareLeft, PopularProduct } from "./_fixtures";
 
 /*
  * 2-1 홈의 칸들. 디자인 2-1 홈(첫 방문)과 11-04 회의 반영 메모를 따른다.
  * 이동할 화면이 아직 없는 링크는 플랜 라우트 표의 경로만 걸어 둔다.
  */
+
+/*
+ * 비교함 남음 안내. 비교함에 담은 지 24시간이 지난 뒤 앱을 다시 열 때 한 번만 보인다.
+ * 한 번 보였는지는 API 연결 때 정한다.
+ */
+export function CompareBanner({ left }: { left: CompareLeft }) {
+  return (
+    <div className="px-5 pb-3">
+      <div className="flex items-start gap-2 rounded-md bg-bg-field py-3 pr-3 pl-4">
+        <p className="text-body2-medium text-text-strong">
+          {left.addedLabel} 담은 {left.count}개가 비교함에 남아 있어요
+        </p>
+        {/* 보이는 높이는 디자인대로 20, 누르는 영역은 위아래로 넓혀 36 */}
+        <Button
+          asChild
+          kind="secondary"
+          size="S"
+          className="relative h-5 shrink-0 after:absolute after:inset-x-0 after:-inset-y-2"
+        >
+          <Link href="/compare">비교하기</Link>
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 /* 대분류 15개 중 앞 10개(10-29 확정). 그림은 10-29 받은 실사 사진 */
 const CATEGORIES = [
@@ -69,7 +94,7 @@ export function PopularSection({ products }: { products: PopularProduct[] }) {
         actionLabel="전체"
         actionHref="/ranking"
       />
-      <div className="flex gap-2.5 overflow-x-auto px-5 pt-1 pb-6">
+      <div className="flex gap-2.5 overflow-x-auto px-5 pt-1 pb-8">
         {products.map((p) => (
           <Link
             key={p.id}
@@ -132,7 +157,7 @@ export function SellerSection() {
       <SectionHeader title="판매처별로 보기" />
       <div className="relative">
         {/* 11-04 회의: 누르면 그 판매처 필터를 켠 대분류 전체 순위 */}
-        <div className="flex gap-2 overflow-x-auto px-5 pt-4 pb-6">
+        <div className="flex gap-2 overflow-x-auto px-5 pt-2 pb-5">
           {SELLERS.map((s) => (
             <Link
               key={s}
@@ -146,7 +171,7 @@ export function SellerSection() {
         {/* 11-04 회의: 오른쪽 끝을 흐리게 해 옆으로 넘길 수 있음을 보인다 */}
         <span
           aria-hidden
-          className="pointer-events-none absolute top-4 right-0 h-9 w-10 bg-gradient-to-r from-white/0 to-white"
+          className="pointer-events-none absolute top-2 right-0 h-9 w-10 bg-gradient-to-r from-white/0 to-white"
         />
       </div>
     </section>

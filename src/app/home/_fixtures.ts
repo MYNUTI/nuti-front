@@ -70,3 +70,11 @@ export const FIXTURE_POPULAR: PopularProduct[] = [
     tags: [{ label: "고단백" }],
   },
 ];
+
+/** 비교함에 담은 지 24시간이 지난 제품. 「어제」 자리는 담은 날을 말로 바꾼 값 */
+export type CompareLeft = { addedLabel: string; count: number };
+
+export const FIXTURE_COMPARE_LEFT: CompareLeft = {
+  addedLabel: "어제",
+  count: 2,
+};

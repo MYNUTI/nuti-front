@@ -4,6 +4,7 @@ import { SearchFieldLink } from "@/components/common/search-field";
 import { TabBar } from "@/components/common/tab-bar";
 
 import {
+  FIXTURE_COMPARE_LEFT,
   FIXTURE_GOAL,
   FIXTURE_POPULAR,
   FIXTURE_RECENT,
@@ -14,6 +15,7 @@ import { HomeGuide } from "./home-guide";
 import { RecentError } from "./recent-error";
 import {
   CategorySection,
+  CompareBanner,
   PopularSection,
   RequestSection,
   SellerSection,
@@ -25,12 +27,13 @@ function Band() {
   return <div aria-hidden className="h-2 bg-bg-band" />;
 }
 
-// 2-1 홈. 비교함·로그인 상태는 이어지는 화면 작업에서 더한다
+// 2-1 홈. 로그인 안 함·계정 삭제 상태는 이어지는 화면 작업에서 더한다
 export default async function HomePage({ searchParams }: PageProps<"/home">) {
   /*
    * API 연결 전 미리보기용 주소 값. 연결하면 목표·최근 본 제품을 서버에서 받아 정한다.
    *   ?goal=diet|muscle — 1-5에서 넘긴 목표
    *   ?state=using|loading|error — 목표 카드 상태(없으면 첫 방문)
+   *   ?state=compare — 사용 중 + 비교함 남음 안내
    */
   const { goal: goalParam, guide, state } = await searchParams;
   const goal: Goal =
@@ -47,7 +50,7 @@ export default async function HomePage({ searchParams }: PageProps<"/home">) {
             data-guide="search"
           />
         </div>
-        {state === "using" ? (
+        {state === "using" || state === "compare" ? (
           <GoalCardUsing goal={goal} summary={FIXTURE_RECENT} />
         ) : state === "loading" ? (
           <GoalCardUsing goal={goal} />
@@ -56,6 +59,7 @@ export default async function HomePage({ searchParams }: PageProps<"/home">) {
         ) : (
           <GoalCardEmpty goal={goal} />
         )}
+        {state === "compare" && <CompareBanner left={FIXTURE_COMPARE_LEFT} />}
         <Band />
         <CategorySection />
         <Band />

@@ -183,7 +183,7 @@
     "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   --font-heading: var(--font-sans);
 
-  /* 디자인 글자 스타일 v2/ 11개. text-display처럼 쓰면 크기·줄높이·굵기가 같이 붙는다 */
+  /* 디자인 글자 스타일 v2/ 11개 + v3/Section. text-display처럼 쓰면 크기·줄높이·굵기가 같이 붙는다 */
   --text-display: 28px;
   --text-display--line-height: 36px;
   --text-display--font-weight: 700;
@@ -193,6 +193,10 @@
   --text-title2: 18px;
   --text-title2--line-height: 26px;
   --text-title2--font-weight: 700;
+  /* v3/Section: 구역 제목(11-05 회의) */
+  --text-section: 17px;
+  --text-section--line-height: 24px;
+  --text-section--font-weight: 700;
   --text-body1: 16px;
   --text-body1--line-height: 24px;
   --text-body1--font-weight: 400;

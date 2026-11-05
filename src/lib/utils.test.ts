@@ -9,6 +9,12 @@ describe("cn", () => {
     );
   });
 
+  it("구역 제목 스타일과 글자 색을 함께 남긴다", () => {
+    expect(cn("text-section", "text-text-strong")).toBe(
+      "text-section text-text-strong",
+    );
+  });
+
   it("글자 스타일끼리는 뒤의 것만 남긴다", () => {
     expect(cn("text-body1", "text-body2-bold")).toBe("text-body2-bold");
   });

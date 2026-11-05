@@ -26,7 +26,7 @@
 
 ## 현재 코드 (2026-11-03 확인)
 
-- `globals.css`에 v3 CHIPS 토큰(색·등급 색·글자 스타일 11개·모서리)이 있다. 예전 토큰과 `rounded-xl` 이상은 임시 화면용으로 남아 있고 13단계에서 지운다
+- `globals.css`에 v3 CHIPS 토큰(색·등급 색·글자 스타일 12개·모서리)이 있다. 예전 토큰과 `rounded-xl` 이상은 임시 화면용으로 남아 있고 13단계에서 지운다
 - 글꼴은 Pretendard 서브셋(400·500·700)
 - 아이콘: `components/icons.tsx`에 피그마 v2/Icon 39개
 - v3 공통 부품: `components/common/`의 button, bottom-cta, top-bar, search-field, tab-bar, grade(GradeBadge·GradeTag, GradeBar 제외), status-tag, chip, select-card, check-row, check-mark, text-field, product-row, list-row, toggle, reason-row, section-header, thumb, category-tile, product-hero, camera-frame, sheet(BottomSheet·ConfirmSheet), empty-state(EmptyState·ErrorState), loading-state, skeleton, step-dots, score-ring. 그 밖의 `components/common/`(cta-button, layer, card-tutorial, choice-card)과 `components/ui/`(shadcn button, checkbox, radio-group)는 임시 화면용이다
@@ -112,7 +112,7 @@ API 연결은 API 브랜치 08·09단계 이후에 붙인다. 그 전까지 화�
 
 ### 00단계 상세
 
-1. **토큰** — `globals.css`의 예전 토큰을 CHIPS v3 값으로 바꾼다. 색(brand·accent·text·bg·line·icon·tab), 등급 색 ④-3(A~E, 배지 글자는 모두 검정), 글자 스타일 11개, 간격(4·8·12·16·20·24·32·40), 모서리(sm 8·md 12·lg 16·sheet 20·pill). shadcn 별칭도 새 토큰을 가리키게 한다
+1. **토큰** — `globals.css`의 예전 토큰을 CHIPS v3 값으로 바꾼다. 색(brand·accent·text·bg·line·icon·tab), 등급 색 ④-3(A~E, 배지 글자는 모두 검정), 글자 스타일 12개(v2 11개 + v3/Section), 간격(4·8·12·16·20·24·32·40), 모서리(sm 8·md 12·lg 16·sheet 20·pill). shadcn 별칭도 새 토큰을 가리키게 한다
 2. **글꼴** — Paperlogy를 Pretendard로 바꾼다(로컬 woff2, `next/font/local`)
 3. **아이콘** — 피그마 v2/Icon 24px 선 아이콘 약 40개. lucide로 대응되는 것과 SVG로 옮길 것을 나눈다
 4. **부품** — 피그마 「부품」 판 기준. 기존 `components/common`은 고치거나 바꾼다
@@ -182,3 +182,4 @@ API 연결은 API 브랜치 08·09단계 이후에 붙인다. 그 전까지 화�
 | 2026-11-04 | Android 12 이상은 운영체제가 흰 배경(`background_color`) + 앱 아이콘(초록 바탕)으로 스플래시를 만든다. 「마이뉴티」 글자만 나오는 건 iOS뿐이고, Android 쪽은 바꿀 수 없어 그대로 둔다                                                                                 |
 | 2026-11-04 | 피그마가 등급 배지(A–E)에서 점수 링(0–100, v3/ScoreRing)으로 바뀌었다(11-03). 점수 색은 「점수 색」 모드 ① 우리 색을 쓴다. 기존 GradeBadge·GradeTag는 일단 두고 필요 없어지면 정리한다                                                                                |
 | 2026-11-04 | 2-1g 홈 가이드 중에는 밝힌 자리(스캔 버튼·검색칸)를 눌러도 이동하지 않는다. 피그마 메모와 다르다. 가이드는 말풍선 버튼으로만 넘기고 닫는다                                                                                                                            |
+| 2026-11-05 | 구역 제목은 v3/Section 17/24/700(`text-section`, 11-05 회의). `cn` 글자 스타일 목록에도 넣었다                                                                                                                                                                        |
