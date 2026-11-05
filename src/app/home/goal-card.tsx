@@ -110,7 +110,7 @@ export function GoalCardEmpty({ goal }: { goal: Goal }) {
       heading="최근 본 제품이 아직 없어요"
       body={
         <>
-          바코드를 찍으면 등급과 함께
+          바코드를 찍으면 점수와 함께
           <br />
           여기에 기록이 쌓여요.
         </>
@@ -206,6 +206,7 @@ export function GoalCardUsing({
         <Skeleton className="mt-3 h-2 w-[56.2cqw]" />
       )}
       <div className="mt-4 flex items-center gap-2.5">
+        {/* 디자인: 전체 보기 → 4-2 내 기록(점수별 보기) */}
         <Link
           href="/history?tab=grade"
           className="text-[13px] leading-[18px] font-medium text-text-body"
