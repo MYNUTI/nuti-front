@@ -13,6 +13,69 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
 
+  /* v3 디자인 시스템(CHIPS 기준, 변수 모드 「CHIPS ④-3 밝게」) */
+  --brand-primary: #84f01c;
+  --brand-primary-pressed: #72d612;
+  --brand-primary-weak: #f0ffe0;
+  --brand-on-lime: #0d1a02;
+  --brand-link: #2a7d06;
+  --accent-pink: #f0306b;
+  --accent-pink-weak: #ffe8ef;
+  --accent-pink-text: #c4104d;
+
+  --text-strong: #111111;
+  --text-body: #2b3036;
+  --text-sub: #5c6470;
+  --text-hint: #5c6470;
+  --text-disabled: #8b929b;
+  --text-danger: #c62828;
+  --text-on-primary: #ffffff;
+
+  --bg-page: #ffffff;
+  --bg-band: #f3f4f6;
+  --bg-tint: #f4f6f5;
+  --bg-field: #f3f4f6;
+  --bg-dark: #141516;
+
+  --line-default: #e1e3e6;
+  --line-strong: #d5d9dd;
+
+  --icon-default: #2b3036;
+  --icon-sub: #707378;
+  --icon-good: #2a7d06;
+  --icon-bad: #f0306b;
+
+  --tab-active: #111111;
+
+  /* 등급 색 ④-3 라임 톤 더 밝게(10-28 결정). 배지 글자는 모두 검정 */
+  --grade-a: #40cf52;
+  --grade-b: #92d933;
+  --grade-c: #ffe438;
+  --grade-d: #ff914d;
+  --grade-e: #f73756;
+  --grade-on: #111111;
+
+  /*
+   * 점수 색(11-03 점수 링). 디자인 변수 모음 「점수 색」의 모드 ① 우리 색.
+   * 모드를 바꾸면 이 값만 바꾼다(② 중간 · ③ 노써치와 같게). 1 잘 맞음 ~ 5 안 맞음
+   */
+  --score-track: #eef0f2;
+  --score-ring-1: #40cf52;
+  --score-ring-2: #92d933;
+  --score-ring-3: #ffe438;
+  --score-ring-4: #ff914d;
+  --score-ring-5: #f73756;
+  --score-number-1: #111111;
+  --score-number-2: #111111;
+  --score-number-3: #111111;
+  --score-number-4: #111111;
+  --score-number-5: #111111;
+
+  /*
+   * 예전 디자인 토큰. 아직 바꾸지 않은 임시 화면이 쓰고 있어 남겨 둔다.
+   * 새 코드에서는 쓰지 않고, 마지막 사용처가 바뀌면 지운다(UI 플랜 13단계).
+   * v3와 이름이 겹치는 text-disabled·text-danger·icon-default는 v3 값을 쓴다.
+   */
   /* Figma Primitive 컬렉션 중 컴포넌트가 직접 참조하는 것만 */
   --deep-green-500: #258770;
   /* Figma 컴포넌트는 같은 값의 Grove (수정필요)/100을 참조 중 */
@@ -47,19 +110,16 @@
   --text-secondary: #4d4d4d;
   --text-tertiary: #888888;
   --text-neutral: #666666;
-  --text-disabled: #b0b0b0;
   --text-on-color: #f8f9fa;
   --text-info: #2a7fdc;
   --text-success: #2fa86e;
   --text-warning: #b57522;
-  --text-danger: #dc2a3f;
   --text-a-default: #285a85;
   --text-b-default: #287050;
   --text-c-default: #7a5a10;
   --text-d-default: #8f481a;
   --text-e-default: #8f1a2a;
 
-  --icon-default: #1f1f1f;
   --icon-secondary: #666666;
   --icon-disabled: #b0b0b0;
   --icon-on-color: #f8f9fa;
@@ -88,40 +148,128 @@
   --border-e-strong: #8f1a2a;
 
   /* shadcn 컴포넌트용 별칭 */
-  --background: var(--bg-default);
-  --foreground: var(--text-default);
-  --card: var(--bg-surface);
-  --card-foreground: var(--text-default);
-  --popover: var(--bg-surface);
-  --popover-foreground: var(--text-default);
-  --primary: var(--deep-green-500);
-  --primary-foreground: #ffffff;
-  --secondary: var(--bg-neutral);
-  --secondary-foreground: var(--text-default);
-  --muted: var(--bg-neutral);
-  --muted-foreground: var(--text-secondary);
-  --accent: var(--bg-neutral);
-  --accent-foreground: var(--text-default);
+  --background: var(--bg-page);
+  --foreground: var(--text-body);
+  --card: var(--bg-page);
+  --card-foreground: var(--text-body);
+  --popover: var(--bg-page);
+  --popover-foreground: var(--text-body);
+  --primary: var(--brand-primary);
+  --primary-foreground: var(--brand-on-lime);
+  --secondary: var(--bg-band);
+  --secondary-foreground: var(--text-strong);
+  --muted: var(--bg-band);
+  --muted-foreground: var(--text-sub);
+  --accent: var(--bg-band);
+  --accent-foreground: var(--text-strong);
   --destructive: var(--text-danger);
-  --border: var(--border-default);
-  --input: var(--border-default);
-  --ring: var(--border-focus);
-  --radius: 0.625rem;
+  --border: var(--line-default);
+  --input: var(--line-strong);
+  --ring: var(--text-strong);
+  --radius: 1rem;
 
-  --chart-1: var(--bg-a-default);
-  --chart-2: var(--bg-b-default);
-  --chart-3: var(--bg-c-default);
-  --chart-4: var(--bg-d-default);
-  --chart-5: var(--bg-e-default);
+  --chart-1: var(--grade-a);
+  --chart-2: var(--grade-b);
+  --chart-3: var(--grade-c);
+  --chart-4: var(--grade-d);
+  --chart-5: var(--grade-e);
 }
 
 @theme inline {
   --container-app: var(--app-max-width);
 
   --font-sans:
-    var(--font-paperlogy), -apple-system, BlinkMacSystemFont, system-ui,
+    var(--font-pretendard), -apple-system, BlinkMacSystemFont, system-ui,
     "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   --font-heading: var(--font-sans);
+
+  /* 디자인 글자 스타일 v2/ 11개 + v3/Section. text-display처럼 쓰면 크기·줄높이·굵기가 같이 붙는다 */
+  --text-display: 28px;
+  --text-display--line-height: 36px;
+  --text-display--font-weight: 700;
+  --text-title1: 22px;
+  --text-title1--line-height: 30px;
+  --text-title1--font-weight: 700;
+  --text-title2: 18px;
+  --text-title2--line-height: 26px;
+  --text-title2--font-weight: 700;
+  /* v3/Section: 구역 제목(11-05 회의) */
+  --text-section: 17px;
+  --text-section--line-height: 24px;
+  --text-section--font-weight: 700;
+  --text-body1: 16px;
+  --text-body1--line-height: 24px;
+  --text-body1--font-weight: 400;
+  --text-body1-medium: 16px;
+  --text-body1-medium--line-height: 24px;
+  --text-body1-medium--font-weight: 500;
+  --text-body1-bold: 16px;
+  --text-body1-bold--line-height: 24px;
+  --text-body1-bold--font-weight: 700;
+  --text-body2: 14px;
+  --text-body2--line-height: 20px;
+  --text-body2--font-weight: 400;
+  --text-body2-medium: 14px;
+  --text-body2-medium--line-height: 20px;
+  --text-body2-medium--font-weight: 500;
+  --text-body2-bold: 14px;
+  --text-body2-bold--line-height: 20px;
+  --text-body2-bold--font-weight: 700;
+  --text-caption: 12px;
+  --text-caption--line-height: 16px;
+  --text-caption--font-weight: 500;
+  --text-caption-bold: 12px;
+  --text-caption-bold--line-height: 16px;
+  --text-caption-bold--font-weight: 700;
+
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-pressed: var(--brand-primary-pressed);
+  --color-brand-primary-weak: var(--brand-primary-weak);
+  --color-brand-on-lime: var(--brand-on-lime);
+  --color-brand-link: var(--brand-link);
+  --color-accent-pink: var(--accent-pink);
+  --color-accent-pink-weak: var(--accent-pink-weak);
+  --color-accent-pink-text: var(--accent-pink-text);
+
+  --color-text-strong: var(--text-strong);
+  --color-text-body: var(--text-body);
+  --color-text-sub: var(--text-sub);
+  --color-text-hint: var(--text-hint);
+  --color-text-on-primary: var(--text-on-primary);
+
+  --color-bg-page: var(--bg-page);
+  --color-bg-band: var(--bg-band);
+  --color-bg-tint: var(--bg-tint);
+  --color-bg-field: var(--bg-field);
+  --color-bg-dark: var(--bg-dark);
+
+  --color-line-default: var(--line-default);
+  --color-line-strong: var(--line-strong);
+
+  --color-icon-sub: var(--icon-sub);
+  --color-icon-good: var(--icon-good);
+  --color-icon-bad: var(--icon-bad);
+
+  --color-tab-active: var(--tab-active);
+
+  --color-grade-a: var(--grade-a);
+  --color-grade-b: var(--grade-b);
+  --color-grade-c: var(--grade-c);
+  --color-grade-d: var(--grade-d);
+  --color-grade-e: var(--grade-e);
+  --color-grade-on: var(--grade-on);
+
+  --color-score-track: var(--score-track);
+  --color-score-ring-1: var(--score-ring-1);
+  --color-score-ring-2: var(--score-ring-2);
+  --color-score-ring-3: var(--score-ring-3);
+  --color-score-ring-4: var(--score-ring-4);
+  --color-score-ring-5: var(--score-ring-5);
+  --color-score-number-1: var(--score-number-1);
+  --color-score-number-2: var(--score-number-2);
+  --color-score-number-3: var(--score-number-3);
+  --color-score-number-4: var(--score-number-4);
+  --color-score-number-5: var(--score-number-5);
 
   --color-backdrop: var(--backdrop);
   --color-background: var(--background);
@@ -220,18 +368,30 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
 
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  /* 디자인 radius/ — sm 8 · md 12 · lg 16 · sheet 20. pill은 rounded-full */
+  --radius-sm: 8px;
+  --radius-md: 12px;
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-sheet: 20px;
+  /*
+   * xl 이상은 디자인에 없는 값이다. 임시 화면이 예전 모양을 유지하도록 토큰 교체 전 값으로 고정했다.
+   * 새 코드에서는 쓰지 않고, 마지막 사용처가 바뀌면 지운다(UI 플랜 13단계).
+   */
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
+  --radius-3xl: 22px;
+  --radius-4xl: 26px;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+
+  /* 브라우저 기본값은 버튼이 화살표 커서라, 링크처럼 누를 수 있는 모든 버튼을 손가락 커서로 맞춘다 */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
   }
 
   html {

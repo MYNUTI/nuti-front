@@ -2,7 +2,7 @@
  * 스플래시 배경이자 manifest theme_color. 스플래시 동안 상단 바를 배경과 맞추려는 것이고,
  * 앱 화면에서는 layout의 viewport.themeColor가 덮어쓴다.
  */
-export const SPLASH_COLOR = "#2f6758";
+export const SPLASH_COLOR = "#ffffff";
 
 /** maskable은 Android가 원·물방울 등으로 잘라 쓰는 아이콘. 로고를 안전영역(반경 40%) 안에 둔다 */
 export const PWA_ICONS = [
