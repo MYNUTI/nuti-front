@@ -16,28 +16,41 @@ import type { Goal, RecentSummary } from "./_fixtures";
  *   불러오는 중: 숫자 자리만 회색 막대
  */
 
+// 디자인(카드 폭 370): 200×150, 왼쪽 203, 카드 아래에서 26 위. 첫 방문·사용 중 같음
+const DIET_IMAGE_CLASS =
+  "bottom-[26px] left-[54.86%] aspect-[4/3] w-[54.05%] object-cover";
+
 const GOAL_CARD = {
   diet: {
     title: "다이어트 목표로 보고 있어요",
     image: { src: "/home/goal-diet.png", width: 1446, height: 1087 },
-    // 디자인(카드 폭 370): 200×150, 왼쪽 203, 카드 아래에서 26 위
-    imageClass:
-      "bottom-[26px] left-[54.86%] aspect-[4/3] w-[54.05%] object-cover",
+    imageClass: { prompt: DIET_IMAGE_CLASS, using: DIET_IMAGE_CLASS },
   },
   muscle: {
     title: "근육 증가 목표로 보고 있어요",
     image: { src: "/home/goal-muscle.png", width: 1358, height: 1159 },
-    // 디자인(카드 폭 370): 248×192, 왼쪽 175, 카드 아래에 붙음
-    imageClass:
-      "bottom-px left-[47.3%] aspect-[248/192] w-[67.03%] object-cover object-top",
+    imageClass: {
+      // 디자인(카드 폭 370): 248×192, 왼쪽 175, 카드 아래에 붙음
+      prompt:
+        "bottom-px left-[47.3%] aspect-[248/192] w-[67.03%] object-cover object-top",
+      // 디자인: 236×179, 왼쪽 191, 틀 안에서 11 내려 그리고 아래 11은 잘림(카드 아래에서 14 위까지 보임)
+      using:
+        "bottom-[3px] left-[51.62%] aspect-[236/179] w-[63.78%] object-cover object-top [clip-path:inset(0_0_6.15%_0)]",
+    },
   },
 } as const;
 
 function GoalCard({
   goal,
+  layout,
+  footer,
   children,
 }: {
   goal: Goal;
+  /** 사람 그림 자리. 근육 증가는 첫 방문 모양과 사용 중 모양에서 그림 위치가 다르다 */
+  layout: "prompt" | "using";
+  /** 카드 바로 아래 줄 */
+  footer?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const card = GOAL_CARD[goal];
@@ -56,7 +69,7 @@ function GoalCard({
           // 카드 폭에 비례해 커지고 줄도록 위치·크기를 디자인 비율(%)로 둔다
           className={cn(
             "absolute h-auto max-w-none opacity-90",
-            card.imageClass,
+            card.imageClass[layout],
           )}
         />
         <div className="absolute top-[18px] left-[18px] flex flex-col items-start">
@@ -70,6 +83,7 @@ function GoalCard({
           {children}
         </div>
       </div>
+      {footer}
     </div>
   );
 }
@@ -80,14 +94,16 @@ function GoalCardPrompt({
   heading,
   body,
   action,
+  footer,
 }: {
   goal: Goal;
   heading: string;
   body: React.ReactNode;
   action: { href: string; label: string };
+  footer?: React.ReactNode;
 }) {
   return (
-    <GoalCard goal={goal}>
+    <GoalCard goal={goal} layout="prompt" footer={footer}>
       <p className="mt-3.5 text-[14px] leading-5 font-medium text-text-strong">
         {heading}
       </p>
@@ -102,11 +118,21 @@ function GoalCardPrompt({
   );
 }
 
-/** 첫 방문: 최근 본 제품이 없을 때 */
-export function GoalCardEmpty({ goal }: { goal: Goal }) {
+/**
+ * 첫 방문: 최근 본 제품이 없을 때.
+ * 11-05 회의: 로그인하지 않았으면 카드 아래 로그인 권유 줄을 둔다(계정 삭제 뒤 홈에는 없음)
+ */
+export function GoalCardEmpty({
+  goal,
+  loginPrompt = false,
+}: {
+  goal: Goal;
+  loginPrompt?: boolean;
+}) {
   return (
     <GoalCardPrompt
       goal={goal}
+      footer={loginPrompt && <LoginPromptRow />}
       heading="최근 본 제품이 아직 없어요"
       body={
         <>
@@ -117,6 +143,19 @@ export function GoalCardEmpty({ goal }: { goal: Goal }) {
       }
       action={{ href: "/scan", label: "바코드 찍어 보기" }}
     />
+  );
+}
+
+function LoginPromptRow() {
+  return (
+    <div className="mt-2.5 flex items-center gap-2 rounded-md bg-bg-band px-3.5 py-3 text-[13px] leading-[18px]">
+      <p className="min-w-0 flex-1 text-text-body">
+        로그인하면 폰을 바꿔도 기록이 남아요
+      </p>
+      <Link href="/login" className="shrink-0 font-bold text-brand-link">
+        로그인 <span aria-hidden>›</span>
+      </Link>
+    </div>
   );
 }
 
@@ -163,7 +202,7 @@ export function GoalCardUsing({
   summary?: RecentSummary;
 }) {
   return (
-    <GoalCard goal={goal}>
+    <GoalCard goal={goal} layout="using">
       {/* 라이브 영역은 늘 두고 안쪽만 바꾼다. 나중에 생긴 영역은 화면 읽기 프로그램이 읽지 않는다(LoadingState와 같은 이유) */}
       <span role="status" className="sr-only">
         {summary ? null : "불러오는 중"}

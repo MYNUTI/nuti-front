@@ -62,7 +62,7 @@ export default async function HomePage({ searchParams }: PageProps<"/home">) {
         ) : state === "error" ? (
           <RecentError />
         ) : (
-          <GoalCardEmpty goal={goal} />
+          <GoalCardEmpty goal={goal} loginPrompt={state !== "deleted"} />
         )}
         {state === "compare" && <CompareBanner left={FIXTURE_COMPARE_LEFT} />}
         <Band />

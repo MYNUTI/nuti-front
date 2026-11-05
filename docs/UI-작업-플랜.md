@@ -154,7 +154,7 @@ API 연결은 API 브랜치 08·09단계 이후에 붙인다. 그 전까지 화�
 
 ## 다른 브랜치와 겹치는 곳
 
-`feat/api`는 아직 `main`과 같다(2026-11-02). API 플랜에서 아래 파일을 고칠 예정이라 UI 작업과 겹친다.
+`feat/api`의 1차 작업은 `main`에 머지됐고(#2, `9d5febf`, 2026-11-05 기준) 이 브랜치에도 들어와 있다. API 플랜 다음 단계에서 아래 파일을 고칠 수 있어 UI 작업과 겹친다.
 
 - `src/app/home/page.tsx`, `src/app/product/[id]/page.tsx` — API 06단계에서 목 카탈로그 import 경로를 바꾸고, 상세 페이지에 서버 조회를 넣는다
 - `src/components/scan/scan-stage.tsx` — API 06단계에서 쿼리 키를 옮긴다
