@@ -1,7 +1,7 @@
 "use client";
 
 import { skipToken, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CtaButton } from "@/components/common/cta-button";
 import { BarcodeScan } from "@/components/scan/barcode-scan";
 import {
@@ -24,7 +24,7 @@ const GUIDE: Record<ScanState["stage"], string> = {
   manual: "아래에 바코드 번호를 입력해 주세요",
 };
 
-const MISS_MESSAGE: Record<ImageMiss, string> = {
+export const MISS_MESSAGE: Record<ImageMiss, string> = {
   "not-found":
     "사진에서 바코드를 찾지 못했어요. 다른 사진을 고르거나 직접 입력해 주세요",
   unreadable: "이미지를 읽지 못했어요. 다른 사진을 골라주세요",
@@ -36,10 +36,21 @@ const MISS_MESSAGE: Record<ImageMiss, string> = {
  * 카메라·앨범·직접 입력이 모두 같은 `handleGtin`으로 모인다. 상세는 내부 상품 ID로
  * 라우팅하므로 GTIN은 반드시 조회를 거쳐 결과 시트가 된다.
  */
-export function ScanStage() {
-  const [gtin, setGtin] = useState<Gtin | null>(null);
+export function ScanStage({
+  initialGtin = null,
+  initialManualOpen = false,
+  onPermissionDenied,
+}: {
+  /** 0-3x에서 사진으로 읽은 바코드. 들어오자마자 조회한다 */
+  initialGtin?: Gtin | null;
+  /** 0-3x 「바코드 번호 입력」으로 들어오면 입력 칸을 연 채로 시작한다 */
+  initialManualOpen?: boolean;
+  /** 카메라 권한이 거부되면 부른다(0-3x로 보내기) */
+  onPermissionDenied?: () => void;
+} = {}) {
+  const [gtin, setGtin] = useState<Gtin | null>(initialGtin);
   const [imageMiss, setImageMiss] = useState<ImageMiss | null>(null);
-  const [manualOpen, setManualOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(initialManualOpen);
 
   const lookup = useQuery({
     queryKey: ["product", gtin],
@@ -91,6 +102,11 @@ export function ScanStage() {
       >
         {(state) => (
           <>
+            {onPermissionDenied &&
+              state.stage === "photo" &&
+              state.reason === "permission-denied" && (
+                <OnMount run={onPermissionDenied} />
+              )}
             <p className="mt-4 text-[15px] text-muted-foreground">
               {GUIDE[state.stage]}
             </p>
@@ -139,4 +155,12 @@ export function ScanStage() {
       </BarcodeScan>
     </>
   );
+}
+
+/** 렌더 중에 부모 상태를 바꾸지 않도록, 그려진 뒤에 한 번 부른다 */
+function OnMount({ run }: { run: () => void }) {
+  useEffect(() => {
+    run();
+  }, [run]);
+  return null;
 }

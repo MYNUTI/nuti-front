@@ -21,7 +21,7 @@ async function decodeImage(file: File): Promise<string | null> {
 }
 
 /**
- * 고른 이미지에서 바코드를 한 번 읽는 버튼.
+ * 고른 이미지에서 바코드를 한 번 읽는다. 버튼 모양은 쓰는 쪽이 정하도록 숨긴 input과 여는 함수만 준다.
  *
  * `capture`를 붙이지 않는다 — 붙이면 카메라 앱이 바로 열려 앨범을 고를 수 없다. 없으면
  * 시스템 선택기가 "사진 찍기"와 "라이브러리에서 선택"을 모두 제공한다.
@@ -32,18 +32,12 @@ async function decodeImage(file: File): Promise<string | null> {
  * 못 찾아도 다른 입력 방법으로 넘기지 않는다. 다시 고르면 해결되는 경우가 많으므로
  * 결과만 알린다.
  */
-export function ScanImageInput({
+export function useImageBarcode({
   onGtin,
   onMiss,
-  disabled,
-  className,
-  children,
 }: {
   onGtin: (gtin: Gtin) => void;
   onMiss: (reason: ImageMiss) => void;
-  disabled?: boolean;
-  className?: string;
-  children: React.ReactNode;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [reading, setReading] = useState(false);
@@ -68,26 +62,49 @@ export function ScanImageInput({
     else onMiss("not-found");
   };
 
+  const input = (
+    <input
+      ref={inputRef}
+      type="file"
+      accept="image/*"
+      hidden
+      onChange={(event) => {
+        const file = event.target.files?.[0];
+        // 같은 파일을 다시 골라도 change가 발생하도록 비운다.
+        event.target.value = "";
+        if (file) void handleFile(file);
+      }}
+    />
+  );
+
+  return { input, open: () => inputRef.current?.click(), reading };
+}
+
+/** 임시 스캔 화면용 버튼. 3-1을 v3로 다시 만들면 useImageBarcode만 남긴다 */
+export function ScanImageInput({
+  onGtin,
+  onMiss,
+  disabled,
+  className,
+  children,
+}: {
+  onGtin: (gtin: Gtin) => void;
+  onMiss: (reason: ImageMiss) => void;
+  disabled?: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const { input, open, reading } = useImageBarcode({ onGtin, onMiss });
+
   return (
     <>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        hidden
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          // 같은 파일을 다시 골라도 change가 발생하도록 비운다.
-          event.target.value = "";
-          if (file) void handleFile(file);
-        }}
-      />
+      {input}
       <CtaButton
         type="button"
         tone="secondary"
         className={className}
         disabled={disabled || reading}
-        onClick={() => inputRef.current?.click()}
+        onClick={open}
       >
         {reading ? "읽는 중…" : children}
       </CtaButton>
