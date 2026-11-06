@@ -44,12 +44,15 @@ export const MISS_MESSAGE: Record<ImageMiss, string> = {
 export function ScanStage({
   initialGtin = null,
   initialManualOpen = false,
+  cameraOff = false,
   onPermissionDenied,
 }: {
   /** 0-3x에서 사진으로 읽은 바코드. 들어오자마자 조회한다 */
   initialGtin?: Gtin | null;
   /** 0-3x 「바코드 번호 입력」으로 들어오면 입력 칸을 연 채로 시작한다 */
   initialManualOpen?: boolean;
+  /** 카메라를 열지 않는다(PC·앱 안 브라우저에서 사진·번호로 찾을 때) */
+  cameraOff?: boolean;
   /** 카메라 권한이 거부되면 부른다(0-3x로 보내기) */
   onPermissionDenied?: () => void;
 } = {}) {
@@ -123,6 +126,7 @@ export function ScanStage({
     <div className="flex h-dvh flex-col bg-bg-dark pt-safe">
       <BarcodeScan
         className="flex-1"
+        cameraOff={cameraOff}
         onGtin={handleGtin}
         overlay={(state) => (
           <>

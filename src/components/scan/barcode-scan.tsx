@@ -30,6 +30,8 @@ export type BarcodeScanProps = {
    * 안내 문장이 단계마다 달라 단계를 넘겨준다.
    */
   overlay?: React.ReactNode | ((state: ScanState) => React.ReactNode);
+  /** 카메라를 열지 않는다(PC·앱 안 브라우저에서 사진·번호로 찾을 때). 사진 읽기용 WASM만 준비한다 */
+  cameraOff?: boolean;
   className?: string;
 };
 
@@ -45,6 +47,7 @@ export function BarcodeScan({
   onGtin,
   children,
   overlay,
+  cameraOff = false,
   className,
 }: BarcodeScanProps) {
   const [state, dispatch] = useReducer(reduce, initialState);
@@ -80,6 +83,11 @@ export function BarcodeScan({
         return;
       }
 
+      if (cameraOff) {
+        if (!cancelled) dispatch({ type: "CAMERA_ERROR", kind: "no-camera" });
+        return;
+      }
+
       try {
         const lens = await pickMainLens();
         if (!cancelled) dispatch({ type: "LENS_RESOLVED", lens });
@@ -93,7 +101,7 @@ export function BarcodeScan({
     return () => {
       cancelled = true;
     };
-  }, [probing, blocked, attempt]);
+  }, [probing, blocked, attempt, cameraOff]);
 
   return (
     <>

@@ -1,7 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { detectCameraPlace } from "@/components/scan/camera-place";
 import { ScanStage } from "@/components/scan/scan-stage";
 import type { Gtin } from "@/lib/scan/types";
 
@@ -13,11 +15,13 @@ import { CameraPermission } from "./camera-permission";
  *   허용됨 → 3-1 스캔 · 거부됨 → 0-3x · 아직 안 물어봄·알 수 없음 → 0-3 권한 안내
  * 권한 창은 스캐너가 카메라를 열 때(getUserMedia) 뜬다. 그래서 「카메라 허용하기」는 스캐너를 띄우기만 하고,
  * 거기서 거부하면 스캐너가 알려 0-3x로 간다.
+ * 그보다 먼저 카메라를 못 여는 곳(앱 안 브라우저·PC)이면 홈으로 보내 안내 시트를 띄운다.
+ * 그 시트에서 사진·번호로 찾으면 ?gtin=·?manual=1로 다시 들어와 카메라 없이 결과를 보인다.
  */
 type Step =
   | { name: "checking" | "ask" | "denied" | "scan" }
   /** 0-3x의 카메라 없이 찾기. 카메라가 꺼진 채로 스캔 화면의 사진·번호 입력을 쓴다 */
-  | { name: "no-camera"; gtin?: Gtin; manual?: boolean };
+  | { name: "no-camera"; gtin?: Gtin; manual?: boolean; cameraOff?: boolean };
 
 function queryCamera(): Promise<PermissionState | "unknown"> {
   // permissions.query가 없거나 "camera"를 모르는 브라우저는 알 수 없음으로 둔다
@@ -30,10 +34,28 @@ function queryCamera(): Promise<PermissionState | "unknown"> {
   );
 }
 
-export function ScanEntry() {
-  const [step, setStep] = useState<Step>({ name: "checking" });
+export function ScanEntry({
+  gtin,
+  manual = false,
+}: {
+  /** 카메라를 못 여는 곳 시트에서 사진으로 읽은 바코드 */
+  gtin?: Gtin;
+  /** 카메라를 못 여는 곳 시트의 「바코드 번호 입력」 */
+  manual?: boolean;
+}) {
+  const router = useRouter();
+  const [step, setStep] = useState<Step>(
+    gtin || manual
+      ? { name: "no-camera", gtin, manual, cameraOff: true }
+      : { name: "checking" },
+  );
 
   useEffect(() => {
+    if (step.name !== "checking") return;
+    if (detectCameraPlace().kind !== "ok") {
+      router.replace("/home?sheet=no-camera");
+      return;
+    }
     let cancelled = false;
     void queryCamera().then((state) => {
       if (cancelled) return;
@@ -45,7 +67,7 @@ export function ScanEntry() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [step.name, router]);
 
   const retry = () => {
     // 디자인 메모: 아직 꺼져 있으면 그대로. 거부로 확인될 때만 머물고, 나머지는 스캐너가 다시 확인한다
@@ -76,6 +98,7 @@ export function ScanEntry() {
           <ScanStage
             initialGtin={step.name === "no-camera" ? step.gtin : null}
             initialManualOpen={step.name === "no-camera" && step.manual}
+            cameraOff={step.name === "no-camera" && step.cameraOff}
             onPermissionDenied={
               step.name === "scan"
                 ? () => setStep({ name: "denied" })
