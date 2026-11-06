@@ -8,7 +8,6 @@ import { pickMainLens } from "@/lib/scan/lens";
 import {
   initialState,
   reduce,
-  STUCK_TIMEOUT_MS,
   type CameraUnavailableReason,
   type ScanEvent,
   type ScanState,
@@ -31,8 +30,6 @@ export type BarcodeScanProps = {
    * 안내 문장이 단계마다 달라 단계를 넘겨준다.
    */
   overlay?: React.ReactNode | ((state: ScanState) => React.ReactNode);
-  /** 결과 시트가 떠 있는지. 떠 있으면 "잘 안 잡히면" 안내를 띄우지 않는다 */
-  showingResult?: boolean;
   className?: string;
 };
 
@@ -48,7 +45,6 @@ export function BarcodeScan({
   onGtin,
   children,
   overlay,
-  showingResult = false,
   className,
 }: BarcodeScanProps) {
   const [state, dispatch] = useReducer(reduce, initialState);
@@ -109,7 +105,6 @@ export function BarcodeScan({
           onRetry={retry}
           onGtin={onGtin}
           overlay={overlayNode}
-          showingResult={showingResult}
           className={className}
         />
       ) : (
@@ -132,7 +127,6 @@ function CameraStage({
   onRetry,
   onGtin,
   overlay,
-  showingResult,
   className,
 }: {
   state: Extract<ScanState, { stage: "camera" }>;
@@ -140,40 +134,19 @@ function CameraStage({
   onRetry: () => void;
   onGtin: BarcodeScanProps["onGtin"];
   overlay?: React.ReactNode;
-  showingResult: boolean;
   className?: string;
 }) {
-  const [confirmed, setConfirmed] = useState(false);
-
+  // 오래 못 읽을 때(STUCK_TIMEOUT)는 보내지 않는다. 3-1 화면이 디자인 메모의 시간으로 직접 센다
   const { ref } = useScanner({
     lens: state.lens,
-    onGtin: (gtin) => {
-      setConfirmed(true);
-      onGtin(gtin, "camera");
-    },
+    onGtin: (gtin) => onGtin(gtin, "camera"),
     onCameraError: (kind) => dispatch({ type: "CAMERA_ERROR", kind }),
   });
 
-  useEffect(() => {
-    // 결과가 이미 떠 있으면(카메라든 사진·직접 입력이든) "잘 안 잡히면" 안내는 거짓말이다.
-    if (confirmed || showingResult) return;
-    const timer = setTimeout(
-      () => dispatch({ type: "STUCK_TIMEOUT" }),
-      STUCK_TIMEOUT_MS,
-    );
-    return () => clearTimeout(timer);
-  }, [confirmed, showingResult, dispatch]);
-
   return (
     <ScanViewfinder videoRef={ref} className={className}>
-      {state.retryable === "in-use" ? (
+      {state.retryable === "in-use" && (
         <Notice onRetry={onRetry}>다른 앱이 카메라를 쓰고 있어요</Notice>
-      ) : (
-        state.stuck &&
-        !confirmed &&
-        !showingResult && (
-          <Notice>바코드가 잘 안 잡히면 다른 방법으로 입력해 주세요</Notice>
-        )
       )}
       {overlay}
     </ScanViewfinder>

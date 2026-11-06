@@ -1,7 +1,7 @@
 "use client";
 
 import { skipToken, useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import Link from "next/link";
 import { CtaButton } from "@/components/common/cta-button";
 import { Toast } from "@/components/common/toast";
@@ -13,12 +13,21 @@ import {
   type ImageMiss,
 } from "@/components/scan/scan-image-input";
 import { ScanManualSheet } from "@/components/scan/scan-manual-sheet";
+import { ScanMissSheet } from "@/components/scan/scan-miss-sheet";
 import {
   ScanMessageSheet,
   ScanResultSheet,
 } from "@/components/scan/scan-result-sheet";
 import { lookupProduct } from "@/lib/scan/lookup";
 import type { Gtin, ScanSource } from "@/lib/scan/types";
+
+/*
+ * 못 읽을 때의 시간 규칙(디자인 메모). 스캐너(lib/scan)의 15초 안내 대신 화면이 직접 센다.
+ *   10초 못 읽음(메모 8~10초) = 실패 1번 → 틀 아래 문장만 바뀜, 인식은 계속
+ *   20초 = 실패 2번 → 「바코드를 못 읽었을 때」 시트(메모 「2번 실패하거나 20초」가 같은 시점이 된다)
+ */
+const SLOW_AFTER_MS = 10_000;
+const MISS_AFTER_MS = 20_000;
 
 export const MISS_MESSAGE: Record<ImageMiss, string> = {
   "not-found":
@@ -48,6 +57,15 @@ export function ScanStage({
   const [imageMiss, setImageMiss] = useState<ImageMiss | null>(null);
   const [manualOpen, setManualOpen] = useState(initialManualOpen);
   const [missKey, setMissKey] = useState(0);
+  const [slow, setSlow] = useState(false);
+  const [missOpen, setMissOpen] = useState(false);
+  // 시트를 닫고 다시 비출 때마다 올려 시간을 처음부터 다시 센다
+  const [readRound, setReadRound] = useState(0);
+
+  const restartReading = () => {
+    setSlow(false);
+    setReadRound((n) => n + 1);
+  };
 
   const lookup = useQuery({
     queryKey: ["product", gtin],
@@ -57,6 +75,9 @@ export function ScanStage({
   const handleGtin = (value: Gtin, source: ScanSource) => {
     setGtin(value);
     setImageMiss(null);
+    setSlow(false);
+    // 못 읽음 시트 뒤에서도 카메라는 돈다. 읽었으면 실패 안내는 거짓이 된다
+    setMissOpen(false);
     // 카메라는 직접 입력 중에도 계속 돈다. 카메라가 다른 바코드를 잡았다고 쓰던 폼을
     // 닫으면 입력이 날아간다.
     if (source === "manual") setManualOpen(false);
@@ -103,7 +124,6 @@ export function ScanStage({
       <BarcodeScan
         className="flex-1"
         onGtin={handleGtin}
-        showingResult={gtin !== null}
         overlay={(state) => (
           <>
             {onPermissionDenied &&
@@ -125,10 +145,27 @@ export function ScanStage({
             />
             {state.stage === "camera" && (
               // 조준 틀(세로 160) 아래 20
-              <p className="absolute inset-x-0 top-[calc(50%+100px)] px-6 text-center text-body1 text-white">
-                바코드를 틀 안에 맞춰 주세요
+              <p
+                aria-live="polite"
+                className="absolute inset-x-0 top-[calc(50%+100px)] px-6 text-center text-body1 text-white"
+              >
+                {/* 다른 앱이 카메라를 쓰는 중이면 원인이 비추는 방법이 아니라서 바꾸지 않는다 */}
+                {slow && state.retryable === null
+                  ? "빛 반사가 심한 것 같아요. 조금 기울여서 다시 비춰 볼까요?"
+                  : "바코드를 틀 안에 맞춰 주세요"}
               </p>
             )}
+            {state.stage === "camera" &&
+              state.retryable === null &&
+              gtin === null &&
+              !manualOpen &&
+              !missOpen && (
+                <ReadTimer
+                  key={readRound}
+                  onSlow={() => setSlow(true)}
+                  onMiss={() => setMissOpen(true)}
+                />
+              )}
             {renderSheet()}
           </>
         )}
@@ -159,10 +196,25 @@ export function ScanStage({
         )}
       </BarcodeScan>
 
+      <ScanMissSheet
+        open={missOpen}
+        onOpenChange={(open) => {
+          setMissOpen(open);
+          if (!open) restartReading();
+        }}
+        onManual={() => {
+          setMissOpen(false);
+          setManualOpen(true);
+        }}
+      />
+
       {/* 3-1(숫자로 입력). 디자인 메모: ✕ → 3-1 스캔 */}
       <ScanManualSheet
         open={manualOpen}
-        onOpenChange={setManualOpen}
+        onOpenChange={(open) => {
+          setManualOpen(open);
+          if (!open) restartReading();
+        }}
         onSubmit={(value) => handleGtin(value, "manual")}
       />
 
@@ -226,5 +278,28 @@ function OnMount({ run }: { run: () => void }) {
   useEffect(() => {
     run();
   }, [run]);
+  return null;
+}
+
+/** 카메라로 읽는 동안만 그려 시간을 센다. 그려지지 않으면(결과·시트가 떠 있으면) 멈춘다 */
+function ReadTimer({
+  onSlow,
+  onMiss,
+}: {
+  onSlow: () => void;
+  onMiss: () => void;
+}) {
+  // 콜백이 그릴 때마다 새로 만들어져도 시간을 다시 세지 않게 한다
+  const slowEvent = useEffectEvent(onSlow);
+  const missEvent = useEffectEvent(onMiss);
+
+  useEffect(() => {
+    const slow = setTimeout(() => slowEvent(), SLOW_AFTER_MS);
+    const miss = setTimeout(() => missEvent(), MISS_AFTER_MS);
+    return () => {
+      clearTimeout(slow);
+      clearTimeout(miss);
+    };
+  }, []);
   return null;
 }
