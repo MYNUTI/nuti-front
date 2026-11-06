@@ -5,9 +5,6 @@ import { toGtin14 } from "@/lib/scan/gtin";
 import type { Gtin } from "@/lib/scan/types";
 import { getPhotoDetector } from "@/lib/scan/wasm";
 
-/** 이미지에서 GTIN을 얻지 못한 이유. 문구는 호출자가 정한다. */
-export type ImageMiss = "not-found" | "unreadable";
-
 async function decodeImage(file: File): Promise<string | null> {
   const detector = await getPhotoDetector();
   const bitmap = await createImageBitmap(file);
@@ -29,14 +26,14 @@ async function decodeImage(file: File): Promise<string | null> {
  * 확정은 라이브 스트림에만 필요하다.
  *
  * 못 찾아도 다른 입력 방법으로 넘기지 않는다. 다시 고르면 해결되는 경우가 많으므로
- * 결과만 알린다.
+ * 결과만 알린다. 바코드가 없는 사진과 열지 못한 사진은 화면에서 같은 안내라(3-1 사진 못 읽음) 이유를 넘기지 않는다.
  */
 export function useImageBarcode({
   onGtin,
   onMiss,
 }: {
   onGtin: (gtin: Gtin) => void;
-  onMiss: (reason: ImageMiss) => void;
+  onMiss: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [reading, setReading] = useState(false);
@@ -48,7 +45,7 @@ export function useImageBarcode({
       raw = await decodeImage(file);
     } catch {
       // WASM 로드 실패, 브라우저가 디코딩 못 하는 이미지 형식 등
-      onMiss("unreadable");
+      onMiss();
       return;
     } finally {
       setReading(false);
@@ -58,7 +55,7 @@ export function useImageBarcode({
     // 사용자가 방금 한 명시적 행동이고, 선택기에서 돌아온 직후 카메라에 우연히 잡힌 값보다
     // 의도에 가깝다.
     if (raw) onGtin(toGtin14(raw));
-    else onMiss("not-found");
+    else onMiss();
   };
 
   const input = (

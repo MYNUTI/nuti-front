@@ -5,16 +5,15 @@ import { useEffect, useEffectEvent, useState } from "react";
 import Link from "next/link";
 import { CtaButton } from "@/components/common/cta-button";
 import { Skeleton } from "@/components/common/skeleton";
-import { Toast } from "@/components/common/toast";
 import { TopBar, TopBarButton } from "@/components/common/top-bar";
 import { IconClose, IconHash, IconImage, IconSearch } from "@/components/icons";
 import { BarcodeScan } from "@/components/scan/barcode-scan";
-import {
-  useImageBarcode,
-  type ImageMiss,
-} from "@/components/scan/scan-image-input";
+import { useImageBarcode } from "@/components/scan/scan-image-input";
 import { ScanManualSheet } from "@/components/scan/scan-manual-sheet";
-import { ScanMissSheet } from "@/components/scan/scan-miss-sheet";
+import {
+  PhotoMissSheet,
+  ScanMissSheet,
+} from "@/components/scan/scan-miss-sheet";
 import {
   ScanMessageSheet,
   ScanResultSheet,
@@ -30,12 +29,6 @@ import { cn } from "@/lib/utils";
  */
 const SLOW_AFTER_MS = 10_000;
 const MISS_AFTER_MS = 20_000;
-
-export const MISS_MESSAGE: Record<ImageMiss, string> = {
-  "not-found":
-    "사진에서 바코드를 찾지 못했어요. 다른 사진을 고르거나 직접 입력해 주세요",
-  unreadable: "이미지를 읽지 못했어요. 다른 사진을 골라주세요",
-};
 
 /**
  * 3-1 스캔. 화면 전체가 카메라이고 아래에 버튼 3개(사진 올리기·바코드 번호 입력·이름으로 찾기).
@@ -61,9 +54,8 @@ export function ScanStage({
   const [gtin, setGtin] = useState<Gtin | null>(initialGtin);
   // 「바코드를 읽었어요」는 카메라·사진으로 읽었을 때만 맞다. 0-3x·홈 시트에서 넘어온 바코드는 사진으로 읽은 것이다
   const [source, setSource] = useState<ScanSource>("photo");
-  const [imageMiss, setImageMiss] = useState<ImageMiss | null>(null);
+  const [photoMissOpen, setPhotoMissOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(initialManualOpen);
-  const [missKey, setMissKey] = useState(0);
   const [slow, setSlow] = useState(false);
   const [missOpen, setMissOpen] = useState(false);
   // 시트를 닫고 다시 비출 때마다 올려 시간을 처음부터 다시 센다
@@ -82,7 +74,7 @@ export function ScanStage({
   const handleGtin = (value: Gtin, source: ScanSource) => {
     setGtin(value);
     setSource(source);
-    setImageMiss(null);
+    setPhotoMissOpen(false);
     setSlow(false);
     // 못 읽음 시트 뒤에서도 카메라는 돈다. 읽었으면 실패 안내는 거짓이 된다
     setMissOpen(false);
@@ -123,9 +115,10 @@ export function ScanStage({
 
   const photo = useImageBarcode({
     onGtin: (value) => handleGtin(value, "photo"),
-    onMiss: (reason) => {
-      setImageMiss(reason);
-      setMissKey((k) => k + 1);
+    onMiss: () => {
+      // 고르는 사이 20초 못 읽음 시트가 떴을 수 있다. 시트 위에 시트를 띄우지 않는다
+      setMissOpen(false);
+      setPhotoMissOpen(true);
     },
   });
 
@@ -172,7 +165,8 @@ export function ScanStage({
               state.retryable === null &&
               gtin === null &&
               !manualOpen &&
-              !missOpen && (
+              !missOpen &&
+              !photoMissOpen && (
                 <ReadTimer
                   key={readRound}
                   onSlow={() => setSlow(true)}
@@ -237,15 +231,22 @@ export function ScanStage({
         onSubmit={(value) => handleGtin(value, "manual")}
       />
 
-      {/* 「사진에서 바코드를 못 읽었을 때」 상태를 만들기 전까지 알림 띠로 알린다 */}
-      {imageMiss && (
-        <Toast
-          key={missKey}
-          // 하단 탭 대신 아래 버튼 줄(186 + safe area)이 있어 그 위 8에 띄운다
-          className="bottom-[calc(194px+var(--safe-bottom))]"
-          message={MISS_MESSAGE[imageMiss]}
-        />
-      )}
+      <PhotoMissSheet
+        open={photoMissOpen}
+        onOpenChange={(open) => {
+          setPhotoMissOpen(open);
+          if (!open) restartReading();
+        }}
+        onManual={() => {
+          setPhotoMissOpen(false);
+          setManualOpen(true);
+        }}
+        onPickAgain={() => {
+          setPhotoMissOpen(false);
+          restartReading();
+          photo.open();
+        }}
+      />
     </div>
   );
 }

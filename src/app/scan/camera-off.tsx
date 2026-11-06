@@ -9,8 +9,7 @@ import { StepList } from "@/components/common/step-list";
 import { TopBar, TopBarButton } from "@/components/common/top-bar";
 import { IconClose } from "@/components/icons";
 import { useImageBarcode } from "@/components/scan/scan-image-input";
-import { MISS_MESSAGE } from "@/components/scan/scan-stage";
-import type { ImageMiss } from "@/components/scan/scan-image-input";
+import { PhotoMissSheet } from "@/components/scan/scan-miss-sheet";
 import type { Gtin } from "@/lib/scan/types";
 
 type Browser = "chrome" | "safari" | "samsung";
@@ -60,8 +59,11 @@ export function CameraOff({
   onManual: () => void;
 }) {
   const [browser, setBrowser] = useState<Browser>("chrome");
-  const [miss, setMiss] = useState<ImageMiss | null>(null);
-  const photo = useImageBarcode({ onGtin: onPhotoGtin, onMiss: setMiss });
+  const [missOpen, setMissOpen] = useState(false);
+  const photo = useImageBarcode({
+    onGtin: onPhotoGtin,
+    onMiss: () => setMissOpen(true),
+  });
 
   return (
     <div className="flex min-h-dvh flex-col bg-bg-page pt-safe pb-[max(var(--safe-bottom),12px)]">
@@ -118,22 +120,30 @@ export function CameraOff({
             type="button"
             kind="secondary"
             disabled={photo.reading}
-            onClick={() => {
-              setMiss(null);
-              photo.open();
-            }}
+            onClick={photo.open}
           >
             {photo.reading ? "읽는 중…" : "바코드 사진 올리기"}
           </Button>
           <Button kind="secondary" asChild>
             <Link href="/search">이름으로 찾기</Link>
           </Button>
-          {/* 사진에서 못 읽었을 때 화면(3-1 상태)을 만들기 전까지 문장만 알린다 */}
-          <p role="status" className="text-body2 text-text-sub">
-            {miss ? MISS_MESSAGE[miss] : "사진은 바코드 숫자를 읽는 데만 써요."}
+          <p className="text-body2 text-text-sub">
+            사진은 바코드 숫자를 읽는 데만 써요.
           </p>
         </section>
       </main>
+      <PhotoMissSheet
+        open={missOpen}
+        onOpenChange={setMissOpen}
+        onManual={() => {
+          setMissOpen(false);
+          onManual();
+        }}
+        onPickAgain={() => {
+          setMissOpen(false);
+          photo.open();
+        }}
+      />
     </div>
   );
 }
