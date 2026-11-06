@@ -9,6 +9,10 @@ import { TopBar, TopBarButton } from "@/components/common/top-bar";
 import { IconClose, IconHash, IconImage, IconSearch } from "@/components/icons";
 import { BarcodeScan } from "@/components/scan/barcode-scan";
 import { useImageBarcode } from "@/components/scan/scan-image-input";
+import {
+  FIXTURE_SCAN_EXTRA,
+  FIXTURE_SCAN_GOAL_LABEL,
+} from "@/components/scan/_fixtures";
 import { ScanManualSheet } from "@/components/scan/scan-manual-sheet";
 import {
   PhotoMissSheet,
@@ -17,9 +21,11 @@ import {
 import {
   ScanMessageSheet,
   ScanResultSheet,
+  type ScanSheetProduct,
 } from "@/components/scan/scan-result-sheet";
 import { lookupProduct } from "@/lib/scan/lookup";
-import type { Gtin, ScanSource } from "@/lib/scan/types";
+import type { ScanState } from "@/lib/scan/machine";
+import type { Gtin, ScanResult, ScanSource } from "@/lib/scan/types";
 import { cn } from "@/lib/utils";
 
 /*
@@ -85,6 +91,10 @@ export function ScanStage({
 
   // 3-1(읽힌 뒤 찾는 중). 디자인 메모: 결과가 오면 바로 3-2. 짧은 진동은 스캐너가 읽은 순간 낸다(use-scanner)
   const finding = gtin !== null && lookup.isPending;
+  const found =
+    lookup.data?.status === "found" ? toSheetProduct(lookup.data.result) : null;
+  // 비교함 담기는 아직 화면 안 상태만 둔다(UI 플랜 「데이터」: 서버 변경이 필요한 동작)
+  const [addedIds, setAddedIds] = useState<ReadonlySet<string>>(new Set());
 
   const renderSheet = () => {
     // 찾는 중 시트는 화면 아래에 따로 그린다(ScanFindingSheet)
@@ -110,7 +120,8 @@ export function ScanStage({
         />
       );
     }
-    return <ScanResultSheet result={lookup.data.result} />;
+    // 결과 시트는 화면 아래에 따로 그린다(ScanResultSheet)
+    return null;
   };
 
   const photo = useImageBarcode({
@@ -124,6 +135,10 @@ export function ScanStage({
 
   return (
     <div className="flex h-dvh flex-col bg-bg-dark pt-safe">
+      {/* 결과 시트는 사용자가 닫는 시트가 아니라 모달이 아니다. 어떤 제품인지는 이 영역으로 알린다(영역은 늘 둔다) */}
+      <p role="status" className="sr-only">
+        {found && `${found.name}, ${found.score}점`}
+      </p>
       <BarcodeScan
         className="flex-1"
         cameraOff={cameraOff}
@@ -151,14 +166,20 @@ export function ScanStage({
               // 조준 틀(세로 160) 아래 20
               <p
                 aria-live="polite"
-                className="absolute inset-x-0 top-[calc(50%+100px)] px-6 text-center text-body1 text-white"
+                // 결과가 떠 있을 때 문장은 디자인에서 한 단계 작은 글자다
+                className={cn(
+                  "absolute inset-x-0 top-[calc(50%+100px)] px-6 text-center text-white",
+                  found ? "text-body2" : "text-body1",
+                )}
               >
                 {/* 다른 앱이 카메라를 쓰는 중이면 원인이 비추는 방법이 아니라서 바꾸지 않는다 */}
-                {finding && source !== "manual"
-                  ? "바코드를 읽었어요"
-                  : slow && state.retryable === null
-                    ? "빛 반사가 심한 것 같아요. 조금 기울여서 다시 비춰 볼까요?"
-                    : "바코드를 틀 안에 맞춰 주세요"}
+                {found
+                  ? "다음 바코드를 비추면 결과가 바로 바뀌어요"
+                  : finding && source !== "manual"
+                    ? "바코드를 읽었어요"
+                    : slow && state.retryable === null
+                      ? "빛 반사가 심한 것 같아요. 조금 기울여서 다시 비춰 볼까요?"
+                      : "바코드를 틀 안에 맞춰 주세요"}
               </p>
             )}
             {state.stage === "camera" &&
@@ -174,6 +195,16 @@ export function ScanStage({
                 />
               )}
             {renderSheet()}
+            {found && (
+              <ScanResultSheet
+                product={found}
+                // 카메라가 읽고 있을 때만 디자인대로 화면 아래에 붙인다. 카메라가 안 읽는 단계(사진·번호·점유 중)에서는
+                // 다른 제품을 더 찾을 아래 버튼 줄을 가리지 않게 카메라 자리 안에 띄운다(UI 플랜 「남은 질문」 6)
+                placement={cameraReading(state) ? "bottom" : "inline"}
+                added={addedIds.has(found.id)}
+                onAdd={() => setAddedIds((ids) => new Set(ids).add(found.id))}
+              />
+            )}
           </>
         )}
       >
@@ -181,10 +212,10 @@ export function ScanStage({
           <nav
             aria-label="다른 방법으로 찾기"
             // 디자인 186은 홈 인디케이터(34)를 뺀 높이라 기기 safe area를 더한다
-            // 찾는 동안에는 디자인처럼 버튼 줄을 비워 두고 그 위에 찾는 중 시트를 올린다(자리는 남긴다)
+            // 찾는 중·결과 시트가 떠 있으면 디자인처럼 버튼 줄을 비워 두고 그 위에 시트를 올린다(자리는 남긴다)
             className={cn(
               "flex h-[calc(186px+var(--safe-bottom))] shrink-0 items-start justify-between px-10 pt-[46px] pb-safe",
-              finding && "invisible",
+              (finding || (found && cameraReading(state))) && "invisible",
             )}
           >
             {photo.input}
@@ -339,4 +370,28 @@ function ScanFindingSheet() {
       <Skeleton className="h-3.5 w-60 rounded-[7px]" />
     </div>
   );
+}
+
+/** 카메라가 실제로 바코드를 읽는 중인지. 사진·번호 단계나 다른 앱이 카메라를 쓰는 중이면 아니다 */
+function cameraReading(state: ScanState) {
+  return state.stage === "camera" && state.retryable === null;
+}
+
+// 목 등급 A–E를 점수 구간 1(잘 맞음)~5(안 맞음)로. 실제 API도 등급 글자를 주므로 같은 대응을 쓴다
+const GRADE_BAND = { A: 1, B: 2, C: 3, D: 4, E: 5 } as const;
+
+/** 목 조회 결과 → 결과 시트 모양. 목에 없는 값은 fixture로 채운다(_fixtures.ts) */
+function toSheetProduct(result: ScanResult): ScanSheetProduct {
+  const extra = FIXTURE_SCAN_EXTRA[result.id];
+  return {
+    id: result.id,
+    name: result.name,
+    brand: extra?.brand ?? null,
+    imageUrl: extra?.imageUrl ?? null,
+    score: extra?.score ?? 0,
+    band: GRADE_BAND[result.grade],
+    rank: extra?.rank ?? null,
+    goalLabel: FIXTURE_SCAN_GOAL_LABEL,
+    summary: result.summary,
+  };
 }
