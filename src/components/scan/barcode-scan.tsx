@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useReducer, useState } from "react";
+import { CameraFrame } from "@/components/common/camera-frame";
 import { ScanViewfinder } from "@/components/scan/scan-viewfinder";
 import { toCameraErrorKind } from "@/lib/scan/errors";
 import { pickMainLens } from "@/lib/scan/lens";
 import {
   initialState,
   reduce,
-  STUCK_TIMEOUT_MS,
   type CameraUnavailableReason,
   type ScanEvent,
   type ScanState,
@@ -15,6 +15,7 @@ import {
 import type { Gtin, ScanSource } from "@/lib/scan/types";
 import { useScanner } from "@/lib/scan/use-scanner";
 import { ensureWasmReady } from "@/lib/scan/wasm";
+import { cn } from "@/lib/utils";
 
 export type BarcodeScanProps = {
   onGtin: (gtin: Gtin, source: ScanSource) => void;
@@ -24,8 +25,13 @@ export type BarcodeScanProps = {
    * 버튼 상태가 스캐너 상태에 따라 달라져야 하기 때문이다.
    */
   children?: (state: ScanState) => React.ReactNode;
-  /** 뷰파인더 위에 겹쳐 그린다(결과 시트). 카메라 단계가 아니어도 같은 자리에 둔다. */
-  overlay?: React.ReactNode;
+  /**
+   * 뷰파인더 위에 겹쳐 그린다(상단 막대·안내 문장·결과 시트). 카메라 단계가 아니어도 같은 자리에 둔다.
+   * 안내 문장이 단계마다 달라 단계를 넘겨준다.
+   */
+  overlay?: React.ReactNode | ((state: ScanState) => React.ReactNode);
+  /** 카메라를 열지 않는다(PC·앱 안 브라우저에서 사진·번호로 찾을 때). 사진 읽기용 WASM만 준비한다 */
+  cameraOff?: boolean;
   className?: string;
 };
 
@@ -41,9 +47,11 @@ export function BarcodeScan({
   onGtin,
   children,
   overlay,
+  cameraOff = false,
   className,
 }: BarcodeScanProps) {
   const [state, dispatch] = useReducer(reduce, initialState);
+  const overlayNode = typeof overlay === "function" ? overlay(state) : overlay;
   /**
    * 재시도할 때마다 올린다. `CameraStage`의 key로 써서 **remount**를 강제한다 —
    * `useZxing`은 옵션이 바뀔 때만 스트림을 다시 여는데, 점유 에러 복구는 바뀌는 옵션이
@@ -75,6 +83,11 @@ export function BarcodeScan({
         return;
       }
 
+      if (cameraOff) {
+        if (!cancelled) dispatch({ type: "CAMERA_ERROR", kind: "no-camera" });
+        return;
+      }
+
       try {
         const lens = await pickMainLens();
         if (!cancelled) dispatch({ type: "LENS_RESOLVED", lens });
@@ -88,7 +101,7 @@ export function BarcodeScan({
     return () => {
       cancelled = true;
     };
-  }, [probing, blocked, attempt]);
+  }, [probing, blocked, attempt, cameraOff]);
 
   return (
     <>
@@ -99,14 +112,14 @@ export function BarcodeScan({
           dispatch={dispatch}
           onRetry={retry}
           onGtin={onGtin}
-          overlay={overlay}
+          overlay={overlayNode}
           className={className}
         />
       ) : (
         <Placeholder
           state={state}
           onRetry={retry}
-          overlay={overlay}
+          overlay={overlayNode}
           className={className}
         />
       )}
@@ -131,38 +144,17 @@ function CameraStage({
   overlay?: React.ReactNode;
   className?: string;
 }) {
-  const [confirmed, setConfirmed] = useState(false);
-  const showingResult = Boolean(overlay);
-
+  // 오래 못 읽을 때(STUCK_TIMEOUT)는 보내지 않는다. 3-1 화면이 디자인 메모의 시간으로 직접 센다
   const { ref } = useScanner({
     lens: state.lens,
-    onGtin: (gtin) => {
-      setConfirmed(true);
-      onGtin(gtin, "camera");
-    },
+    onGtin: (gtin) => onGtin(gtin, "camera"),
     onCameraError: (kind) => dispatch({ type: "CAMERA_ERROR", kind }),
   });
 
-  useEffect(() => {
-    // 결과가 이미 떠 있으면(카메라든 사진·직접 입력이든) "잘 안 잡히면" 안내는 거짓말이다.
-    if (confirmed || showingResult) return;
-    const timer = setTimeout(
-      () => dispatch({ type: "STUCK_TIMEOUT" }),
-      STUCK_TIMEOUT_MS,
-    );
-    return () => clearTimeout(timer);
-  }, [confirmed, showingResult, dispatch]);
-
   return (
     <ScanViewfinder videoRef={ref} className={className}>
-      {state.retryable === "in-use" ? (
+      {state.retryable === "in-use" && (
         <Notice onRetry={onRetry}>다른 앱이 카메라를 쓰고 있어요</Notice>
-      ) : (
-        state.stuck &&
-        !confirmed &&
-        !showingResult && (
-          <Notice>바코드가 잘 안 잡히면 다른 방법으로 입력해 주세요</Notice>
-        )
       )}
       {overlay}
     </ScanViewfinder>
@@ -200,19 +192,21 @@ function Placeholder({
         : "이 환경에서는 바코드를 읽을 수 없어요";
 
   return (
-    <div
-      className={`relative flex w-full flex-col items-center justify-center gap-3 rounded-3xl bg-muted px-6 text-center ${className ?? ""}`}
-    >
-      <p className="text-[15px] text-muted-foreground">{message}</p>
-      {state.stage === "probing" && state.retryable === "in-use" && (
-        <button
-          type="button"
-          onClick={onRetry}
-          className="text-[15px] font-bold underline"
-        >
-          다시 시도
-        </button>
-      )}
+    <div className={cn("relative w-full overflow-hidden", className)}>
+      <CameraFrame className="absolute inset-0" />
+      {/* 안내 문장과 같은 자리(조준 틀 아래 20). 단계별 화면은 3-1 상태 작업에서 바꾼다 */}
+      <div className="absolute inset-x-0 top-[calc(50%+100px)] flex flex-col items-center gap-3 px-6 text-center text-body1 text-white">
+        <p>{message}</p>
+        {state.stage === "probing" && state.retryable === "in-use" && (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="font-bold underline"
+          >
+            다시 시도
+          </button>
+        )}
+      </div>
       {overlay}
     </div>
   );
@@ -227,7 +221,7 @@ function Notice({
   onRetry?: () => void;
 }) {
   return (
-    <div className="absolute inset-x-4 top-4 flex items-center gap-2 rounded-2xl bg-black/70 px-4 py-3 text-[13px] text-white">
+    <div className="absolute inset-x-4 top-15 flex items-center gap-2 rounded-2xl bg-black/70 px-4 py-3 text-[13px] text-white">
       <span className="flex-1">{children}</span>
       {onRetry && (
         <button type="button" onClick={onRetry} className="font-bold underline">

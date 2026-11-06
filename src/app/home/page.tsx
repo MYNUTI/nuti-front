@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { SearchFieldLink } from "@/components/common/search-field";
 import { TabBar } from "@/components/common/tab-bar";
 import { Toast } from "@/components/common/toast";
+import { NoCameraSheet } from "@/components/scan/no-camera-sheet";
 
 import {
   FIXTURE_COMPARE_LEFT,
@@ -37,8 +38,9 @@ export default async function HomePage({ searchParams }: PageProps<"/home">) {
    *   ?state=compare — 사용 중 + 비교함 남음 안내
    *   ?state=guest — 로그인 안 함(최근 본 제품 1개 이상)
    *   ?state=deleted — 계정 삭제 뒤: 첫 방문 카드 + 알림 「계정을 삭제했어요」
+   * 미리보기가 아닌 값: ?sheet=no-camera — 스캔이 카메라를 못 여는 곳(앱 안 브라우저·PC)이라 보낸 안내 시트
    */
-  const { goal: goalParam, guide, state } = await searchParams;
+  const { goal: goalParam, guide, state, sheet } = await searchParams;
   const goal: Goal =
     goalParam === "muscle" || goalParam === "diet" ? goalParam : FIXTURE_GOAL;
 
@@ -77,6 +79,7 @@ export default async function HomePage({ searchParams }: PageProps<"/home">) {
       <TabBar />
       {guide === "1" && <HomeGuide goal={goal} />}
       {state === "deleted" && <Toast message="계정을 삭제했어요" />}
+      {sheet === "no-camera" && <NoCameraSheet closeHref="/home" />}
     </>
   );
 }
