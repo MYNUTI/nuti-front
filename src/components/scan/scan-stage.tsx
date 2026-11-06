@@ -4,6 +4,7 @@ import { skipToken, useQuery } from "@tanstack/react-query";
 import { useEffect, useEffectEvent, useState } from "react";
 import Link from "next/link";
 import { CtaButton } from "@/components/common/cta-button";
+import { Skeleton } from "@/components/common/skeleton";
 import { Toast } from "@/components/common/toast";
 import { TopBar, TopBarButton } from "@/components/common/top-bar";
 import { IconClose, IconHash, IconImage, IconSearch } from "@/components/icons";
@@ -20,6 +21,7 @@ import {
 } from "@/components/scan/scan-result-sheet";
 import { lookupProduct } from "@/lib/scan/lookup";
 import type { Gtin, ScanSource } from "@/lib/scan/types";
+import { cn } from "@/lib/utils";
 
 /*
  * 못 읽을 때의 시간 규칙(디자인 메모). 스캐너(lib/scan)의 15초 안내 대신 화면이 직접 센다.
@@ -57,6 +59,8 @@ export function ScanStage({
   onPermissionDenied?: () => void;
 } = {}) {
   const [gtin, setGtin] = useState<Gtin | null>(initialGtin);
+  // 「바코드를 읽었어요」는 카메라·사진으로 읽었을 때만 맞다. 0-3x·홈 시트에서 넘어온 바코드는 사진으로 읽은 것이다
+  const [source, setSource] = useState<ScanSource>("photo");
   const [imageMiss, setImageMiss] = useState<ImageMiss | null>(null);
   const [manualOpen, setManualOpen] = useState(initialManualOpen);
   const [missKey, setMissKey] = useState(0);
@@ -77,6 +81,7 @@ export function ScanStage({
 
   const handleGtin = (value: Gtin, source: ScanSource) => {
     setGtin(value);
+    setSource(source);
     setImageMiss(null);
     setSlow(false);
     // 못 읽음 시트 뒤에서도 카메라는 돈다. 읽었으면 실패 안내는 거짓이 된다
@@ -86,10 +91,12 @@ export function ScanStage({
     if (source === "manual") setManualOpen(false);
   };
 
+  // 3-1(읽힌 뒤 찾는 중). 디자인 메모: 결과가 오면 바로 3-2. 짧은 진동은 스캐너가 읽은 순간 낸다(use-scanner)
+  const finding = gtin !== null && lookup.isPending;
+
   const renderSheet = () => {
-    if (gtin === null) return null;
-    if (lookup.isPending)
-      return <ScanMessageSheet title="상품을 찾고 있어요" />;
+    // 찾는 중 시트는 화면 아래에 따로 그린다(ScanFindingSheet)
+    if (gtin === null || lookup.isPending) return null;
     if (lookup.isError) {
       return (
         <ScanMessageSheet
@@ -154,9 +161,11 @@ export function ScanStage({
                 className="absolute inset-x-0 top-[calc(50%+100px)] px-6 text-center text-body1 text-white"
               >
                 {/* 다른 앱이 카메라를 쓰는 중이면 원인이 비추는 방법이 아니라서 바꾸지 않는다 */}
-                {slow && state.retryable === null
-                  ? "빛 반사가 심한 것 같아요. 조금 기울여서 다시 비춰 볼까요?"
-                  : "바코드를 틀 안에 맞춰 주세요"}
+                {finding && source !== "manual"
+                  ? "바코드를 읽었어요"
+                  : slow && state.retryable === null
+                    ? "빛 반사가 심한 것 같아요. 조금 기울여서 다시 비춰 볼까요?"
+                    : "바코드를 틀 안에 맞춰 주세요"}
               </p>
             )}
             {state.stage === "camera" &&
@@ -178,7 +187,11 @@ export function ScanStage({
           <nav
             aria-label="다른 방법으로 찾기"
             // 디자인 186은 홈 인디케이터(34)를 뺀 높이라 기기 safe area를 더한다
-            className="flex h-[calc(186px+var(--safe-bottom))] shrink-0 items-start justify-between px-10 pt-[46px] pb-safe"
+            // 찾는 동안에는 디자인처럼 버튼 줄을 비워 두고 그 위에 찾는 중 시트를 올린다(자리는 남긴다)
+            className={cn(
+              "flex h-[calc(186px+var(--safe-bottom))] shrink-0 items-start justify-between px-10 pt-[46px] pb-safe",
+              finding && "invisible",
+            )}
           >
             {photo.input}
             <ScanAction
@@ -199,6 +212,8 @@ export function ScanStage({
           </nav>
         )}
       </BarcodeScan>
+
+      {finding && <ScanFindingSheet />}
 
       <ScanMissSheet
         open={missOpen}
@@ -306,4 +321,21 @@ function ReadTimer({
     };
   }, []);
   return null;
+}
+
+/**
+ * 3-1 스캔(읽힌 뒤 찾는 중). 아래 버튼 줄을 덮는 흰 시트에 제목과 회색 틀 두 줄.
+ * 사용자가 닫는 시트가 아니라 결과가 오면 바뀌는 자리라 모달로 띄우지 않는다.
+ */
+function ScanFindingSheet() {
+  return (
+    <div
+      role="status"
+      className="fixed-app bottom-0 z-40 flex flex-col gap-3 rounded-t-sheet bg-bg-page px-5 pt-6 pb-[calc(26px+max(var(--safe-bottom),34px))]"
+    >
+      <p className="text-body1-bold text-text-strong">제품을 찾고 있어요</p>
+      <Skeleton className="h-3.5 w-full rounded-[7px]" />
+      <Skeleton className="h-3.5 w-60 rounded-[7px]" />
+    </div>
+  );
 }
