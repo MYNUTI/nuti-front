@@ -4,7 +4,6 @@ import { skipToken, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CtaButton } from "@/components/common/cta-button";
-import { BottomSheet } from "@/components/common/sheet";
 import { Toast } from "@/components/common/toast";
 import { TopBar, TopBarButton } from "@/components/common/top-bar";
 import { IconClose, IconHash, IconImage, IconSearch } from "@/components/icons";
@@ -13,7 +12,7 @@ import {
   useImageBarcode,
   type ImageMiss,
 } from "@/components/scan/scan-image-input";
-import { ScanManualInput } from "@/components/scan/scan-manual-input";
+import { ScanManualSheet } from "@/components/scan/scan-manual-sheet";
 import {
   ScanMessageSheet,
   ScanResultSheet,
@@ -160,16 +159,12 @@ export function ScanStage({
         )}
       </BarcodeScan>
 
-      {/* 3-1(숫자로 입력) 시트를 만들기 전까지 예전 입력 폼을 시트에 담아 둔다 */}
-      <BottomSheet
+      {/* 3-1(숫자로 입력). 디자인 메모: ✕ → 3-1 스캔 */}
+      <ScanManualSheet
         open={manualOpen}
         onOpenChange={setManualOpen}
-        title="바코드 번호 입력"
-      >
-        <div className="px-5 pb-5">
-          <ScanManualInput onSubmit={(value) => handleGtin(value, "manual")} />
-        </div>
-      </BottomSheet>
+        onSubmit={(value) => handleGtin(value, "manual")}
+      />
 
       {/* 「사진에서 바코드를 못 읽었을 때」 상태를 만들기 전까지 알림 띠로 알린다 */}
       {imageMiss && (

@@ -20,12 +20,18 @@ export function BottomSheet({
   open,
   onOpenChange,
   title,
+  footer,
+  initialFocus,
   className,
   children,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: React.ReactNode;
+  /** 내용 아래 고정 줄(BottomCta). 있으면 기기 아래 여백은 그쪽이 맡는다 */
+  footer?: React.ReactNode;
+  /** 열릴 때 초점을 줄 요소(입력칸 등). 없으면 Radix가 첫 번째로 누를 수 있는 요소(닫기 버튼)에 준다 */
+  initialFocus?: React.RefObject<HTMLElement | null>;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -35,7 +41,12 @@ export function BottomSheet({
         <Dialog.Overlay className={overlayClass} />
         <Dialog.Content
           aria-describedby={undefined}
-          className={cn(contentClass, "pb-safe", className)}
+          className={cn(contentClass, !footer && "pb-safe", className)}
+          onOpenAutoFocus={(event) => {
+            if (!initialFocus?.current) return;
+            event.preventDefault();
+            initialFocus.current.focus();
+          }}
         >
           <div aria-hidden className="flex justify-center pt-2 pb-1">
             <span className="h-1 w-9 rounded-[2px] bg-line-strong" />
@@ -52,6 +63,7 @@ export function BottomSheet({
             </Dialog.Close>
           </div>
           <div className="overflow-y-auto px-5 pt-2 pb-4">{children}</div>
+          {footer}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
