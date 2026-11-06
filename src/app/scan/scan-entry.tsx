@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-import { TabBar } from "@/components/common/tab-bar";
 import { ScanStage } from "@/components/scan/scan-stage";
 import type { Gtin } from "@/lib/scan/types";
 
@@ -72,19 +71,17 @@ export function ScanEntry() {
     case "scan":
     case "no-camera":
       return (
-        <main className="flex flex-1 flex-col pt-safe">
-          <div className="flex flex-1 flex-col px-5 pt-14 pb-32">
-            <ScanStage
-              initialGtin={step.name === "no-camera" ? step.gtin : null}
-              initialManualOpen={step.name === "no-camera" && step.manual}
-              onPermissionDenied={
-                step.name === "scan"
-                  ? () => setStep({ name: "denied" })
-                  : undefined
-              }
-            />
-          </div>
-          <TabBar />
+        // 3-1은 하단 탭 없이 화면 전체가 카메라다(✕로 홈)
+        <main>
+          <ScanStage
+            initialGtin={step.name === "no-camera" ? step.gtin : null}
+            initialManualOpen={step.name === "no-camera" && step.manual}
+            onPermissionDenied={
+              step.name === "scan"
+                ? () => setStep({ name: "denied" })
+                : undefined
+            }
+          />
         </main>
       );
   }

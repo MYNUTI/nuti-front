@@ -18,7 +18,8 @@ const chipVariants = cva(
         removable: "gap-1 pr-2.5 pl-3.5 [&_svg]:size-4",
       },
       selected: {
-        true: "bg-brand-primary-weak text-body2-bold text-brand-link",
+        // 고를 때 너비가 바뀌지 않게 투명 테두리를 둔다
+        true: "border border-transparent bg-brand-primary-weak text-body2-bold text-brand-link",
         false:
           "border border-line-strong bg-bg-page text-body2-medium text-text-strong [&_svg]:text-icon-default",
       },

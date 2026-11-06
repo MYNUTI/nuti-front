@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { CtaButton } from "@/components/common/cta-button";
 import { toGtin14 } from "@/lib/scan/gtin";
 import type { Gtin } from "@/lib/scan/types";
 import { getPhotoDetector } from "@/lib/scan/wasm";
@@ -78,36 +77,4 @@ export function useImageBarcode({
   );
 
   return { input, open: () => inputRef.current?.click(), reading };
-}
-
-/** 임시 스캔 화면용 버튼. 3-1을 v3로 다시 만들면 useImageBarcode만 남긴다 */
-export function ScanImageInput({
-  onGtin,
-  onMiss,
-  disabled,
-  className,
-  children,
-}: {
-  onGtin: (gtin: Gtin) => void;
-  onMiss: (reason: ImageMiss) => void;
-  disabled?: boolean;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  const { input, open, reading } = useImageBarcode({ onGtin, onMiss });
-
-  return (
-    <>
-      {input}
-      <CtaButton
-        type="button"
-        tone="secondary"
-        className={className}
-        disabled={disabled || reading}
-        onClick={open}
-      >
-        {reading ? "읽는 중…" : children}
-      </CtaButton>
-    </>
-  );
 }
