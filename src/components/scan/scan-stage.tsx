@@ -202,6 +202,7 @@ export function ScanStage({
                 // 다른 제품을 더 찾을 아래 버튼 줄을 가리지 않게 카메라 자리 안에 띄운다(UI 플랜 「남은 질문」 6)
                 placement={cameraReading(state) ? "bottom" : "inline"}
                 added={addedIds.has(found.id)}
+                compareCount={addedIds.size}
                 onAdd={() => setAddedIds((ids) => new Set(ids).add(found.id))}
               />
             )}
