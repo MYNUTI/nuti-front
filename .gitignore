@@ -41,9 +41,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# docs: 개인 작업 문서는 로컬에만 두고 API·UI 작업 플랜, 인수인계 문서와 디자인 문서(design/ 브랜치)만 공유한다
+# docs: 개인 작업 문서는 로컬에만 두고 API·UI 작업 플랜, 인수인계 문서, 출시 전 작업 목록과 디자인 문서(design/ 브랜치)만 공유한다
 /docs/*
 !/docs/API-작업-플랜.md
 !/docs/UI-작업-플랜.md
 !/docs/인수인계-2026-11-09.md
+!/docs/출시-전-작업-목록.md
 !/docs/design/
