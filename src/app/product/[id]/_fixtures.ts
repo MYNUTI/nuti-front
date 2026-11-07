@@ -29,6 +29,14 @@ export type NutrientValue = {
   dailyValue: number | null;
 };
 
+/** 목표마다 달라지는 값 */
+export type GoalView = {
+  score: number;
+  band: ScoreBand;
+  rank: { position: number; total: number } | null;
+  reasons: { good: string[]; bad: string[] };
+};
+
 export type ProductResult = {
   id: string;
   brand: string | null;
@@ -39,8 +47,11 @@ export type ProductResult = {
   score: number;
   band: ScoreBand;
   rank: { position: number; total: number } | null;
+  /** 내 목표. 점수·순위·이유는 이 목표 기준이다 */
   goal: Goal;
   reasons: { good: string[]; bad: string[] };
+  /** 다른 목표로 미리 볼 때의 점수·순위·이유(3-2 다른 목표로 보기) */
+  preview: Partial<Record<Goal, GoalView>>;
   nutrition: {
     /** 음료는 100mL당 */
     unit: "g" | "mL";
@@ -106,6 +117,18 @@ const DESIGN: ProductResult = {
   reasons: {
     good: ["단백질이 많아요"],
     bad: ["칼로리가 높은 편이에요", "식이섬유 표시가 없어요"],
+  },
+  // 디자인 「3-2 다른 목표로 보기」 값
+  preview: {
+    muscle: {
+      score: 85,
+      band: 1,
+      rank: { position: 6, total: 48 },
+      reasons: {
+        good: ["단백질이 많아요", "칼로리가 충분해요"],
+        bad: ["식이섬유 표시가 없어요"],
+      },
+    },
   },
   // 1일 기준치는 식약처 1일 영양성분 기준치(성인 2,000kcal)
   nutrition: {
@@ -183,6 +206,10 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
     score: 34,
     band: 4,
     rank: null,
+    // 순위가 없는 상품이라 미리 보기에서도 순위를 빼 디자인 상품 값이 새지 않게 한다
+    preview: {
+      muscle: { ...DESIGN.preview.muscle!, rank: null },
+    },
   },
   "2": {
     ...DESIGN,
@@ -204,6 +231,10 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
     score: 86,
     band: 1,
     rank: null,
+    // 순위가 없는 상품이라 미리 보기에서도 순위를 빼 디자인 상품 값이 새지 않게 한다
+    preview: {
+      muscle: { ...DESIGN.preview.muscle!, rank: null },
+    },
   },
   "4": DESIGN,
 };

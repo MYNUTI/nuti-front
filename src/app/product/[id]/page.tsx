@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { BackButton } from "@/components/common/back-button";
 import { BottomCta } from "@/components/common/bottom-cta";
 import { Button } from "@/components/common/button";
+import { Notice } from "@/components/common/notice";
 import { ProductCard } from "@/components/common/product-card";
 import { ProductHero } from "@/components/common/product-hero";
 import { ReasonChip } from "@/components/common/reason-chip";
@@ -23,6 +24,7 @@ import {
 
 import { FIXTURE_PRODUCTS, type Goal } from "./_fixtures";
 import { NutritionSection } from "./nutrition-section";
+import { FocusTarget, PreviewLink } from "./preview-focus";
 
 export async function generateMetadata({
   params,
@@ -42,22 +44,33 @@ const OTHER_GOAL_LABEL: Record<Goal, string> = {
   muscle: "체중 감량으로 보기",
 };
 
+const OTHER_GOAL: Record<Goal, Goal> = { diet: "muscle", muscle: "diet" };
+
 function Band() {
   return <div aria-hidden className="h-2 bg-bg-band" />;
 }
 
 /*
  * 3-2 제품 결과. 위에서부터 제품 머리 · 점수 · 이 점수인 이유 · 영양성분 · 더 맞는 제품 · 쿠팡 고지, 아래 고정 줄.
- * 공유·♡·다른 목표 칩·정보 수정 요청·비교함 담기의 동작은 3-2 상태 화면 작업에서 붙인다.
+ * 공유·♡·정보 수정 요청·비교함 담기의 동작은 3-2 상태 화면 작업에서 붙인다.
+ *
+ * ?preview=muscle|diet — 3-2 다른 목표로 보기. 점수·순위·이유만 그 목표 기준으로 바꿔 보이고 내 목표 설정은 바꾸지 않는다.
  */
 export default async function ProductPage({
   params,
+  searchParams,
 }: PageProps<"/product/[id]">) {
   const { id } = await params;
   const product = FIXTURE_PRODUCTS[id];
   if (!product) notFound();
 
-  const { nutrition, reasons } = product;
+  const { preview: previewParam } = await searchParams;
+  const otherGoal = OTHER_GOAL[product.goal];
+  const previewView =
+    previewParam === otherGoal ? product.preview[otherGoal] : undefined;
+  // 미리 보는 중이면 점수·순위·이유를 그 목표 값으로 보인다
+  const { score, band, rank, reasons } = previewView ?? product;
+  const { nutrition } = product;
 
   return (
     <div className="flex min-h-dvh flex-col bg-bg-page pt-safe">
@@ -70,6 +83,18 @@ export default async function ProductPage({
           className="min-w-0 flex-1"
         />
       </header>
+      {previewView && (
+        // 디자인: 미리보기 알림 줄(고정). 스크롤해도 화면 위에 붙어 있다
+        <div className="sticky top-0 z-20 flex items-center bg-bg-tint pr-2">
+          <FocusTarget className="flex-1 outline-none">
+            <Notice>{GOAL_LABEL[otherGoal]} 목표로 미리 보는 중이에요</Notice>
+          </FocusTarget>
+          {/* 디자인 메모: 내 목표로 → 3-2 제품 결과 */}
+          <Button kind="text" size="S" asChild>
+            <PreviewLink href={`/product/${product.id}`}>내 목표로</PreviewLink>
+          </Button>
+        </div>
+      )}
 
       <main className="pb-[calc(76px+max(var(--safe-bottom),12px))]">
         <ProductHero
@@ -92,57 +117,72 @@ export default async function ProductPage({
           }
         />
 
-        <section
-          aria-label="점수"
-          className="flex flex-col gap-3 px-5 pt-4 pb-6"
-        >
-          <div className="flex items-center gap-3.5">
-            <ScoreRing score={product.score} band={product.band} size="L" />
-            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              {product.rank && (
-                <p className="text-[16px] leading-[26px] font-medium text-text-strong">
-                  {product.category} {product.rank.total}개 중{" "}
-                  {product.rank.position}위
-                </p>
-              )}
-              {/* 디자인 메모: 점수 기준 보기 › → 5-4 */}
-              <Link
-                href="/grade-guide"
-                className="flex items-center text-[13px] leading-5 font-medium text-text-sub"
-              >
-                점수 기준 보기
-                <IconChevronRight className="size-4" />
-              </Link>
+        <section aria-label="점수">
+          <FocusTarget
+            active={!previewView}
+            className="flex flex-col gap-3 px-5 pt-4 pb-6 outline-none"
+          >
+            <div className="flex items-center gap-3.5">
+              <ScoreRing score={score} band={band} size="L" />
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                {rank && (
+                  <p className="text-[16px] leading-[26px] font-medium text-text-strong">
+                    {product.category} {rank.total}개 중 {rank.position}위
+                  </p>
+                )}
+                {/* 디자인 메모: 점수 기준 보기 › → 5-4 */}
+                <Link
+                  href="/grade-guide"
+                  className="flex items-center text-[13px] leading-5 font-medium text-text-sub"
+                >
+                  점수 기준 보기
+                  <IconChevronRight className="size-4" />
+                </Link>
+              </div>
+              <div className="flex items-center gap-[18px] text-icon-default">
+                <button
+                  type="button"
+                  aria-label="공유"
+                  className="[&_svg]:size-[26px]"
+                >
+                  <IconShare />
+                </button>
+                <button
+                  type="button"
+                  aria-label="저장"
+                  className="[&_svg]:size-7"
+                >
+                  <IconHeart />
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-[18px] text-icon-default">
-              <button
-                type="button"
-                aria-label="공유"
-                className="[&_svg]:size-[26px]"
-              >
-                <IconShare />
-              </button>
-              <button
-                type="button"
-                aria-label="저장"
-                className="[&_svg]:size-7"
-              >
-                <IconHeart />
-              </button>
-            </div>
-          </div>
-          {/* 디자인 메모(11-05): 지금 기준 = 하늘색 바탕 + 파란 글자 · 다른 목표 = 흰 바탕 + 회색 테두리 */}
-          <div className="flex gap-2">
-            <span className="flex h-9 items-center rounded-full bg-accent-blue-weak px-3.5 text-body2-bold text-accent-blue-text">
-              {GOAL_LABEL[product.goal]} · 내 목표
-            </span>
-            <button
-              type="button"
-              className="flex h-9 items-center rounded-full border border-line-strong bg-bg-page px-3.5 text-body2-medium text-text-strong"
-            >
-              {OTHER_GOAL_LABEL[product.goal]}
-            </button>
-          </div>
+            {/* 디자인 메모(11-05): 지금 기준 = 하늘색 바탕 + 파란 글자 · 다른 목표 = 흰 바탕 + 회색 테두리 */}
+            {previewView ? (
+              <div className="flex gap-2">
+                <span className="flex h-9 items-center rounded-full bg-accent-blue-weak px-3.5 text-body2-bold text-accent-blue-text">
+                  {GOAL_LABEL[otherGoal]} · 미리 보기
+                </span>
+                {/* 디자인 메모: 누르는 곳이 아닌 정보 글자 */}
+                <span className="flex h-9 items-center rounded-full border border-line-strong bg-bg-page px-3.5 text-body2-medium text-text-strong">
+                  내 목표({GOAL_LABEL[product.goal]})로는 {product.score}점
+                </span>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <span className="flex h-9 items-center rounded-full bg-accent-blue-weak px-3.5 text-body2-bold text-accent-blue-text">
+                  {GOAL_LABEL[product.goal]} · 내 목표
+                </span>
+                {product.preview[otherGoal] && (
+                  <PreviewLink
+                    href={`/product/${product.id}?preview=${otherGoal}`}
+                    className="flex h-9 items-center rounded-full border border-line-strong bg-bg-page px-3.5 text-body2-medium text-text-strong"
+                  >
+                    {OTHER_GOAL_LABEL[product.goal]}
+                  </PreviewLink>
+                )}
+              </div>
+            )}
+          </FocusTarget>
         </section>
 
         <Band />
@@ -164,7 +204,8 @@ export default async function ProductPage({
           정보 수정 요청
         </button>
 
-        {product.better.length > 0 && (
+        {/* 디자인 「다른 목표로 보기」 화면에는 더 맞는 제품 칸이 없다(더 맞는 제품은 내 목표 기준이라) */}
+        {!previewView && product.better.length > 0 && (
           <>
             <Band />
             <section>
