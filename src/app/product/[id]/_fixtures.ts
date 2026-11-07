@@ -4,6 +4,7 @@
  * "4"는 디자인 3-2 화면 값 그대로, "1"·"2"는 스캔 목 조회(lib/mock-catalog.ts)와 같은 상품이라 스캔에서 「자세히 보기」로 와도 열린다.
  * "3"은 「더 맞는 제품」 칼만스 카드가 404가 되지 않게 카드와 같은 이름·사진·점수로 둔다.
  * "5"는 디자인 「더 맞는 제품이 없을 때」 값 그대로(커클랜드 카드도 이 주소로 연다).
+ * "6"은 디자인 「생산 중단」(재고 판매 중), "7"은 단종(쿠팡 버튼 없음).
  * 상태 확인용: "1"은 더 맞는 제품이 없는 C~E 등급·사진 없음, "2"는 아쉬운 점이 없는 제품·사진 주소가 깨진 제품.
  * 순위는 API에 없다(인수인계 백엔드 질문 8).
  */
@@ -65,6 +66,11 @@ export type ProductResult = {
     more: NutrientValue[];
   };
   better: ProductCardItem[];
+  /**
+   * 생산 중단·단종. label은 받은 상태 글자 그대로(「단종」·「생산 중단 · 재고 판매 중」), 재고가 없으면(단종) 쿠팡 버튼을 뺀다.
+   * 판매 중이면 null. API에 아직 이 값이 없다(인수인계 백엔드 질문 10)
+   */
+  production: { label: string; inStock: boolean } | null;
   /** 쿠팡 상품 주소. 없으면 쿠팡 버튼·고지를 뺀다 */
   coupangUrl: string | null;
 };
@@ -192,6 +198,7 @@ const DESIGN: ProductResult = {
     ],
   },
   better: BETTER,
+  production: null,
   coupangUrl: "https://www.coupang.com/",
 };
 
@@ -334,6 +341,17 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
       ],
     },
     better: [],
+    production: null,
     coupangUrl: "https://www.coupang.com/",
+  },
+  "6": {
+    ...DESIGN,
+    id: "6",
+    production: { label: "생산 중단 · 재고 판매 중", inStock: true },
+  },
+  "7": {
+    ...DESIGN,
+    id: "7",
+    production: { label: "단종", inStock: false },
   },
 };

@@ -71,6 +71,30 @@ export default async function ProductPage({
   const { score, band, rank, reasons } = previewView ?? product;
   const { nutrition } = product;
 
+  // 디자인 「다른 목표로 보기」 화면에는 더 맞는 제품 칸이 없다(더 맞는 제품은 내 목표 기준이라)
+  const betterSection = !previewView && product.better.length > 0 && (
+    <>
+      <Band />
+      <section>
+        {/* 디자인 메모(11-05): 더 맞는 제품 · 전체 › → 3-4 더 맞는 제품(전체) */}
+        <SectionHeader
+          title="더 맞는 제품"
+          actionLabel="전체"
+          actionHref={`/product/${product.id}/better`}
+        />
+        <div className="flex gap-2.5 overflow-x-auto px-5 pt-1 pb-6">
+          {product.better.map((p) => (
+            <ProductCard key={p.id} product={p} />
+          ))}
+        </div>
+      </section>
+    </>
+  );
+  // 디자인 메모(생산 중단): 더 맞는 제품 칸이 점수 바로 아래로 올라온다. 단종이면 쿠팡 버튼·고지가 없다
+  const stopped = product.production !== null;
+  const coupangUrl =
+    product.production?.inStock === false ? null : product.coupangUrl;
+
   return (
     <ProductActions previewing={Boolean(previewView)}>
       <div className="flex min-h-dvh flex-col bg-bg-page pt-safe">
@@ -100,7 +124,10 @@ export default async function ProductPage({
 
         <main className="pb-[calc(76px+max(var(--safe-bottom),12px))]">
           <ProductHero
-            meta={[product.brand, product.category].filter(Boolean).join(" · ")}
+            // 디자인 메모(생산 중단): 브랜드 줄 끝에 받은 상태 글자 그대로
+            meta={[product.brand, product.category, product.production?.label]
+              .filter(Boolean)
+              .join(" · ")}
             name={product.name}
             image={
               <ProductPhoto key={product.image?.src} image={product.image} />
@@ -163,8 +190,21 @@ export default async function ProductPage({
                   )}
                 </div>
               )}
+              {stopped && (
+                <p className="rounded-xl bg-bg-band px-4 py-3 text-[14px] leading-[21px] text-text-body">
+                  제조사가 생산을 멈춘 제품이에요.
+                  {/* 더 맞는 제품이 없으면 아래 「아직 찾지 못했어요」와 어긋나 뺀다(디자인에 없는 조합, UI 플랜 「남은 질문」 12) */}
+                  {product.better.length > 0 && (
+                    <>
+                      <br />
+                      비슷한 제품을 찾아볼 수 있어요.
+                    </>
+                  )}
+                </p>
+              )}
             </FocusTarget>
           </section>
+          {stopped && betterSection}
 
           <Band />
           <section>
@@ -203,27 +243,9 @@ export default async function ProductPage({
             </p>
           )}
 
-          {/* 디자인 「다른 목표로 보기」 화면에는 더 맞는 제품 칸이 없다(더 맞는 제품은 내 목표 기준이라) */}
-          {!previewView && product.better.length > 0 && (
-            <>
-              <Band />
-              <section>
-                {/* 디자인 메모(11-05): 더 맞는 제품 · 전체 › → 3-4 더 맞는 제품(전체) */}
-                <SectionHeader
-                  title="더 맞는 제품"
-                  actionLabel="전체"
-                  actionHref={`/product/${product.id}/better`}
-                />
-                <div className="flex gap-2.5 overflow-x-auto px-5 pt-1 pb-6">
-                  {product.better.map((p) => (
-                    <ProductCard key={p.id} product={p} />
-                  ))}
-                </div>
-              </section>
-            </>
-          )}
+          {!stopped && betterSection}
 
-          {product.coupangUrl && (
+          {coupangUrl && (
             <p className="px-5 py-6 text-center text-caption text-text-sub">
               쿠팡 파트너스 활동의 일환으로,
               <br />
@@ -233,7 +255,7 @@ export default async function ProductPage({
         </main>
 
         <ProductBottomBar
-          coupangUrl={product.coupangUrl}
+          coupangUrl={coupangUrl}
           thumbnail={product.image?.src ?? null}
         />
       </div>
