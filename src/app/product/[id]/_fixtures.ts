@@ -3,6 +3,8 @@
  * 이 모양으로 바꾸는 mapper로 바꾼다(UI 플랜 「데이터」).
  * "4"는 디자인 3-2 화면 값 그대로, "1"·"2"는 스캔 목 조회(lib/mock-catalog.ts)와 같은 상품이라 스캔에서 「자세히 보기」로 와도 열린다.
  * "3"은 「더 맞는 제품」 칼만스 카드가 404가 되지 않게 카드와 같은 이름·사진·점수로 둔다.
+ * "5"는 디자인 「더 맞는 제품이 없을 때」 값 그대로(커클랜드 카드도 이 주소로 연다).
+ * 상태 확인용: "1"은 더 맞는 제품이 없는 C~E 등급, "2"는 아쉬운 점이 없는 제품.
  * 순위는 API에 없다(인수인계 백엔드 질문 8).
  */
 import type { ProductCardItem } from "@/components/common/product-card";
@@ -69,7 +71,7 @@ export type ProductResult = {
 
 const BETTER: ProductCardItem[] = [
   {
-    id: "1",
+    id: "5",
     brand: "커클랜드 시그니처",
     name: "프로틴바 초콜릿 브라우니",
     image: "/fixtures/product-1.png",
@@ -210,6 +212,7 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
     preview: {
       muscle: { ...DESIGN.preview.muscle!, rank: null },
     },
+    better: [],
   },
   "2": {
     ...DESIGN,
@@ -221,6 +224,7 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
     image: null,
     score: 88,
     band: 1,
+    reasons: { good: ["단백질이 많아요", "당류가 적어요"], bad: [] },
   },
   "3": {
     ...DESIGN,
@@ -237,4 +241,98 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
     },
   },
   "4": DESIGN,
+  "5": {
+    id: "5",
+    brand: "커클랜드 시그니처",
+    category: "프로틴바·간식",
+    name: "프로틴바 초콜릿 브라우니",
+    image: { src: "/fixtures/product-1.png", size: 800 },
+    score: 92,
+    band: 1,
+    rank: { position: 1, total: 48 },
+    goal: "diet",
+    reasons: {
+      good: ["식이섬유가 많아요", "당류가 적어요"],
+      bad: ["포화지방이 많은 편이에요"],
+    },
+    // 디자인에 근육 증가로 보기 칩만 있고 값은 없어 임시 값
+    preview: {
+      muscle: {
+        score: 88,
+        band: 1,
+        rank: null,
+        reasons: {
+          good: ["단백질이 많아요", "당류가 적어요"],
+          bad: ["포화지방이 많은 편이에요"],
+        },
+      },
+    },
+    nutrition: {
+      unit: "g",
+      serving: { label: "한 개", amount: 60 },
+      main: [
+        {
+          key: "calories",
+          label: "칼로리",
+          unit: "kcal",
+          per100: 317,
+          dailyValue: 2000,
+        },
+        {
+          key: "protein",
+          label: "단백질",
+          unit: "g",
+          per100: 35,
+          dailyValue: 55,
+        },
+        {
+          key: "sugar",
+          label: "당류",
+          unit: "g",
+          per100: 3.3,
+          dailyValue: 100,
+        },
+      ],
+      // 디자인의 숨은 줄 값. 식이섬유는 「25.0g · 30%」가 서로 맞지 않아 30%에 맞춘 7.5g로 둔다
+      more: [
+        {
+          key: "saturatedFat",
+          label: "포화지방",
+          unit: "g",
+          per100: 4.3,
+          dailyValue: 15,
+        },
+        {
+          key: "transFat",
+          label: "트랜스지방",
+          unit: "g",
+          per100: 0,
+          dailyValue: null,
+        },
+        {
+          key: "cholesterol",
+          label: "콜레스테롤",
+          unit: "mg",
+          per100: 10,
+          dailyValue: 300,
+        },
+        {
+          key: "sodium",
+          label: "나트륨",
+          unit: "mg",
+          per100: 233,
+          dailyValue: 2000,
+        },
+        {
+          key: "dietaryFiber",
+          label: "식이섬유",
+          unit: "g",
+          per100: 7.5,
+          dailyValue: 25,
+        },
+      ],
+    },
+    better: [],
+    coupangUrl: "https://www.coupang.com/",
+  },
 };

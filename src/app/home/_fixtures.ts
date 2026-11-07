@@ -28,7 +28,7 @@ export const FIXTURE_RECENT: RecentSummary = {
 
 export const FIXTURE_POPULAR: PopularProduct[] = [
   {
-    id: "1",
+    id: "5",
     brand: "커클랜드 시그니처",
     name: "프로틴바 초콜릿 브라우니",
     image: "/fixtures/product-1.png",

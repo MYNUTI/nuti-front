@@ -14,6 +14,7 @@ import { SearchFieldLink } from "@/components/common/search-field";
 import { SectionHeader } from "@/components/common/section-header";
 import { Thumb } from "@/components/common/thumb";
 import { IconChevronRight } from "@/components/icons";
+import { cn } from "@/lib/utils";
 
 import { FIXTURE_PRODUCTS, type Goal } from "./_fixtures";
 import { NutritionSection } from "./nutrition-section";
@@ -183,13 +184,37 @@ export default async function ProductPage({
             <SectionHeader title="이 점수인 이유" />
             <div className="pt-2 pb-4">
               <ReasonGroup kind="good" title="좋은 점" items={reasons.good} />
-              <ReasonGroup kind="bad" title="아쉬운 점" items={reasons.bad} />
+              {/* 디자인 메모(더 맞는 제품이 없을 때): 아쉬운 점이 없으면 그 자리에 이 문장 */}
+              <ReasonGroup
+                kind="bad"
+                title="아쉬운 점"
+                items={reasons.bad}
+                empty="이 목표에서 아쉬운 점이 없어요"
+              />
             </div>
           </section>
 
           <Band />
           <NutritionSection nutrition={nutrition} />
           <ReportButton />
+          {!previewView && product.better.length === 0 && (
+            // 디자인 메모(더 맞는 제품이 없을 때): 「정보가 틀렸어요」 아래 한 줄. A·B 등급이면 이미 높은 편, C~E면 아직 못 찾음
+            <p
+              className={cn(
+                "px-5 pb-3 text-body2-medium",
+                product.band <= 2 ? "text-brand-link" : "text-text-sub",
+              )}
+            >
+              {product.band <= 2 ? (
+                <>
+                  <span aria-hidden>✓</span> 이미 이 종류에서 점수가 높은
+                  편이에요
+                </>
+              ) : (
+                "같은 종류에서 더 맞는 제품을 아직 찾지 못했어요"
+              )}
+            </p>
+          )}
 
           {/* 디자인 「다른 목표로 보기」 화면에는 더 맞는 제품 칸이 없다(더 맞는 제품은 내 목표 기준이라) */}
           {!previewView && product.better.length > 0 && (
@@ -233,12 +258,25 @@ function ReasonGroup({
   kind,
   title,
   items,
+  empty,
 }: {
   kind: "good" | "bad";
   title: string;
   items: string[];
+  /** 항목이 없을 때 머리 아래 보일 문장. 없으면 묶음째 숨긴다 */
+  empty?: string;
 }) {
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    if (!empty) return null;
+    return (
+      <>
+        <h3 className="px-5 pt-3 pb-1 text-body2-bold text-text-sub">
+          {title}
+        </h3>
+        <p className="px-5 pt-1 pb-1.5 text-body2 text-text-sub">{empty}</p>
+      </>
+    );
+  }
   return (
     <>
       <h3 className="px-5 pt-3 pb-1 text-body2-bold text-text-sub">
