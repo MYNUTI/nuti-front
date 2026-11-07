@@ -14,7 +14,6 @@ import { SearchFieldLink } from "@/components/common/search-field";
 import { SectionHeader } from "@/components/common/section-header";
 import { Thumb } from "@/components/common/thumb";
 import {
-  IconChevronDown,
   IconChevronRight,
   IconCompare,
   IconFlag,
@@ -22,7 +21,8 @@ import {
   IconShare,
 } from "@/components/icons";
 
-import { FIXTURE_PRODUCTS, type Goal, type NutrientRow } from "./_fixtures";
+import { FIXTURE_PRODUCTS, type Goal } from "./_fixtures";
+import { NutritionSection } from "./nutrition-section";
 
 export async function generateMetadata({
   params,
@@ -48,7 +48,7 @@ function Band() {
 
 /*
  * 3-2 제품 결과. 위에서부터 제품 머리 · 점수 · 이 점수인 이유 · 영양성분 · 더 맞는 제품 · 쿠팡 고지, 아래 고정 줄.
- * 공유·♡·다른 목표 칩·더 보기·정보 수정 요청·비교함 담기의 동작은 3-2 상태 화면 작업에서 붙인다.
+ * 공유·♡·다른 목표 칩·정보 수정 요청·비교함 담기의 동작은 3-2 상태 화면 작업에서 붙인다.
  */
 export default async function ProductPage({
   params,
@@ -155,33 +155,14 @@ export default async function ProductPage({
         </section>
 
         <Band />
-        <section>
-          <SectionHeader
-            title="영양성분"
-            description={[nutrition.basis, nutrition.serving]
-              .filter(Boolean)
-              .join(" · ")}
-          />
-          {nutrition.main.map((row) => (
-            <Nutrient key={row.label} row={row} />
-          ))}
-          {nutrition.more.length > 0 && (
-            <button
-              type="button"
-              className="flex items-center gap-1 px-5 py-3 text-body2-medium text-accent-blue-text"
-            >
-              다른 영양성분 {nutrition.more.length}개 더 보기
-              <IconChevronDown className="size-4" />
-            </button>
-          )}
-          <button
-            type="button"
-            className="flex items-center gap-1.5 px-5 pt-2 pb-7 text-body2-medium text-text-sub"
-          >
-            <IconFlag className="size-4" />
-            정보 수정 요청
-          </button>
-        </section>
+        <NutritionSection nutrition={nutrition} />
+        <button
+          type="button"
+          className="flex items-center gap-1.5 px-5 pt-2 pb-7 text-body2-medium text-text-sub"
+        >
+          <IconFlag className="size-4" />
+          정보 수정 요청
+        </button>
 
         {product.better.length > 0 && (
           <>
@@ -261,31 +242,5 @@ function ReasonGroup({
         ))}
       </ul>
     </>
-  );
-}
-
-function Nutrient({ row }: { row: NutrientRow }) {
-  return (
-    <div className="flex flex-col gap-1.5 px-5 py-2">
-      <div className="flex items-center gap-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <p className="text-body1-medium text-text-strong">{row.label}</p>
-          <p className="text-body2 text-text-sub">{row.note}</p>
-        </div>
-        <p className="text-body1-medium text-text-strong">{row.amount}</p>
-      </div>
-      {row.percent !== null && (
-        // 디자인 메모: 막대는 한 색. 좋음·걸림은 이유 칩으로만 보인다
-        <div
-          aria-hidden
-          className="h-1.5 overflow-hidden rounded-[3px] bg-bg-band"
-        >
-          <div
-            className="h-full rounded-[3px] bg-text-sub"
-            style={{ width: `${Math.min(row.percent, 100)}%` }}
-          />
-        </div>
-      )}
-    </div>
   );
 }

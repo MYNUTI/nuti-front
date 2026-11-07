@@ -10,14 +10,23 @@ import type { ScoreBand } from "@/components/common/score-ring";
 
 export type Goal = "diet" | "muscle";
 
-export type NutrientRow = {
+/** 영양성분 하나. 값은 100g(음료는 100mL)당 숫자로 두고, 1회 제공량 값·1일 기준치 %·평가 말은 화면이 계산한다 */
+export type NutrientValue = {
+  key:
+    | "calories"
+    | "protein"
+    | "sugar"
+    | "saturatedFat"
+    | "transFat"
+    | "cholesterol"
+    | "sodium"
+    | "dietaryFiber";
   label: string;
-  /** 「413kcal」 */
-  amount: string;
-  /** 「많은 편 (1일 기준치의 21%)」 같은 아래 줄 */
-  note: string;
-  /** 1일 기준치 대비 %. 기준치가 없거나 표시가 없으면 null이고 막대를 그리지 않는다 */
-  percent: number | null;
+  unit: "kcal" | "g" | "mg";
+  /** 표시가 없으면 null */
+  per100: number | null;
+  /** 1일 영양성분 기준치. 기준치가 없는 성분(트랜스지방)은 null */
+  dailyValue: number | null;
 };
 
 export type ProductResult = {
@@ -33,14 +42,14 @@ export type ProductResult = {
   goal: Goal;
   reasons: { good: string[]; bad: string[] };
   nutrition: {
-    /** 「100g당」 */
-    basis: string;
-    /** 한 개 용량이 기준 양과 다를 때만. 「한 개(40g)는 165kcal」 */
-    serving: string | null;
+    /** 음료는 100mL당 */
+    unit: "g" | "mL";
+    /** 1회 제공량. 없는 제품은 1회 제공량 칩을 숨긴다(디자인 메모) */
+    serving: { label: string; amount: number } | null;
     /** 처음부터 보이는 줄 */
-    main: NutrientRow[];
+    main: NutrientValue[];
     /** 「다른 영양성분 n개 더 보기」로 펼치는 줄 */
-    more: NutrientRow[];
+    more: NutrientValue[];
   };
   better: ProductCardItem[];
   /** 쿠팡 상품 주소. 없으면 쿠팡 버튼·고지를 뺀다 */
@@ -98,59 +107,62 @@ const DESIGN: ProductResult = {
     good: ["단백질이 많아요"],
     bad: ["칼로리가 높은 편이에요", "식이섬유 표시가 없어요"],
   },
+  // 1일 기준치는 식약처 1일 영양성분 기준치(성인 2,000kcal)
   nutrition: {
-    basis: "100g당",
-    serving: "한 개(40g)는 165kcal",
+    unit: "g",
+    serving: { label: "한 개", amount: 40 },
     main: [
       {
+        key: "calories",
         label: "칼로리",
-        amount: "413kcal",
-        note: "많은 편 (1일 기준치의 21%)",
-        percent: 21,
+        unit: "kcal",
+        per100: 413,
+        dailyValue: 2000,
       },
       {
+        key: "protein",
         label: "단백질",
-        amount: "37.7g",
-        note: "많은 편 (1일 기준치의 69%)",
-        percent: 69,
+        unit: "g",
+        per100: 37.7,
+        dailyValue: 55,
       },
-      {
-        label: "당류",
-        amount: "12.7g",
-        note: "보통 (1일 기준치의 13%)",
-        percent: 13,
-      },
+      { key: "sugar", label: "당류", unit: "g", per100: 12.7, dailyValue: 100 },
     ],
     more: [
       {
+        key: "saturatedFat",
         label: "포화지방",
-        amount: "2.7g",
-        note: "보통 (1일 기준치의 18%)",
-        percent: 18,
+        unit: "g",
+        per100: 2.7,
+        dailyValue: 15,
       },
       {
+        key: "transFat",
         label: "트랜스지방",
-        amount: "0g",
-        note: "1일 기준치가 없는 성분이에요",
-        percent: null,
+        unit: "g",
+        per100: 0,
+        dailyValue: null,
       },
       {
+        key: "cholesterol",
         label: "콜레스테롤",
-        amount: "10mg",
-        note: "적은 편 (1일 기준치의 3%)",
-        percent: 3,
+        unit: "mg",
+        per100: 10,
+        dailyValue: 300,
       },
       {
+        key: "sodium",
         label: "나트륨",
-        amount: "250mg",
-        note: "보통 (1일 기준치의 13%)",
-        percent: 13,
+        unit: "mg",
+        per100: 250,
+        dailyValue: 2000,
       },
       {
+        key: "dietaryFiber",
         label: "식이섬유",
-        amount: "표시 없음",
-        note: "표시가 없어 0으로 계산했어요",
-        percent: null,
+        unit: "g",
+        per100: null,
+        dailyValue: 25,
       },
     ],
   },
@@ -166,6 +178,7 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
     brand: null,
     category: "음료",
     name: "더단백 라떼 350ml",
+    nutrition: { ...DESIGN.nutrition, unit: "mL", serving: null },
     image: null,
     score: 34,
     band: 4,
@@ -177,6 +190,7 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
     brand: null,
     category: "음료",
     name: "잇더핏 프로틴 190ml",
+    nutrition: { ...DESIGN.nutrition, unit: "mL", serving: null },
     image: null,
     score: 88,
     band: 1,
