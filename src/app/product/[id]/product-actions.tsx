@@ -40,6 +40,11 @@ type Actions = {
 
 const ActionsContext = createContext<Actions | null>(null);
 
+/** 담기·공유와 같은 알림 띠를 이 화면의 다른 동작(정보가 틀렸어요)도 쓴다 */
+export function useProductToast() {
+  return useActions().showToast;
+}
+
 function useActions() {
   const value = use(ActionsContext);
   if (!value) throw new Error("ProductActions 안에서 써야 한다");

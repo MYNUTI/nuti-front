@@ -13,7 +13,7 @@ import { ScoreRing } from "@/components/common/score-ring";
 import { SearchFieldLink } from "@/components/common/search-field";
 import { SectionHeader } from "@/components/common/section-header";
 import { Thumb } from "@/components/common/thumb";
-import { IconChevronRight, IconFlag } from "@/components/icons";
+import { IconChevronRight } from "@/components/icons";
 
 import { FIXTURE_PRODUCTS, type Goal } from "./_fixtures";
 import { NutritionSection } from "./nutrition-section";
@@ -24,6 +24,7 @@ import {
   SaveButton,
   ShareButton,
 } from "./product-actions";
+import { ReportButton } from "./report-sheet";
 
 export async function generateMetadata({
   params,
@@ -51,7 +52,6 @@ function Band() {
 
 /*
  * 3-2 제품 결과. 위에서부터 제품 머리 · 점수 · 이 점수인 이유 · 영양성분 · 더 맞는 제품 · 쿠팡 고지, 아래 고정 줄.
- * 정보 수정 요청의 동작은 3-2 상태 화면(정보가 틀렸어요) 작업에서 붙인다.
  *
  * ?preview=muscle|diet — 3-2 다른 목표로 보기. 점수·순위·이유만 그 목표 기준으로 바꿔 보이고 내 목표 설정은 바꾸지 않는다.
  */
@@ -189,13 +189,7 @@ export default async function ProductPage({
 
           <Band />
           <NutritionSection nutrition={nutrition} />
-          <button
-            type="button"
-            className="flex items-center gap-1.5 px-5 pt-2 pb-7 text-body2-medium text-text-sub"
-          >
-            <IconFlag className="size-4" />
-            정보 수정 요청
-          </button>
+          <ReportButton />
 
           {/* 디자인 「다른 목표로 보기」 화면에는 더 맞는 제품 칸이 없다(더 맞는 제품은 내 목표 기준이라) */}
           {!previewView && product.better.length > 0 && (
