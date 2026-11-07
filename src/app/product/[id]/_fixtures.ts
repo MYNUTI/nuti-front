@@ -4,7 +4,7 @@
  * "4"는 디자인 3-2 화면 값 그대로, "1"·"2"는 스캔 목 조회(lib/mock-catalog.ts)와 같은 상품이라 스캔에서 「자세히 보기」로 와도 열린다.
  * "3"은 「더 맞는 제품」 칼만스 카드가 404가 되지 않게 카드와 같은 이름·사진·점수로 둔다.
  * "5"는 디자인 「더 맞는 제품이 없을 때」 값 그대로(커클랜드 카드도 이 주소로 연다).
- * "6"은 디자인 「생산 중단」(재고 판매 중), "7"은 단종(쿠팡 버튼 없음).
+ * "6"은 디자인 「생산 중단」(재고 판매 중), "7"은 단종(쿠팡 버튼 없음), "8"·"9"는 「내 몸에 맞춤」(다이어트·근육 증가 목표).
  * 상태 확인용: "1"은 더 맞는 제품이 없는 C~E 등급·사진 없음, "2"는 아쉬운 점이 없는 제품·사진 주소가 깨진 제품.
  * 순위는 API에 없다(인수인계 백엔드 질문 8).
  */
@@ -52,6 +52,11 @@ export type ProductResult = {
   rank: { position: number; total: number } | null;
   /** 내 목표. 점수·순위·이유는 이 목표 기준이다 */
   goal: Goal;
+  /**
+   * 내 몸에 맞추기(5-7)를 켰으면 그 하루 칼로리. 다이어트 등급만 이 칼로리로 계산한다(3-2 내 몸에 맞춤).
+   * 목표처럼 사용자 값이지만 화면이 한 모양으로 받도록 여기 둔다
+   */
+  bodyFitKcal: number | null;
   reasons: { good: string[]; bad: string[] };
   /** 다른 목표로 미리 볼 때의 점수·순위·이유(3-2 다른 목표로 보기) */
   preview: Partial<Record<Goal, GoalView>>;
@@ -122,6 +127,7 @@ const DESIGN: ProductResult = {
   band: 3,
   rank: { position: 12, total: 48 },
   goal: "diet",
+  bodyFitKcal: null,
   reasons: {
     good: ["단백질이 많아요"],
     bad: ["칼로리가 높은 편이에요", "식이섬유 표시가 없어요"],
@@ -259,6 +265,7 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
     band: 1,
     rank: { position: 1, total: 48 },
     goal: "diet",
+    bodyFitKcal: null,
     reasons: {
       good: ["식이섬유가 많아요", "당류가 적어요"],
       bad: ["포화지방이 많은 편이에요"],
@@ -353,5 +360,23 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
     ...DESIGN,
     id: "7",
     production: { label: "단종", inStock: false },
+  },
+  // 디자인 「내 몸에 맞춤」(다이어트 목표). 등급·문장은 자리 표시용이라 디자인 상품 값 그대로
+  "8": { ...DESIGN, id: "8", bodyFitKcal: 2680 },
+  // 근육 증가 목표 + 내 몸에 맞추기. 다이어트로 미리 볼 때만 내 몸에 맞춘 값이다
+  "9": {
+    ...DESIGN,
+    id: "9",
+    goal: "muscle",
+    bodyFitKcal: 2680,
+    ...DESIGN.preview.muscle!,
+    preview: {
+      diet: {
+        score: DESIGN.score,
+        band: DESIGN.band,
+        rank: DESIGN.rank,
+        reasons: DESIGN.reasons,
+      },
+    },
   },
 };

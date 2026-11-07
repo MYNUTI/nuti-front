@@ -70,6 +70,9 @@ export default async function ProductPage({
   // 미리 보는 중이면 점수·순위·이유를 그 목표 값으로 보인다
   const { score, band, rank, reasons } = previewView ?? product;
   const { nutrition } = product;
+  // 내 몸에 맞추기는 다이어트 등급에만 쓴다. 지금 보이는 등급이 다이어트 기준일 때만 맞춘 값이다
+  const shownGoal = previewView ? otherGoal : product.goal;
+  const bodyFit = product.bodyFitKcal !== null && shownGoal === "diet";
 
   // 디자인 「다른 목표로 보기」 화면에는 더 맞는 제품 칸이 없다(더 맞는 제품은 내 목표 기준이라)
   const betterSection = !previewView && product.better.length > 0 && (
@@ -178,7 +181,9 @@ export default async function ProductPage({
               ) : (
                 <div className="flex gap-2">
                   <span className="flex h-9 items-center rounded-full bg-accent-blue-weak px-3.5 text-body2-bold text-accent-blue-text">
-                    {GOAL_LABEL[product.goal]} · 내 목표
+                    {/* 디자인 메모(내 몸에 맞춤): 다이어트 목표면 칩 글자만 바뀐다. 근육 증가는 그대로 */}
+                    {GOAL_LABEL[product.goal]} ·{" "}
+                    {bodyFit ? "내 몸에 맞추기" : "내 목표"}
                   </span>
                   {product.preview[otherGoal] && (
                     <PreviewLink
@@ -222,7 +227,10 @@ export default async function ProductPage({
           </section>
 
           <Band />
-          <NutritionSection nutrition={nutrition} />
+          <NutritionSection
+            nutrition={nutrition}
+            bodyFitKcal={bodyFit ? product.bodyFitKcal : null}
+          />
           <ReportButton />
           {!previewView && product.better.length === 0 && (
             // 디자인 메모(더 맞는 제품이 없을 때): 「정보가 틀렸어요」 아래 한 줄. A·B 등급이면 이미 높은 편, C~E면 아직 못 찾음
