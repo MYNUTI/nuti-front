@@ -97,6 +97,9 @@ export default async function ProductPage({
   const stopped = product.production !== null;
   const coupangUrl =
     product.production?.inStock === false ? null : product.coupangUrl;
+  const noBetter = !previewView && product.better.length === 0;
+  // 쿠팡 상품을 못 찾은 경우만. 단종이라 쿠팡 버튼을 뺀 경우는 이 안내를 띄우지 않는다
+  const noCoupang = product.coupangUrl === null;
 
   return (
     <ProductActions previewing={Boolean(previewView)}>
@@ -232,23 +235,42 @@ export default async function ProductPage({
             bodyFitKcal={bodyFit ? product.bodyFitKcal : null}
           />
           <ReportButton />
-          {!previewView && product.better.length === 0 && (
-            // 디자인 메모(더 맞는 제품이 없을 때): 「정보가 틀렸어요」 아래 한 줄. A·B 등급이면 이미 높은 편, C~E면 아직 못 찾음
-            <p
-              className={cn(
-                "px-5 pb-3 text-body2-medium",
-                product.band <= 2 ? "text-brand-link" : "text-text-sub",
+          {(noBetter || noCoupang) && (
+            <div className="flex flex-col gap-1.5 px-5 pb-3 text-body2">
+              {noBetter && (
+                // 디자인 메모(더 맞는 제품이 없을 때): 「정보가 틀렸어요」 아래 한 줄. A·B 등급이면 이미 높은 편, C~E면 아직 못 찾음
+                <p
+                  className={cn(
+                    "font-medium",
+                    product.band <= 2 ? "text-brand-link" : "text-text-sub",
+                  )}
+                >
+                  {product.band <= 2 ? (
+                    <>
+                      <span aria-hidden>✓</span> 이미 이 종류에서 점수가 높은
+                      편이에요
+                    </>
+                  ) : (
+                    "같은 종류에서 더 맞는 제품을 아직 찾지 못했어요"
+                  )}
+                </p>
               )}
-            >
-              {product.band <= 2 ? (
+              {noCoupang && (
+                // 디자인 「쿠팡 상품이 없을 때」: 살 곳 대신 같은 종류 순위로 이어 준다
                 <>
-                  <span aria-hidden>✓</span> 이미 이 종류에서 점수가 높은
-                  편이에요
+                  <p className="text-text-sub">
+                    쿠팡에서 파는 상품을 찾지 못했어요
+                  </p>
+                  {/* 2-2 등급 순위. 종류를 고른 채로 여는 주소는 07단계에서 정한다 */}
+                  <Link
+                    href="/ranking"
+                    className="self-start font-medium text-brand-link"
+                  >
+                    같은 종류 순위 보기 <span aria-hidden>›</span>
+                  </Link>
                 </>
-              ) : (
-                "같은 종류에서 더 맞는 제품을 아직 찾지 못했어요"
               )}
-            </p>
+            </div>
           )}
 
           {!stopped && betterSection}
