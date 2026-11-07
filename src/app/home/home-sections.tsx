@@ -3,9 +3,8 @@ import Link from "next/link";
 
 import { Button } from "@/components/common/button";
 import { CategoryTile } from "@/components/common/category-tile";
-import { ScoreRing } from "@/components/common/score-ring";
+import { ProductCard } from "@/components/common/product-card";
 import { SectionHeader } from "@/components/common/section-header";
-import { cn } from "@/lib/utils";
 
 import type { CompareLeft, PopularProduct } from "./_fixtures";
 
@@ -96,45 +95,7 @@ export function PopularSection({ products }: { products: PopularProduct[] }) {
       />
       <div className="flex gap-2.5 overflow-x-auto px-5 pt-1 pb-8">
         {products.map((p) => (
-          <Link
-            key={p.id}
-            href={`/product/${p.id}`}
-            className="flex w-[114px] shrink-0 flex-col gap-1.5"
-          >
-            <Image
-              src={p.image}
-              width={p.imageSize}
-              height={p.imageSize}
-              sizes="114px"
-              alt=""
-              className="size-[114px] rounded-sm border border-line-default bg-white object-contain"
-            />
-            <span className="flex items-center gap-1.5">
-              <span className="min-w-0 flex-1 truncate text-[12px] leading-4 text-text-sub">
-                {p.brand}
-              </span>
-              {/* 디자인은 S(32) 링을 30으로 줄여 놓았다. 부품 크기 S를 그대로 쓴다 */}
-              <ScoreRing score={p.score} band={p.band} size="S" />
-            </span>
-            <span className="line-clamp-2 h-9 text-[13px] leading-[18px] font-medium break-keep text-text-strong">
-              {p.name}
-            </span>
-            <span className="flex h-11 flex-wrap content-start gap-1 overflow-hidden">
-              {p.tags.map((t) => (
-                <span
-                  key={t.label}
-                  className={cn(
-                    "rounded-[4px] px-1.5 py-0.5 text-[11px] leading-4",
-                    t.warn
-                      ? "bg-accent-pink-weak text-accent-pink-text"
-                      : "bg-bg-band text-text-body",
-                  )}
-                >
-                  {t.label}
-                </span>
-              ))}
-            </span>
-          </Link>
+          <ProductCard key={p.id} product={p} />
         ))}
       </div>
     </section>

@@ -4,15 +4,18 @@ import { BackButton } from "@/components/common/back-button";
 import { TopBar } from "@/components/common/top-bar";
 
 import { GoalForm } from "./goal-form";
+import { toNextPath } from "./next-path";
 
 export const metadata: Metadata = { title: "목표 선택" };
 
-// 1-5 목표 선택. 디자인 메모: 0-4 「건너뛰기」 또는 0-4b 「목표 고르기」에서 온다
-export default function Page() {
+// 1-5 목표 선택. 디자인 메모: 0-4 「건너뛰기」 또는 0-4b 「목표 고르기」에서 온다. 3-2 공유 링크·목표 없음의 「내 목표 고르기」에서도 온다(?next=)
+export default async function Page({ searchParams }: PageProps<"/intro/goal">) {
+  const { next } = await searchParams;
   return (
     <div className="flex min-h-dvh flex-col bg-bg-page pt-safe">
       <TopBar left={<BackButton fallbackHref="/intro/2" />} />
       <GoalForm
+        next={toNextPath(next)}
         header={
           <div className="flex flex-col gap-2 px-5 pt-2 pb-8">
             <h1 className="text-title1 text-text-strong">

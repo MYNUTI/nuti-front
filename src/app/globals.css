@@ -22,6 +22,9 @@
   --accent-pink: #f0306b;
   --accent-pink-weak: #ffe8ef;
   --accent-pink-text: #c4104d;
+  /* 3-2 목표 칩·펼침 글자(11-05 회의). 좋은 점 연두 칩과 구분하는 파랑 */
+  --accent-blue-weak: #ebf3ff;
+  --accent-blue-text: #1767cf;
 
   --text-strong: #111111;
   --text-body: #2b3036;
@@ -230,6 +233,8 @@
   --color-accent-pink: var(--accent-pink);
   --color-accent-pink-weak: var(--accent-pink-weak);
   --color-accent-pink-text: var(--accent-pink-text);
+  --color-accent-blue-weak: var(--accent-blue-weak);
+  --color-accent-blue-text: var(--accent-blue-text);
 
   --color-text-strong: var(--text-strong);
   --color-text-body: var(--text-body);

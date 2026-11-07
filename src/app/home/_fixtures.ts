@@ -2,20 +2,12 @@
  * 홈 임시 데이터. API 연결 전까지 쓰고, 연결할 때 이 import를 쿼리 훅으로 바꾼다(UI 플랜 「데이터」).
  * 값은 디자인 2-1 홈(첫 방문·사용 중) 그대로다.
  */
+import type { ProductCardItem } from "@/components/common/product-card";
 import type { ScoreBand } from "@/components/common/score-ring";
 
 export type Goal = "diet" | "muscle";
 
-export type PopularProduct = {
-  id: string;
-  brand: string;
-  name: string;
-  image: string;
-  imageSize: number;
-  score: number;
-  band: ScoreBand;
-  tags: { label: string; warn?: boolean }[];
-};
+export type PopularProduct = ProductCardItem;
 
 export const FIXTURE_GOAL: Goal = "diet";
 
@@ -36,7 +28,7 @@ export const FIXTURE_RECENT: RecentSummary = {
 
 export const FIXTURE_POPULAR: PopularProduct[] = [
   {
-    id: "1",
+    id: "5",
     brand: "커클랜드 시그니처",
     name: "프로틴바 초콜릿 브라우니",
     image: "/fixtures/product-1.png",

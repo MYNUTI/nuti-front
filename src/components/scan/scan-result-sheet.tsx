@@ -45,13 +45,16 @@ export function ScanResultSheet({
   product,
   placement = "bottom",
   added,
+  compareCount,
   onAdd,
 }: {
   product: ScanSheetProduct;
   /** bottom: 화면 아래에 붙음(디자인) · inline: 카메라 자리 안 아래(아래 버튼 줄을 살릴 때) */
   placement?: "bottom" | "inline";
-  /** 비교함에 담았는지 */
+  /** 이 제품을 비교함에 담았는지 */
   added: boolean;
+  /** 비교함에 담긴 수. 1개 이상이면 비교함 줄을 보인다(다음 바코드로 시트가 바뀌어도 남는다) */
+  compareCount: number;
   onAdd: () => void;
 }) {
   const href = `/product/${product.id}`;
@@ -107,12 +110,26 @@ export function ScanResultSheet({
           className="flex-1"
           onClick={onAdd}
         >
-          {added ? "담김 ✓" : "비교함 담기"}
+          {added ? "담김" : "비교함 담기"}
         </Button>
         <Button size="M" className="flex-1" asChild>
           <Link href={href}>자세히 보기</Link>
         </Button>
       </div>
+      {compareCount > 0 && (
+        // 디자인 메모: 줄 → 3-5 제품 비교
+        <Link
+          href="/compare"
+          className="flex h-[42px] items-center gap-2 rounded-[10px] bg-brand-primary-weak px-3.5"
+        >
+          <span className="min-w-0 flex-1 text-[13px] text-text-strong">
+            비교함 {compareCount}개. 다음 바코드를 찍어 더 담아 보세요
+          </span>
+          <span className="shrink-0 text-caption-bold text-brand-link">
+            비교하기 <span aria-hidden>›</span>
+          </span>
+        </Link>
+      )}
     </section>
   );
 }

@@ -12,6 +12,7 @@ import { SelectCard } from "@/components/common/select-card";
  * 1-5 목표 카드 2장. 디자인 메모(11-04 회의): 카드를 눌러도 바로 넘어가지 않고 「다음」으로 넘어간다.
  * 그림이 다이어트를 고른 상태라 다이어트를 먼저 골라 둔다(설명 「잘 모르겠으면 다이어트로 시작해 보세요」).
  * 목표 저장은 API 브랜치(온보딩)에서 붙인다. 지금은 홈에 목표(goal)와 2-1g 가이드를 띄우라는 표시(guide)만 넘긴다.
+ * next가 있으면(3-2 공유 링크·목표 없음 「내 목표 고르기」) 가이드 없이 그 제품 결과로 돌아간다.
  */
 const GOALS = [
   {
@@ -33,7 +34,14 @@ const GOALS = [
 type Goal = (typeof GOALS)[number]["value"];
 
 /** 선택 상태를 「다음」 링크와 함께 쓰려고 본문(main)과 아래 버튼을 같이 그린다. header는 main 안 맨 위에 놓인다 */
-export function GoalForm({ header }: { header: React.ReactNode }) {
+export function GoalForm({
+  header,
+  next,
+}: {
+  header: React.ReactNode;
+  /** 고른 뒤 돌아갈 제품 결과 주소 */
+  next?: string;
+}) {
   const [goal, setGoal] = useState<Goal>("diet");
 
   return (
@@ -70,7 +78,13 @@ export function GoalForm({ header }: { header: React.ReactNode }) {
       </main>
       <BottomCta>
         <Button className="flex-1" asChild>
-          <Link href={`/home?goal=${goal}&guide=1`}>다음</Link>
+          <Link
+            href={next ? `${next}?goal=${goal}` : `/home?goal=${goal}&guide=1`}
+            // 제품 결과로 돌아갈 때는 1-5를 방문 기록에서 빼, 뒤로 가기 한 번에 들어온 화면으로 간다
+            replace={Boolean(next)}
+          >
+            다음
+          </Link>
         </Button>
       </BottomCta>
     </>

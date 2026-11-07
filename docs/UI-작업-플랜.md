@@ -1,6 +1,6 @@
 # UI 작업 플랜
 
-> 상태: **03단계 바코드 진행 중** (2026-11-07). 0-3·0-3x·3-1 상태 6개 완료, 3-1 여러 개·이 제품인가요는 보류(「남은 질문」 4), 3-2 스캔 직후 완료, 다음은 3-2 담았을 때. 이 문서는 범위·순서·결정만 기록한다. 화면 하나가 끝날 때마다 확인받고 다음 화면으로 넘어간다.
+> 상태: **04단계 제품 결과 진행 중** (2026-11-07). 03단계 바코드는 만들 수 있는 화면을 모두 만들었다(3-1 여러 개·이 제품인가요·3-2 이 제품으로 이었을 때는 「남은 질문」 4로 보류). 04단계는 3-2 기본 화면·영양성분 펼침·다른 목표로 보기·담고 저장·공유 주소 복사·정보가 틀렸어요·더 맞는 제품이 없을 때·사진이 없을 때·생산 중단·내 몸에 맞춤·쿠팡 상품이 없을 때·공유 링크 목표 없음 완료. 이 문서는 범위·순서·결정만 기록한다. 화면 하나가 끝날 때마다 확인받고 다음 화면으로 넘어간다.
 
 ## 목적
 
@@ -29,7 +29,7 @@
 - `globals.css`에 v3 CHIPS 토큰(색·등급 색·글자 스타일 12개·모서리)이 있다. 예전 토큰과 `rounded-xl` 이상은 임시 화면용으로 남아 있고 13단계에서 지운다
 - 글꼴은 Pretendard 서브셋(400·500·700)
 - 아이콘: `components/icons.tsx`에 피그마 v2/Icon 39개
-- v3 공통 부품: `components/common/`의 button, bottom-cta, top-bar, search-field, tab-bar, grade(GradeBadge·GradeTag, GradeBar 제외), status-tag, chip, select-card, check-row, check-mark, text-field, product-row, list-row, toggle, reason-row, section-header, thumb, category-tile, product-hero, camera-frame, sheet(BottomSheet·ConfirmSheet), empty-state(EmptyState·ErrorState), loading-state, skeleton, step-dots, score-ring, back-button, coachmark, toast. 그 밖의 `components/common/`(cta-button, layer, card-tutorial, choice-card)과 `components/ui/`(shadcn button, checkbox, radio-group)는 임시 화면용이다
+- v3 공통 부품: `components/common/`의 button, bottom-cta, top-bar, search-field, tab-bar, grade(GradeBadge·GradeTag, GradeBar 제외), status-tag, chip, select-card, check-row, check-mark, text-field, product-row, list-row, toggle, reason-row, section-header, thumb, category-tile, product-hero, camera-frame, sheet(BottomSheet·ConfirmSheet), empty-state(EmptyState·ErrorState), loading-state, skeleton, step-dots, score-ring, back-button, coachmark, toast, step-list, reason-chip, product-card, notice. 그 밖의 `components/common/`(cta-button, layer, card-tutorial, choice-card)과 `components/ui/`(shadcn button, checkbox, radio-group)는 임시 화면용이다
 - 스캔: `components/scan/`가 `lib/scan` 상태 기계·lookup에 붙어 있다. UI 작업은 겉모양만 바꾸고 이 연결은 유지한다
 - 라우트는 임시본이다(`home`, `scan`, `history`, `settings`, `product/[id]`, `onboarding/*` 9개). v3 화면 구성과 맞지 않는다
 
@@ -156,7 +156,7 @@ API 연결은 API 브랜치 08·09단계 이후에 붙인다. 그 전까지 화�
 
 `feat/api`의 1차 작업은 `main`에 머지됐고(#2, `9d5febf`, 2026-11-05 기준) 이 브랜치에도 들어와 있다. API 플랜 다음 단계에서 아래 파일을 고칠 수 있어 UI 작업과 겹친다.
 
-- `src/app/home/page.tsx`, `src/app/product/[id]/page.tsx` — API 06단계에서 목 카탈로그 import 경로를 바꾸고, 상세 페이지에 서버 조회를 넣는다
+- `src/app/home/page.tsx`, `src/app/product/[id]/page.tsx` — API 06단계에서 `_fixtures.ts` import를 서버 조회(`getProductDetail`) + 화면용 모양(`ProductResult`) mapper로 바꾼다
 - `src/components/scan/scan-stage.tsx` — API 06단계에서 쿼리 키를 옮긴다
 - `src/app/providers.tsx` — API 07단계. UI 작업은 건드리지 않는다
 
@@ -167,9 +167,17 @@ API 연결은 API 브랜치 08·09단계 이후에 붙인다. 그 전까지 화�
 1. **불러오는 중 10초 넘음** — 피그마 메모는 「단계 문장」뿐이다. 지금은 회색 자리 위에 문장을 덧붙인다. 회색 자리를 문장으로 바꿔야 하는지 디자이너 확인
 2. **회색 자리 움직임** — 메모는 「동작 줄이기면 움직이지 않는 회색」뿐이다. 지금은 pulse. 움직임 종류 디자이너 확인
 3. 메모의 「안 정함」 항목 — 화면 작업 때 해당 화면 것을 모아 묻는다
-4. **3-1 「바코드에 제품이 여러 개일 때」·「이 제품인가요?」(보류)** — 1차 바코드 조회 API(`lookupBarcode`)는 제품 1개만 돌려주고, 여러 제품·비슷한 후보·「이어 두기」 저장 응답이 없다. 「여러 개」는 메모에도 「안 정함: 이 시트를 둘지, 고른 제품을 기억할지(SCAN_009)」로 남아 있다. 백엔드 응답과 디자인 결정이 나오면 만든다(SCAN_008·009·010)
+4. **3-1 「바코드에 제품이 여러 개일 때」·「이 제품인가요?」, 3-2 「스캔 직후, 이 제품으로 이었을 때」(보류)** — 1차 바코드 조회 API(`lookupBarcode`)는 제품 1개만 돌려주고, 여러 제품·비슷한 후보·「이어 두기」 저장 응답이 없다. 「여러 개」는 메모에도 「안 정함: 이 시트를 둘지, 고른 제품을 기억할지(SCAN_009)」로 남아 있다. 백엔드 응답과 디자인 결정이 나오면 만든다(SCAN_008·009·010)
 5. **3-1 카메라 점유 안내** — 다른 앱이 카메라를 쓰고 있을 때(`retryable: "in-use"`) 「다른 앱이 카메라를 쓰고 있어요 · 다시 시도」 띠를 보인다. 디자인에 이 상태 화면이 없어 예전 띠 모양 그대로다. 디자이너 확인
 6. **3-2 카메라 없이 찾은 뒤의 결과** — 디자인의 결과 시트는 화면 아래에 붙어 아래 버튼 줄(사진·번호·이름)을 가린다. 카메라가 읽고 있을 때는 다음 바코드를 비추면 되지만, 사진·번호로만 찾는 중(PC·앱 안 브라우저·권한 거부)이나 카메라 점유 중에는 더 찾을 방법이 없어진다. 그래서 그때만 시트를 카메라 자리 안에 띄우고 버튼 줄을 남겼다. 디자이너 확인
+7. **3-2 목표 이름** — 목표 칩은 「다이어트 · 내 목표」인데, 디자인 메모는 근육 증가 목표일 때 다른 목표 칩을 「체중 감량으로 보기」로 적는다. 같은 목표를 두 이름으로 부르게 되어, 「다이어트로 보기」로 맞출지 디자이너 확인(지금은 메모 문구 그대로)
+8. **3-2 영양성분 평가 말 기준** — 디자인에는 「많은 편 · 보통 · 적은 편」 값만 있고 기준이 없다. 디자인 값(3% 적은 편 · 13%·18% 보통 · 21%·69% 많은 편)과 맞게 「1일 기준치의 5% 이하 적은 편 · 20% 이상 많은 편」으로 정했다. 1회 제공량으로 바꿨을 때도 같은 기준을 쓴다. 기획·디자이너 확인
+9. **3-2 영양성분 빈 값·1회 제공량 머리 줄** — (1) 표시가 없을 때 「표시가 없어 0으로 계산했어요」는 0으로 계산하는 식이섬유에만 맞다. 다른 성분에 값이 없을 때 문구가 디자인에 없어 임시로 「표시가 없는 성분이에요」를 쓴다. (2) 1회 제공량으로 바꿨을 때 머리 줄(「100g당 · 한 개(40g)는 165kcal」)도 바뀌는지 디자인에 없다(지금은 그대로). 디자이너 확인
+10. **3-2 공유 주소 복사 실패 문구** — https가 아니라 복사 기능이 없거나 권한이 거절돼 주소를 복사하지 못하면 알림 문구가 디자인에 없다. 임시로 「주소를 복사하지 못했어요」. 디자이너 확인
+11. **3-2 정보가 틀렸어요 — 보낼 곳과 사진 보관** — (1) 지금 있는 문의 API(`postInquiry`, `POST /support/inquiries`)는 내용·분류·이메일만 받아 제품 ID·고른 항목·사진을 담을 자리가 없다. 그래서 보내기는 아직 서버로 보내지 않고, 메모의 「보내지 못했을 때 → 오류 문장 + 고른 내용 유지」도 API가 정해지면 붙인다. 백엔드 확인. (2) 메모 「안 정함: 사진 보관 기간(CTRB_003)」. 기획 확인
+12. **3-2 생산 중단 + 더 맞는 제품 없음** — 안내 상자 「…비슷한 제품을 찾아볼 수 있어요.」와 아래 「같은 종류에서 더 맞는 제품을 아직 찾지 못했어요」가 어긋난다. 디자인에 없는 조합이라 임시로 더 맞는 제품이 0개면 상자의 둘째 문장을 뺀다. 디자이너 확인
+13. **3-2 내 몸에 맞춤 + 다른 목표로 보기** — 근육 증가 목표에서 다이어트로 미리 볼 때 등급은 맞춘 칼로리 기준인데, 미리 보기 칩(「다이어트 · 미리 보기」)에 그 표시가 디자인에 없다. 지금은 칩 글자를 그대로 두고 펼친 영양성분 설명만 바꾼다. 디자이너 확인
+14. **3-2 공유 링크·목표 없음의 「내 목표」 표현** — 목표를 고른 적 없는데 칩이 「다이어트 · 내 목표」(디자인 그대로)이고, 다른 목표로 미리 보면 「내 목표(다이어트)로는 n점」이 된다. 「다이어트 · 기본」 등으로 바꿀지 디자이너 확인
 
 ## 결정 기록
 
@@ -185,5 +193,8 @@ API 연결은 API 브랜치 08·09단계 이후에 붙인다. 그 전까지 화�
 | 2026-11-04 | Android 12 이상은 운영체제가 흰 배경(`background_color`) + 앱 아이콘(초록 바탕)으로 스플래시를 만든다. 「마이뉴티」 글자만 나오는 건 iOS뿐이고, Android 쪽은 바꿀 수 없어 그대로 둔다                                                                                 |
 | 2026-11-04 | 피그마가 등급 배지(A–E)에서 점수 링(0–100, v3/ScoreRing)으로 바뀌었다(11-03). 점수 색은 「점수 색」 모드 ① 우리 색을 쓴다. 기존 GradeBadge·GradeTag는 일단 두고 필요 없어지면 정리한다                                                                                |
 | 2026-11-04 | 2-1g 홈 가이드 중에는 밝힌 자리(스캔 버튼·검색칸)를 눌러도 이동하지 않는다. 피그마 메모와 다르다. 가이드는 말풍선 버튼으로만 넘기고 닫는다                                                                                                                            |
+| 2026-11-07 | 3-2 미리 보는 중 공유로 주소를 복사하면 알림은 「주소를 복사했어요. 받는 사람의 목표 기준으로 보여요」(메모 문장에 복사했다는 말을 합침). 공유 창으로 보낸 경우는 메모대로 「받는 사람의 목표 기준으로 보여요」                                                       |
+| 2026-11-07 | 3-2 더 맞는 제품이 없을 때 C·D·E 등급 문장(「같은 종류에서 더 맞는 제품을 아직 찾지 못했어요」)은 색이 디자인에 없어 회색(text-text-sub)으로 둔다                                                                                                                     |
+| 2026-11-07 | 3-2 영양성분 g 값은 소수 첫째 자리가 0이면 뗀다(「35.0g」 → 「35g」). 디자인은 「.0」을 붙이지만 지금 표시를 유지                                                                                                                                                     |
 | 2026-11-07 | 스캔 결과 시트 fixture는 이를 쓰는 스캐너 부품 옆 `src/components/scan/_fixtures.ts`에 둔다(「데이터」 규칙 `src/app/<경로>/_fixtures.ts`의 예외). API 06단계에서 지우고, 13단계 정리 때 남아 있는지 확인한다                                                         |
 | 2026-11-05 | 구역 제목은 v3/Section 17/24/700(`text-section`, 11-05 회의). `cn` 글자 스타일 목록에도 넣었다                                                                                                                                                                        |
