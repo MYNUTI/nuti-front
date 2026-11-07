@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -12,7 +11,6 @@ import { ReasonChip } from "@/components/common/reason-chip";
 import { ScoreRing } from "@/components/common/score-ring";
 import { SearchFieldLink } from "@/components/common/search-field";
 import { SectionHeader } from "@/components/common/section-header";
-import { Thumb } from "@/components/common/thumb";
 import { IconChevronRight } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +23,7 @@ import {
   SaveButton,
   ShareButton,
 } from "./product-actions";
+import { ProductPhoto } from "./product-photo";
 import { ReportButton } from "./report-sheet";
 
 export async function generateMetadata({
@@ -104,19 +103,7 @@ export default async function ProductPage({
             meta={[product.brand, product.category].filter(Boolean).join(" · ")}
             name={product.name}
             image={
-              product.image ? (
-                <Image
-                  src={product.image.src}
-                  width={product.image.size}
-                  height={product.image.size}
-                  sizes="256px"
-                  alt=""
-                  loading="eager"
-                  fetchPriority="high"
-                />
-              ) : (
-                <Thumb className="size-full" />
-              )
+              <ProductPhoto key={product.image?.src} image={product.image} />
             }
           />
 

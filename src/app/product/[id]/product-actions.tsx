@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { createContext, use, useRef, useState } from "react";
 
@@ -208,15 +209,7 @@ export function ProductBottomBar({
         // 아래 고정 줄(위 선 1 + 위 여백 12 + 버튼 52 + 아래 여백) 바로 위에 붙인다. 바 높이 61 = 선 1 + 12 + 버튼 44 + 4
         <div className="fixed-app bottom-[calc(65px+max(var(--safe-bottom),12px))] z-30 flex items-center gap-2 border-t border-line-default bg-bg-page px-5 pt-3 pb-1">
           <span className="size-8 shrink-0 overflow-hidden rounded-sm bg-bg-tint">
-            {thumbnail && (
-              // 서버 사진 주소라 next/image 허용 도메인을 정하기 전까지 img로 둔다
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={thumbnail}
-                alt=""
-                className="size-full object-contain"
-              />
-            )}
+            <CompareThumb key={thumbnail} src={thumbnail} />
           </span>
           <p className="flex-1 text-body1-bold text-text-strong">
             비교함 {count}
@@ -283,5 +276,32 @@ export function ProductBottomBar({
         />
       )}
     </>
+  );
+}
+
+/** 비교함 바의 작은 사진. 사진이 없거나 깨지면 3-2 「사진이 없을 때」 그림만(작은 칸은 글 없이) */
+function CompareThumb({ src }: { src: string | null }) {
+  const [broken, setBroken] = useState(false);
+  if (!src || broken) {
+    // 로컬 그림이라 작은 칸 크기로 줄여 받는다
+    return (
+      <Image
+        src="/common/no-photo.png"
+        width={32}
+        height={32}
+        alt=""
+        className="size-full"
+      />
+    );
+  }
+  return (
+    // 서버 사진 주소라 next/image 허용 도메인을 정하기 전까지 img로 둔다
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt=""
+      className="size-full object-contain"
+      onError={() => setBroken(true)}
+    />
   );
 }

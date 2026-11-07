@@ -4,7 +4,7 @@
  * "4"는 디자인 3-2 화면 값 그대로, "1"·"2"는 스캔 목 조회(lib/mock-catalog.ts)와 같은 상품이라 스캔에서 「자세히 보기」로 와도 열린다.
  * "3"은 「더 맞는 제품」 칼만스 카드가 404가 되지 않게 카드와 같은 이름·사진·점수로 둔다.
  * "5"는 디자인 「더 맞는 제품이 없을 때」 값 그대로(커클랜드 카드도 이 주소로 연다).
- * 상태 확인용: "1"은 더 맞는 제품이 없는 C~E 등급, "2"는 아쉬운 점이 없는 제품.
+ * 상태 확인용: "1"은 더 맞는 제품이 없는 C~E 등급·사진 없음, "2"는 아쉬운 점이 없는 제품·사진 주소가 깨진 제품.
  * 순위는 API에 없다(인수인계 백엔드 질문 8).
  */
 import type { ProductCardItem } from "@/components/common/product-card";
@@ -221,7 +221,8 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
     category: "음료",
     name: "잇더핏 프로틴 190ml",
     nutrition: { ...DESIGN.nutrition, unit: "mL", serving: null },
-    image: null,
+    // 일부러 없는 파일. 사진 주소가 깨졌을 때 그림으로 바뀌는지 본다
+    image: { src: "/fixtures/missing.png", size: 400 },
     score: 88,
     band: 1,
     reasons: { good: ["단백질이 많아요", "당류가 적어요"], bad: [] },
