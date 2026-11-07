@@ -14,7 +14,7 @@ import { SectionHeader } from "@/components/common/section-header";
 import { IconChevronRight } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
-import { FIXTURE_PRODUCTS, type Goal } from "./_fixtures";
+import { FIXTURE_PRODUCTS, type Goal, type GoalView } from "./_fixtures";
 import { NutritionSection } from "./nutrition-section";
 import { FocusTarget, PreviewLink } from "./preview-focus";
 import {
@@ -63,16 +63,41 @@ export default async function ProductPage({
   const product = FIXTURE_PRODUCTS[id];
   if (!product) notFound();
 
-  const { preview: previewParam } = await searchParams;
-  const otherGoal = OTHER_GOAL[product.goal];
-  const previewView =
-    previewParam === otherGoal ? product.preview[otherGoal] : undefined;
+  const { preview: previewParam, goal: goalParam, state } = await searchParams;
+  const views: Partial<Record<Goal, GoalView>> = {
+    ...product.preview,
+    [product.goal]: product,
+  };
+  // 3-2 공유 링크·목표 없음: 목표를 고른 적 없는 사람은 다이어트 기준으로 보인다(디자인 메모).
+  // 1-5에서 고르고 돌아오면 ?goal=로 그 목표를 내 목표로 본다. 목표 저장·조회는 API 연결 때 사용자 정보로 바꾼다
+  const noGoal = state === "no-goal";
+  const wanted = noGoal ? "diet" : goalParam;
+  const goal: Goal =
+    (wanted === "diet" || wanted === "muscle") && views[wanted]
+      ? wanted
+      : product.goal;
+  const mine = views[goal]!;
+  const otherGoal = OTHER_GOAL[goal];
+  const previewView = previewParam === otherGoal ? views[otherGoal] : undefined;
+  // 미리 보기를 켜고 꺼도 목표 없음·고른 목표 표시는 주소에 남긴다
+  const keep = noGoal
+    ? "state=no-goal"
+    : goal !== product.goal
+      ? `goal=${goal}`
+      : "";
+  const productHref = (extra?: string) => {
+    const query = [keep, extra].filter(Boolean).join("&");
+    return `/product/${product.id}${query ? `?${query}` : ""}`;
+  };
   // 미리 보는 중이면 점수·순위·이유를 그 목표 값으로 보인다
-  const { score, band, rank, reasons } = previewView ?? product;
+  const { score, band, rank, reasons } = previewView ?? mine;
   const { nutrition } = product;
   // 내 몸에 맞추기는 다이어트 등급에만 쓴다. 지금 보이는 등급이 다이어트 기준일 때만 맞춘 값이다
-  const shownGoal = previewView ? otherGoal : product.goal;
-  const bodyFit = product.bodyFitKcal !== null && shownGoal === "diet";
+  const shownGoal = previewView ? otherGoal : goal;
+  // 목표를 고른 적 없는 사람(목표 없음, 1-5에서 막 고르고 돌아온 ?goal=)은 내 몸에 맞추기도 켠 적이 없다
+  const fresh = noGoal || goalParam !== undefined;
+  const bodyFit =
+    !fresh && product.bodyFitKcal !== null && shownGoal === "diet";
 
   // 디자인 「다른 목표로 보기」 화면에는 더 맞는 제품 칸이 없다(더 맞는 제품은 내 목표 기준이라)
   const betterSection = !previewView && product.better.length > 0 && (
@@ -121,9 +146,7 @@ export default async function ProductPage({
             </FocusTarget>
             {/* 디자인 메모: 내 목표로 → 3-2 제품 결과 */}
             <Button kind="text" size="S" asChild>
-              <PreviewLink href={`/product/${product.id}`}>
-                내 목표로
-              </PreviewLink>
+              <PreviewLink href={productHref()}>내 목표로</PreviewLink>
             </Button>
           </div>
         )}
@@ -178,22 +201,22 @@ export default async function ProductPage({
                   </span>
                   {/* 디자인 메모: 누르는 곳이 아닌 정보 글자 */}
                   <span className="flex h-9 items-center rounded-full border border-line-strong bg-bg-page px-3.5 text-body2-medium text-text-strong">
-                    내 목표({GOAL_LABEL[product.goal]})로는 {product.score}점
+                    내 목표({GOAL_LABEL[goal]})로는 {mine.score}점
                   </span>
                 </div>
               ) : (
                 <div className="flex gap-2">
                   <span className="flex h-9 items-center rounded-full bg-accent-blue-weak px-3.5 text-body2-bold text-accent-blue-text">
                     {/* 디자인 메모(내 몸에 맞춤): 다이어트 목표면 칩 글자만 바뀐다. 근육 증가는 그대로 */}
-                    {GOAL_LABEL[product.goal]} ·{" "}
+                    {GOAL_LABEL[goal]} ·{" "}
                     {bodyFit ? "내 몸에 맞추기" : "내 목표"}
                   </span>
-                  {product.preview[otherGoal] && (
+                  {views[otherGoal] && (
                     <PreviewLink
-                      href={`/product/${product.id}?preview=${otherGoal}`}
+                      href={productHref(`preview=${otherGoal}`)}
                       className="flex h-9 items-center rounded-full border border-line-strong bg-bg-page px-3.5 text-body2-medium text-text-strong"
                     >
-                      {OTHER_GOAL_LABEL[product.goal]}
+                      {OTHER_GOAL_LABEL[goal]}
                     </PreviewLink>
                   )}
                 </div>
@@ -212,6 +235,20 @@ export default async function ProductPage({
               )}
             </FocusTarget>
           </section>
+          {noGoal && !previewView && (
+            // 디자인 메모(공유 링크, 목표 없음): 줄 → 1-5, 고르면 가이드 없이 같은 제품 결과로 돌아온다
+            <Link
+              href={`/intro/goal?next=/product/${product.id}`}
+              className="flex items-center gap-2 bg-brand-primary-weak px-5 py-3 text-body2"
+            >
+              <span className="min-w-0 flex-1 text-text-strong">
+                지금은 {GOAL_LABEL[goal]} 목표예요
+              </span>
+              <span className="shrink-0 font-bold text-brand-link">
+                내 목표 고르기 <span aria-hidden>›</span>
+              </span>
+            </Link>
+          )}
           {stopped && betterSection}
 
           <Band />
@@ -242,10 +279,10 @@ export default async function ProductPage({
                 <p
                   className={cn(
                     "font-medium",
-                    product.band <= 2 ? "text-brand-link" : "text-text-sub",
+                    mine.band <= 2 ? "text-brand-link" : "text-text-sub",
                   )}
                 >
-                  {product.band <= 2 ? (
+                  {mine.band <= 2 ? (
                     <>
                       <span aria-hidden>✓</span> 이미 이 종류에서 점수가 높은
                       편이에요
