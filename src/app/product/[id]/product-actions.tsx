@@ -6,7 +6,12 @@ import { createContext, use, useRef, useState } from "react";
 import { BottomCta } from "@/components/common/bottom-cta";
 import { Button } from "@/components/common/button";
 import { Toast } from "@/components/common/toast";
-import { IconCompare, IconHeart, IconHeartFill } from "@/components/icons";
+import {
+  IconCompare,
+  IconHeart,
+  IconHeartFill,
+  IconShare,
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 /*
@@ -22,6 +27,7 @@ type ToastState = {
 };
 
 type Actions = {
+  previewing: boolean;
   /** 되돌리기 뒤 포커스를 돌려놓을 ♡ 버튼 */
   saveRef: React.RefObject<HTMLButtonElement | null>;
   saved: boolean;
@@ -91,10 +97,71 @@ export function ProductActions({
 
   return (
     <ActionsContext
-      value={{ saveRef, saved, added, toggleSave, toggleAdd, toast, showToast }}
+      value={{
+        previewing,
+        saveRef,
+        saved,
+        added,
+        toggleSave,
+        toggleAdd,
+        toast,
+        showToast,
+      }}
     >
       {children}
     </ActionsContext>
+  );
+}
+
+/**
+ * 점수 줄의 공유(3-2 공유 주소 복사). 디자인 메모: 기기 공유 창을 띄울 수 있는 브라우저면 공유 창,
+ * 안 되면 주소 복사 + 알림.
+ * 미리 보기 중이어도 주소에는 미리 보기를 빼고 보낸다. 받는 사람은 자기 목표 기준으로 본다(디자인 메모 11-03).
+ */
+export function ShareButton({ path, title }: { path: string; title: string }) {
+  const { previewing, showToast } = useActions();
+
+  const share = async () => {
+    const url = `${window.location.origin}${path}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, url });
+        if (previewing)
+          showToast({ message: "받는 사람의 목표 기준으로 보여요" });
+        return;
+      } catch (error) {
+        // 공유 창을 닫았거나 이미 열려 있으면 그대로 둔다. 권한 정책·앱 안 브라우저의 거절은 주소 복사로 넘어간다
+        if (
+          error instanceof DOMException &&
+          (error.name === "AbortError" || error.name === "InvalidStateError")
+        )
+          return;
+      }
+    }
+    try {
+      // https가 아니면 navigator.clipboard 자체가 없다(타입은 늘 있다고 본다)
+      await navigator.clipboard.writeText(url);
+    } catch {
+      // 실패 문구는 디자인에 없어 임시(UI 플랜 「남은 질문」 10)
+      showToast({ message: "주소를 복사하지 못했어요" });
+      return;
+    }
+    showToast({
+      message: previewing
+        ? "주소를 복사했어요. 받는 사람의 목표 기준으로 보여요"
+        : "주소를 복사했어요. 카카오톡 등에 붙여 넣어 보내 보세요.",
+    });
+  };
+
+  return (
+    <button
+      type="button"
+      aria-label="공유"
+      className="[&_svg]:size-[26px]"
+      onClick={() => void share()}
+    >
+      <IconShare />
+    </button>
   );
 }
 
