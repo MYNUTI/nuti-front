@@ -1,6 +1,6 @@
 # UI 작업 플랜
 
-> 상태: **03단계 바코드 진행 중** (2026-11-07). 0-3·0-3x·3-1 상태 6개 완료, 3-1 여러 개·이 제품인가요는 보류(「남은 질문」 4), 3-2 스캔 직후·담았을 때 완료(3-2 이 제품으로 이었을 때는 「남은 질문」 4와 같은 이유로 보류). 다음은 04단계 제품 결과. 이 문서는 범위·순서·결정만 기록한다. 화면 하나가 끝날 때마다 확인받고 다음 화면으로 넘어간다.
+> 상태: **04단계 제품 결과 진행 중** (2026-11-07). 03단계 바코드는 만들 수 있는 화면을 모두 만들었다(3-1 여러 개·이 제품인가요·3-2 이 제품으로 이었을 때는 「남은 질문」 4로 보류). 04단계는 3-2 기본 화면 완료. 이 문서는 범위·순서·결정만 기록한다. 화면 하나가 끝날 때마다 확인받고 다음 화면으로 넘어간다.
 
 ## 목적
 
@@ -29,7 +29,7 @@
 - `globals.css`에 v3 CHIPS 토큰(색·등급 색·글자 스타일 12개·모서리)이 있다. 예전 토큰과 `rounded-xl` 이상은 임시 화면용으로 남아 있고 13단계에서 지운다
 - 글꼴은 Pretendard 서브셋(400·500·700)
 - 아이콘: `components/icons.tsx`에 피그마 v2/Icon 39개
-- v3 공통 부품: `components/common/`의 button, bottom-cta, top-bar, search-field, tab-bar, grade(GradeBadge·GradeTag, GradeBar 제외), status-tag, chip, select-card, check-row, check-mark, text-field, product-row, list-row, toggle, reason-row, section-header, thumb, category-tile, product-hero, camera-frame, sheet(BottomSheet·ConfirmSheet), empty-state(EmptyState·ErrorState), loading-state, skeleton, step-dots, score-ring, back-button, coachmark, toast. 그 밖의 `components/common/`(cta-button, layer, card-tutorial, choice-card)과 `components/ui/`(shadcn button, checkbox, radio-group)는 임시 화면용이다
+- v3 공통 부품: `components/common/`의 button, bottom-cta, top-bar, search-field, tab-bar, grade(GradeBadge·GradeTag, GradeBar 제외), status-tag, chip, select-card, check-row, check-mark, text-field, product-row, list-row, toggle, reason-row, section-header, thumb, category-tile, product-hero, camera-frame, sheet(BottomSheet·ConfirmSheet), empty-state(EmptyState·ErrorState), loading-state, skeleton, step-dots, score-ring, back-button, coachmark, toast, step-list, reason-chip, product-card. 그 밖의 `components/common/`(cta-button, layer, card-tutorial, choice-card)과 `components/ui/`(shadcn button, checkbox, radio-group)는 임시 화면용이다
 - 스캔: `components/scan/`가 `lib/scan` 상태 기계·lookup에 붙어 있다. UI 작업은 겉모양만 바꾸고 이 연결은 유지한다
 - 라우트는 임시본이다(`home`, `scan`, `history`, `settings`, `product/[id]`, `onboarding/*` 9개). v3 화면 구성과 맞지 않는다
 
@@ -156,7 +156,7 @@ API 연결은 API 브랜치 08·09단계 이후에 붙인다. 그 전까지 화�
 
 `feat/api`의 1차 작업은 `main`에 머지됐고(#2, `9d5febf`, 2026-11-05 기준) 이 브랜치에도 들어와 있다. API 플랜 다음 단계에서 아래 파일을 고칠 수 있어 UI 작업과 겹친다.
 
-- `src/app/home/page.tsx`, `src/app/product/[id]/page.tsx` — API 06단계에서 목 카탈로그 import 경로를 바꾸고, 상세 페이지에 서버 조회를 넣는다
+- `src/app/home/page.tsx`, `src/app/product/[id]/page.tsx` — API 06단계에서 `_fixtures.ts` import를 서버 조회(`getProductDetail`) + 화면용 모양(`ProductResult`) mapper로 바꾼다
 - `src/components/scan/scan-stage.tsx` — API 06단계에서 쿼리 키를 옮긴다
 - `src/app/providers.tsx` — API 07단계. UI 작업은 건드리지 않는다
 
@@ -170,6 +170,7 @@ API 연결은 API 브랜치 08·09단계 이후에 붙인다. 그 전까지 화�
 4. **3-1 「바코드에 제품이 여러 개일 때」·「이 제품인가요?」, 3-2 「스캔 직후, 이 제품으로 이었을 때」(보류)** — 1차 바코드 조회 API(`lookupBarcode`)는 제품 1개만 돌려주고, 여러 제품·비슷한 후보·「이어 두기」 저장 응답이 없다. 「여러 개」는 메모에도 「안 정함: 이 시트를 둘지, 고른 제품을 기억할지(SCAN_009)」로 남아 있다. 백엔드 응답과 디자인 결정이 나오면 만든다(SCAN_008·009·010)
 5. **3-1 카메라 점유 안내** — 다른 앱이 카메라를 쓰고 있을 때(`retryable: "in-use"`) 「다른 앱이 카메라를 쓰고 있어요 · 다시 시도」 띠를 보인다. 디자인에 이 상태 화면이 없어 예전 띠 모양 그대로다. 디자이너 확인
 6. **3-2 카메라 없이 찾은 뒤의 결과** — 디자인의 결과 시트는 화면 아래에 붙어 아래 버튼 줄(사진·번호·이름)을 가린다. 카메라가 읽고 있을 때는 다음 바코드를 비추면 되지만, 사진·번호로만 찾는 중(PC·앱 안 브라우저·권한 거부)이나 카메라 점유 중에는 더 찾을 방법이 없어진다. 그래서 그때만 시트를 카메라 자리 안에 띄우고 버튼 줄을 남겼다. 디자이너 확인
+7. **3-2 목표 이름** — 목표 칩은 「다이어트 · 내 목표」인데, 디자인 메모는 근육 증가 목표일 때 다른 목표 칩을 「체중 감량으로 보기」로 적는다. 같은 목표를 두 이름으로 부르게 되어, 「다이어트로 보기」로 맞출지 디자이너 확인(지금은 메모 문구 그대로)
 
 ## 결정 기록
 
