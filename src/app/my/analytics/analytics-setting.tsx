@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
+
 import { ListRow } from "@/components/common/list-row";
+import { Toast } from "@/components/common/toast";
 import { writeOptOut } from "@/lib/analytics/ga";
 import {
   useAnalyticsOptOut,
@@ -12,6 +15,8 @@ import { usePolicies } from "@/lib/me/queries";
 export function AnalyticsSetting() {
   const optedOut = useAnalyticsOptOut(false);
   const readable = useOptOutStorageReadable();
+  // 저장 실패 알림을 다시 띄우려면 Toast를 새로 마운트해야 해서(key) 횟수로 센다
+  const [saveFailures, setSaveFailures] = useState(0);
   const { data: policies } = usePolicies();
   const privacyUrl = policies?.privacy?.url;
 
@@ -31,10 +36,22 @@ export function AnalyticsSetting() {
           // 저장소를 못 읽는 브라우저는 보내지 않음으로 고정한다(켬 값을 기억할 수 없어서 · ACCT_011 예외)
           disabled: !readable,
           className: readable ? undefined : "opacity-40",
-          // 켜면 GA를 이미 시작한 화면은 새로 고쳐진다(app/google-analytics.tsx)
-          onChange: (event) => writeOptOut(event.target.checked),
+          // 켜면 GA를 이미 시작한 화면은 새로 고쳐진다(app/google-analytics.tsx). 저장에 실패하면 스위치 · GA는
+          // 그대로 두고 알림만 띄운다(ACCT_011 마지막 시나리오)
+          onChange: (event) => {
+            if (!writeOptOut(event.target.checked))
+              setSaveFailures((count) => count + 1);
+          },
         }}
       />
+      {saveFailures > 0 && (
+        <Toast
+          key={saveFailures}
+          message="저장하지 못했어요. 브라우저 저장 공간을 확인해 주세요."
+          // 이 화면에는 하단 탭이 없어 화면 아래쪽에 띄운다
+          className="bottom-[calc(24px+var(--safe-bottom))]"
+        />
+      )}
       <p className="px-5 pt-4 text-body2 break-keep text-text-sub">
         이 브라우저에만 적용돼요. 다른 브라우저나 기기로 열거나 쿠키와 사이트
         데이터를 지우면 {"'이용 통계 보내지 않기'"}를 다시 켜 주세요. 보내지

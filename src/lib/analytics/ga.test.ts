@@ -5,7 +5,6 @@ import {
   canReadOptOutStorage,
   getMeasurementId,
   hasStartedAnalytics,
-  isOptOutSaved,
   readOptOut,
   resetAnalyticsForTest,
   subscribeOptOut,
@@ -220,7 +219,7 @@ describe("이용 통계 보내지 않기", () => {
     expect(readOptOut()).toBe(true);
   });
 
-  it("쓰기만 실패하면 이 화면에서만 기억하고 저장 안 됨으로 알린다", () => {
+  it("쓰기만 실패하면 아무것도 바꾸지 않고 실패를 돌려준다(스위치 · GA 그대로)", () => {
     vi.stubGlobal("localStorage", {
       getItem: () => null,
       setItem: () => {
@@ -229,15 +228,15 @@ describe("이용 통계 보내지 않기", () => {
       removeItem: () => undefined,
     });
     const win = stubBrowser();
+    const onChange = vi.fn();
+    subscribeOptOut(onChange);
 
+    expect(writeOptOut(true)).toBe(false);
     expect(readOptOut()).toBe(false);
-    writeOptOut(true);
-    expect(readOptOut()).toBe(true);
-    expect(isOptOutSaved()).toBe(false);
-    expect(win[`ga-disable-${ID}`]).toBe(true);
+    expect(win[`ga-disable-${ID}`]).toBeUndefined();
+    expect(onChange).not.toHaveBeenCalled();
 
-    writeOptOut(false);
-    expect(isOptOutSaved()).toBe(true);
-    expect(readOptOut()).toBe(false);
+    expect(writeOptOut(false)).toBe(true);
+    expect(onChange).toHaveBeenCalledTimes(1);
   });
 });

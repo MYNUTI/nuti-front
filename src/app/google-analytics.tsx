@@ -7,7 +7,6 @@ import { useEffect, useRef } from "react";
 import {
   getMeasurementId,
   hasStartedAnalytics,
-  isOptOutSaved,
   readOptOut,
   trackPageView,
 } from "@/lib/analytics/ga";
@@ -29,10 +28,10 @@ export function GoogleAnalytics() {
   }, [id, optedOut, pathname]);
 
   // 이미 불러온 gtag.js는 끄기 값을 나중에 세워도 자동 이벤트를 계속 보낸다. 이 탭이든 다른 탭이든 끄면,
-  // GA를 시작한 탭은 보이는 동안 새로 고쳐 처음부터 부르지 않게 한다. 저장에 실패했으면 새로 고치면 끈 것이
-  // 사라지므로 그대로 둔다
+  // GA를 시작한 탭은 보이는 동안 새로 고쳐 처음부터 부르지 않게 한다. 저장에 실패하면 끔 자체가 바뀌지 않아
+  // 여기까지 오지 않는다(writeOptOut)
   useEffect(() => {
-    if (!optedOut || !hasStartedAnalytics() || !isOptOutSaved()) return;
+    if (!optedOut || !hasStartedAnalytics()) return;
     const reloadWhenVisible = () => {
       if (document.visibilityState === "visible") window.location.reload();
     };

@@ -42,9 +42,6 @@ export function toAnalyticsUrl(href: string): string {
   }
 }
 
-// 저장에 실패했을 때 이 화면에서만 쓰는 값. 새로 고치면 사라진다
-let unsavedOptOut: boolean | null = null;
-
 /**
  * 저장소를 읽을 수 있는가. 못 읽는 브라우저(쿠키·사이트 데이터를 통째로 막음)는 켬 값을 기억할 수 없어,
  * 이용자의 「보내지 않기」를 지킬 길이 고정뿐이다 — 보내지 않음으로 두고 스위치를 누를 수 없게 한다
@@ -60,27 +57,29 @@ export function canReadOptOutStorage(): boolean {
 }
 
 export function readOptOut(): boolean {
-  let stored: string | null;
   try {
-    stored = localStorage.getItem(OPT_OUT_STORAGE_KEY);
+    return localStorage.getItem(OPT_OUT_STORAGE_KEY) === "1";
   } catch {
     return true;
   }
-  if (unsavedOptOut !== null) return unsavedOptOut;
-  return stored === "1";
 }
 
-export function writeOptOut(optOut: boolean) {
+/**
+ * 끄기 상태를 저장한다. 저장에 실패하면(읽기는 되는데 쓰기만 안 됨 — 저장 공간 가득 참 등) 아무것도 바꾸지
+ * 않고 false를 돌려준다 — 스위치는 그대로, GA도 그대로, 새로 고치지 않는다. 화면이 「보내지 않아요」라고
+ * 말하는데 이미 불러온 GA가 계속 보내는 일을 막으려는 것이다(디자인 확정 11-16 · ACCT_011 마지막 시나리오).
+ * 실패 안내는 부르는 쪽이 띄운다
+ */
+export function writeOptOut(optOut: boolean): boolean {
   try {
     if (optOut) localStorage.setItem(OPT_OUT_STORAGE_KEY, "1");
     else localStorage.removeItem(OPT_OUT_STORAGE_KEY);
-    unsavedOptOut = null;
   } catch {
-    // 읽기는 되는데 쓰기만 안 되면(저장 공간 가득 참 등) 이 화면에서만 기억한다
-    unsavedOptOut = optOut;
+    return false;
   }
   applyDisableFlag(optOut);
   window.dispatchEvent(new Event(OPT_OUT_EVENT));
+  return true;
 }
 
 /** `useSyncExternalStore`용. 이 탭에서 바꾼 것과 다른 탭에서 바꾼 것(storage 이벤트)을 모두 듣는다 */
@@ -104,11 +103,6 @@ function applyDisableFlag(optOut: boolean) {
 
 let started = false;
 const configured = new Set<string>();
-
-/** 끈 상태가 저장소에 남았는가(새로 고쳐도 유지되는가) */
-export function isOptOutSaved(): boolean {
-  return unsavedOptOut === null;
-}
 
 /** 이 화면에서 GA 명령을 한 번이라도 보냈는가. 켰다가 끄면 새로 고쳐야 멈춘다 */
 export function hasStartedAnalytics(): boolean {
@@ -158,5 +152,4 @@ export function trackPageView(id: string, previous: string | null): string {
 export function resetAnalyticsForTest() {
   started = false;
   configured.clear();
-  unsavedOptOut = null;
 }

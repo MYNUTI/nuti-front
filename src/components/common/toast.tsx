@@ -52,7 +52,8 @@ export function Toast({
       {shown && !gone && (
         <div
           className={cn(
-            "flex items-center gap-3 rounded-[10px] bg-[rgba(17,20,24,0.8)] px-4 py-3 text-[14px] leading-[17px] font-medium text-white",
+            // 좁은 화면에서 두 줄이 될 때 낱말 중간에서 끊기지 않게 한다(break-keep)
+            "flex items-center gap-3 rounded-[10px] bg-[rgba(17,20,24,0.8)] px-4 py-3 text-[14px] leading-[17px] font-medium break-keep text-white",
             // 글자 버튼이 없으면 아래(하단 탭 등)를 가리지 않게 누를 수 없는 띠로 둔다
             action && "pointer-events-auto",
           )}
