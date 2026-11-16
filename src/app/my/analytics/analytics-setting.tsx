@@ -1,7 +1,7 @@
 "use client";
 
 import { ListRow } from "@/components/common/list-row";
-import { hasStartedAnalytics, writeOptOut } from "@/lib/analytics/ga";
+import { writeOptOut } from "@/lib/analytics/ga";
 import { useAnalyticsOptOut } from "@/lib/analytics/use-opt-out";
 import { usePolicies } from "@/lib/me/queries";
 
@@ -12,9 +12,9 @@ export function AnalyticsSetting() {
 
   return (
     <div className="flex flex-col pb-10">
-      <p className="px-5 pt-2 pb-6 text-body1 text-text-sub">
+      <p className="px-5 pt-2 pb-6 text-body1 break-keep text-text-sub">
         어느 화면에서 이용이 끊기는지 알고 고치려고, 본 화면과 머문 시간 같은
-        이용 기록을 Google 애널리틱스로 보내요. 이름·이메일·고른 목표는 보내지
+        이용 기록을 Google 애널리틱스로 보내요. 이름, 이메일, 고른 목표는 보내지
         않아요.
       </p>
       <ListRow
@@ -22,18 +22,13 @@ export function AnalyticsSetting() {
         description="이 브라우저에서만 적용돼요"
         toggle={{
           checked: optedOut,
-          onChange: (event) => {
-            const optOut = event.target.checked;
-            writeOptOut(optOut);
-            // 이미 불러온 gtag.js는 끄기 값을 나중에 세워도 자동 이벤트(스크롤 등)를 계속 보낸다(Google 안내도
-            // 「gtag를 부르기 전에」 세우라고 한다 — 로컬에서 확인). 새로 고쳐 처음부터 부르지 않게 한다
-            if (optOut && hasStartedAnalytics()) window.location.reload();
-          },
+          // 켜면 GA를 이미 시작한 화면은 새로 고쳐진다(app/google-analytics.tsx)
+          onChange: (event) => writeOptOut(event.target.checked),
         }}
       />
-      <p className="px-5 pt-4 text-body2 text-text-sub">
-        다른 브라우저로 열거나 브라우저 데이터를 지우면 다시 켜 주세요. 켜도
-        모든 기능을 그대로 쓸 수 있어요.
+      <p className="px-5 pt-4 text-body2 break-keep text-text-sub">
+        보내지 않아도 모든 기능을 그대로 쓸 수 있어요. 다른 브라우저로 열거나
+        브라우저 데이터를 지우면 다시 켜 주세요.
       </p>
       {privacyUrl && (
         <a

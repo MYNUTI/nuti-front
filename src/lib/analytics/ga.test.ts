@@ -4,6 +4,7 @@ import {
   OPT_OUT_STORAGE_KEY,
   getMeasurementId,
   hasStartedAnalytics,
+  isOptOutSaved,
   readOptOut,
   resetAnalyticsForTest,
   subscribeOptOut,
@@ -197,7 +198,7 @@ describe("이용 통계 보내지 않기", () => {
     expect(onChange).toHaveBeenCalledTimes(1);
   });
 
-  it("저장소를 못 쓰면 보냄으로 읽고, 쓰기 실패에도 이번 화면은 멈춘다", () => {
+  it("저장소를 아예 못 읽으면 보내지 않음으로 읽는다(스위치가 듣지 않으므로)", () => {
     vi.stubGlobal("localStorage", {
       getItem: () => {
         throw new Error("blocked");
@@ -207,10 +208,29 @@ describe("이용 통계 보내지 않기", () => {
       },
       removeItem: () => undefined,
     });
+    stubBrowser();
+
+    expect(readOptOut()).toBe(true);
+  });
+
+  it("쓰기만 실패하면 이 화면에서만 기억하고 저장 안 됨으로 알린다", () => {
+    vi.stubGlobal("localStorage", {
+      getItem: () => null,
+      setItem: () => {
+        throw new Error("quota");
+      },
+      removeItem: () => undefined,
+    });
     const win = stubBrowser();
 
     expect(readOptOut()).toBe(false);
     writeOptOut(true);
+    expect(readOptOut()).toBe(true);
+    expect(isOptOutSaved()).toBe(false);
     expect(win[`ga-disable-${ID}`]).toBe(true);
+
+    writeOptOut(false);
+    expect(isOptOutSaved()).toBe(true);
+    expect(readOptOut()).toBe(false);
   });
 });

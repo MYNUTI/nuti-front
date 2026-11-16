@@ -1,12 +1,16 @@
 /**
  * Google 애널리틱스(GA4). 개인정보 처리방침 9-2항(다른 회사가 수집해 가는 이용 정보)이 약속한 것을 여기서 지킨다.
  * - 화면 주소의 「?」 뒤(`goal` 같은 값)와 「#」 뒤는 보내지 않는다. 화면이 바뀔 때마다 정리한 주소를
- *   `set`으로 먼저 넣어, 뒤따르는 자동 이벤트(스크롤·바깥 링크 클릭 등 향상된 측정)도 그 주소를 싣게 한다.
- *   GA 관리 화면의 데이터 가리기(`goal`·`next`)는 덧대기다
+ *   `set`으로 먼저 넣어, 뒤따르는 자동 이벤트(스크롤 등 향상된 측정)도 그 주소를 싣게 한다(page_location·
+ *   page_referrer). 자동 이벤트가 따로 싣는 주소(바깥 링크 `link_url`·양식 `form_destination`·동영상
+ *   `video_url`)는 여기서 못 고친다 — GA 관리 화면 데이터 가리기(`goal`·`next`)가 보내기 전에 지운다
+ * - 배포 조건: GA 관리 › 웹 스트림 › 향상된 측정 › 페이지 조회 › 「브라우저 기록 이벤트 기반 페이지 변경」은
+ *   꺼져 있어야 한다. 켜면 GA가 화면 이동마다 정리 전 주소로 page_view를 따로 보낸다(2026-11-16 꺼짐 확인)
  * - 회원 번호·기기 임시 번호·이메일은 보내지 않는다(`user_id`를 쓰지 않는다)
  * - 「이용 통계 보내지 않기」를 켠 브라우저는 gtag.js를 부르지 않는다. Google 공식 끄기 값
  *   `window['ga-disable-<측정 ID>']`도 세우지만, 이미 불러온 gtag.js는 나중에 세운 값을 듣지 않고 자동 이벤트를
- *   계속 보내므로(로컬 확인) 켠 화면은 새로 고친다(`hasStartedAnalytics`)
+ *   계속 보내므로(로컬 확인) GA를 시작한 탭은 보이는 동안 새로 고친다 — 다른 탭에서 켠 것도 같다
+ *   (`app/google-analytics.tsx`)
  * 측정 ID(`NEXT_PUBLIC_GA_MEASUREMENT_ID`)가 비어 있으면 아무것도 하지 않는다. Preview·개발에서는 비워 둔다
  */
 
@@ -38,13 +42,16 @@ export function toAnalyticsUrl(href: string): string {
   }
 }
 
-// 저장소를 못 쓰는 브라우저(사생활 보호 모드 등)는 끈 상태를 기억할 수 없어 보낸다. 이번 화면에서 끈 것은
-// 아래 끄기 값으로 지켜진다
+// 저장에 실패했을 때 이 화면에서만 쓰는 값. 새로 고치면 사라진다
+let unsavedOptOut: boolean | null = null;
+
+// 저장소를 아예 못 읽는 브라우저는 끈 상태를 기억할 수 없어 스위치가 듣지 않는다. 그래서 보내지 않음으로 읽는다
 export function readOptOut(): boolean {
+  if (unsavedOptOut !== null) return unsavedOptOut;
   try {
     return localStorage.getItem(OPT_OUT_STORAGE_KEY) === "1";
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -52,8 +59,10 @@ export function writeOptOut(optOut: boolean) {
   try {
     if (optOut) localStorage.setItem(OPT_OUT_STORAGE_KEY, "1");
     else localStorage.removeItem(OPT_OUT_STORAGE_KEY);
+    unsavedOptOut = null;
   } catch {
-    // 저장하지 못해도 이번 화면에서는 끄기 값으로 멈춘다
+    // 읽기는 되는데 쓰기만 안 되면(저장 공간 가득 참 등) 이 화면에서만 기억한다
+    unsavedOptOut = optOut;
   }
   applyDisableFlag(optOut);
   window.dispatchEvent(new Event(OPT_OUT_EVENT));
@@ -80,6 +89,11 @@ function applyDisableFlag(optOut: boolean) {
 
 let started = false;
 const configured = new Set<string>();
+
+/** 끈 상태가 저장소에 남았는가(새로 고쳐도 유지되는가) */
+export function isOptOutSaved(): boolean {
+  return unsavedOptOut === null;
+}
 
 /** 이 화면에서 GA 명령을 한 번이라도 보냈는가. 켰다가 끄면 새로 고쳐야 멈춘다 */
 export function hasStartedAnalytics(): boolean {
@@ -129,4 +143,5 @@ export function trackPageView(id: string, previous: string | null): string {
 export function resetAnalyticsForTest() {
   started = false;
   configured.clear();
+  unsavedOptOut = null;
 }
