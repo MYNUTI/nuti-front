@@ -7,6 +7,7 @@ import {
   iosSplashMedia,
   iosSplashPath,
 } from "@/lib/pwa";
+import { GoogleAnalytics } from "./google-analytics";
 import Providers from "./providers";
 
 const pretendard = localFont({
@@ -26,6 +27,12 @@ export const metadata: Metadata = {
   },
   description: "",
   robots: { index: false, follow: false },
+  // 네이버 서치어드바이저 사이트 소유 확인. 값은 공개 확인용이라 비밀이 아니다
+  verification: {
+    other: {
+      "naver-site-verification": "dcbde3834fa1b1f6a80433d1d4a4b8cafcf3be20",
+    },
+  },
   icons: { apple: APPLE_ICON.path },
   appleWebApp: {
     title: "마이뉴티",
@@ -50,6 +57,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <div className="mx-auto flex min-h-dvh w-full max-w-app flex-col bg-background">
           <Providers>{children}</Providers>
         </div>
+        <GoogleAnalytics />
       </body>
     </html>
   );
