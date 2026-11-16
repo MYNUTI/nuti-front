@@ -2,12 +2,16 @@
 
 import { ListRow } from "@/components/common/list-row";
 import { writeOptOut } from "@/lib/analytics/ga";
-import { useAnalyticsOptOut } from "@/lib/analytics/use-opt-out";
+import {
+  useAnalyticsOptOut,
+  useOptOutStorageReadable,
+} from "@/lib/analytics/use-opt-out";
 import { usePolicies } from "@/lib/me/queries";
 
 // 5-11 이용 통계. 문구는 디자인 확정본(11-16 · 기능명세서 ACCT_011)
 export function AnalyticsSetting() {
   const optedOut = useAnalyticsOptOut(false);
+  const readable = useOptOutStorageReadable();
   const { data: policies } = usePolicies();
   const privacyUrl = policies?.privacy?.url;
 
@@ -21,8 +25,12 @@ export function AnalyticsSetting() {
       <ListRow
         title="이용 통계 보내지 않기"
         description={optedOut ? "지금은 보내지 않아요" : "지금은 보내고 있어요"}
+        className={readable ? undefined : "cursor-not-allowed"}
         toggle={{
           checked: optedOut,
+          // 저장소를 못 읽는 브라우저는 보내지 않음으로 고정한다(켬 값을 기억할 수 없어서 · ACCT_011 예외)
+          disabled: !readable,
+          className: readable ? undefined : "opacity-40",
           // 켜면 GA를 이미 시작한 화면은 새로 고쳐진다(app/google-analytics.tsx)
           onChange: (event) => writeOptOut(event.target.checked),
         }}

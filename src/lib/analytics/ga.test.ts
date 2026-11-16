@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   OPT_OUT_STORAGE_KEY,
+  canReadOptOutStorage,
   getMeasurementId,
   hasStartedAnalytics,
   isOptOutSaved,
@@ -198,7 +199,7 @@ describe("이용 통계 보내지 않기", () => {
     expect(onChange).toHaveBeenCalledTimes(1);
   });
 
-  it("저장소를 아예 못 읽으면 보내지 않음으로 읽는다(스위치가 듣지 않으므로)", () => {
+  it("저장소를 아예 못 읽으면 보내지 않음으로 고정한다(켬 값을 기억할 수 없으므로)", () => {
     vi.stubGlobal("localStorage", {
       getItem: () => {
         throw new Error("blocked");
@@ -206,10 +207,16 @@ describe("이용 통계 보내지 않기", () => {
       setItem: () => {
         throw new Error("blocked");
       },
-      removeItem: () => undefined,
+      removeItem: () => {
+        throw new Error("blocked");
+      },
     });
     stubBrowser();
 
+    expect(canReadOptOutStorage()).toBe(false);
+    expect(readOptOut()).toBe(true);
+    // 화면은 스위치를 막지만, 누가 불러도 이번 화면의 「보냄」이 고정을 이기지 않는다
+    writeOptOut(false);
     expect(readOptOut()).toBe(true);
   });
 

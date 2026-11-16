@@ -45,14 +45,29 @@ export function toAnalyticsUrl(href: string): string {
 // 저장에 실패했을 때 이 화면에서만 쓰는 값. 새로 고치면 사라진다
 let unsavedOptOut: boolean | null = null;
 
-// 저장소를 아예 못 읽는 브라우저는 끈 상태를 기억할 수 없어 스위치가 듣지 않는다. 그래서 보내지 않음으로 읽는다
-export function readOptOut(): boolean {
-  if (unsavedOptOut !== null) return unsavedOptOut;
+/**
+ * 저장소를 읽을 수 있는가. 못 읽는 브라우저(쿠키·사이트 데이터를 통째로 막음)는 켬 값을 기억할 수 없어,
+ * 이용자의 「보내지 않기」를 지킬 길이 고정뿐이다 — 보내지 않음으로 두고 스위치를 누를 수 없게 한다
+ * (디자인 확정 11-16 · 기능명세서 ACCT_011 예외 행)
+ */
+export function canReadOptOutStorage(): boolean {
   try {
-    return localStorage.getItem(OPT_OUT_STORAGE_KEY) === "1";
+    localStorage.getItem(OPT_OUT_STORAGE_KEY);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function readOptOut(): boolean {
+  let stored: string | null;
+  try {
+    stored = localStorage.getItem(OPT_OUT_STORAGE_KEY);
   } catch {
     return true;
   }
+  if (unsavedOptOut !== null) return unsavedOptOut;
+  return stored === "1";
 }
 
 export function writeOptOut(optOut: boolean) {
