@@ -23,9 +23,10 @@ export function AnalyticsSetting() {
   return (
     <div className="flex flex-col pb-10">
       <p className="px-5 pt-2 pb-6 text-body1 break-keep text-text-sub">
+        {/* 화면 기록(PostHog) 문장은 임시 — 디자인 확정 전 */}
         어느 화면에서 이용을 멈추는지 알고 고치려고, 열어 본 화면과 머문 시간
-        같은 이용 통계를 Google 애널리틱스로 보내요. 이름, 이메일, 고른 목표는
-        보내지 않아요.
+        같은 이용 통계는 Google 애널리틱스로, 화면을 누르고 넘긴 기록은
+        PostHog로 보내요. 이름, 이메일, 입력한 글자, 고른 목표는 보내지 않아요.
       </p>
       <ListRow
         title="이용 통계 보내지 않기"

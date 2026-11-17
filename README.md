@@ -41,6 +41,7 @@ http://localhost:3000
 | `API_URL`                       | 백엔드 주소 | 서버 전용(주소는 팀 공지). 비우면 dev는 뜨지만 API 요청이 404가 된다. `next build`는 필수      |
 | `NEXT_PUBLIC_LOGGING_ENABLED`   | 비움        | 로깅 전송. 비우면 프로덕션 빌드만 보낸다. 개발 중에는 비워 두고 로깅 전송을 확인할 때만 `true` |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | 비움        | Google 애널리틱스 측정 ID. 비우면 GA를 부르지 않는다. 운영에만 넣고 Preview·개발은 비운다      |
+| `NEXT_PUBLIC_POSTHOG_KEY`       | 비움        | PostHog 프로젝트 키(화면 기록). 비우면 부르지 않는다. 운영에만 넣는다(EU 서버 고정)            |
 
 개발 서버가 따로 없어 개발 중에도 배포 API 서버(운영 데이터)를 부른다. 상품 조회만 해도 조회수가 오르고 없는 바코드는 분석 대기 목록에 등록되니 실험 삼아 반복 호출하지 않는다.
 

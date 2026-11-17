@@ -48,7 +48,8 @@ export function GoalForm({
     <>
       <main className="flex flex-1 flex-col">
         {header}
-        <fieldset className="flex flex-col gap-3 px-5">
+        {/* ph-no-capture: 화면 기록(PostHog)에서 고른 목표가 보이지 않게 통째로 가린다 */}
+        <fieldset className="ph-no-capture flex flex-col gap-3 px-5">
           <legend className="sr-only">목표</legend>
           {GOALS.map((g) => (
             <SelectCard
