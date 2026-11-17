@@ -57,6 +57,9 @@ describe("maskSensitiveText", () => {
     );
     expect(maskSensitiveText("2,500kcal 기준으로 보기")).toBe("***으로 보기");
     expect(maskSensitiveText("1998년생")).toBe("***");
+    expect(maskSensitiveText("계정 user.name+1@gmail.com 로그인")).toBe(
+      "계정 *** 로그인",
+    );
   });
 
   it("다른 글자는 그대로 둔다(제품 열량 포함)", () => {

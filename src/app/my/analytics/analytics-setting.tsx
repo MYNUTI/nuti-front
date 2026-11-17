@@ -23,10 +23,11 @@ export function AnalyticsSetting() {
   return (
     <div className="flex flex-col pb-10">
       <p className="px-5 pt-2 pb-6 text-body1 break-keep text-text-sub">
-        {/* 화면 기록(PostHog) 문장은 임시 — 디자인 확정 전 */}
-        어느 화면에서 이용을 멈추는지 알고 고치려고, 열어 본 화면과 머문 시간
-        같은 이용 통계는 Google 애널리틱스로, 화면을 누르고 넘긴 기록은
-        PostHog로 보내요. 이름, 이메일, 입력한 글자, 고른 목표는 보내지 않아요.
+        {/* 디자인 확정 11-17. 「이름, 이메일」은 이름 · 이메일을 글자로 보여 주는 화면(내 정보 계정 줄 등)에
+            ph-mask 를 붙인 뒤에만 넣는다 — 그 전에는 녹화에 담길 수 있어 뺀 판(디자인 세션이 정한 대체 문구) */}
+        어느 화면에서 이용을 멈추는지 알고 고치려고, 열어 본 화면과 머문 시간은
+        Google 애널리틱스로, 화면을 누르고 넘긴 모습은 화면 녹화로 PostHog에
+        보내요. 입력한 글자, 고른 목표, 키와 몸무게는 가려서 보내지 않아요.
       </p>
       <ListRow
         title="이용 통계 보내지 않기"
