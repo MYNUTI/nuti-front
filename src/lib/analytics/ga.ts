@@ -31,16 +31,25 @@ export function getMeasurementId(): string | null {
   return id ? id : null;
 }
 
-/** 주소에서 「?」 뒤와 「#」 뒤를 뺀다. 주소가 아니면 빈 문자열 */
+/** 주소에서 「?」 뒤(광고 · 유입 표시 utm_ 만 남김)와 「#」 뒤를 뺀다. 주소가 아니면 빈 문자열 */
 export function toAnalyticsUrl(href: string): string {
   if (!href) return "";
   try {
     const url = new URL(href);
-    return `${url.origin}${url.pathname}`;
+    // 광고 · 유입 표시(utm_)만 남긴다. GA 는 이 값으로 「어디서 들어왔나」(예: 인스타그램 게시물)를 센다.
+    // 이용자가 고른 값(goal · next 등)은 남기지 않는다
+    const kept = new URLSearchParams();
+    url.searchParams.forEach((value, key) => {
+      if (UTM_PARAM.test(key)) kept.append(key, value);
+    });
+    const query = kept.toString();
+    return `${url.origin}${url.pathname}${query ? `?${query}` : ""}`;
   } catch {
     return "";
   }
 }
+
+const UTM_PARAM = /^utm_(source|medium|campaign|term|content|id)$/;
 
 /**
  * 저장소를 읽을 수 있는가. 못 읽는 브라우저(쿠키·사이트 데이터를 통째로 막음)는 켬 값을 기억할 수 없어,

@@ -55,6 +55,19 @@ describe("toAnalyticsUrl", () => {
     );
   });
 
+  it("광고 · 유입 표시(utm_)는 남기고 나머지는 뺀다", () => {
+    expect(
+      toAnalyticsUrl(
+        "https://nutriuniv.co.kr/product/3?goal=diet&utm_source=instagram&utm_medium=social&next=%2Fhome&utm_campaign=card12",
+      ),
+    ).toBe(
+      "https://nutriuniv.co.kr/product/3?utm_source=instagram&utm_medium=social&utm_campaign=card12",
+    );
+    expect(
+      toAnalyticsUrl("https://nutriuniv.co.kr/home?utm_x=1&goal=diet"),
+    ).toBe("https://nutriuniv.co.kr/home");
+  });
+
   it("비었거나 주소가 아니면 빈 문자열", () => {
     expect(toAnalyticsUrl("")).toBe("");
     expect(toAnalyticsUrl("goal=diet")).toBe("");
