@@ -8,6 +8,7 @@ import {
   iosSplashPath,
 } from "@/lib/pwa";
 import { GoogleAnalytics } from "./google-analytics";
+import { PosthogAnalytics } from "./posthog-analytics";
 import Providers from "./providers";
 
 const pretendard = localFont({
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Providers>{children}</Providers>
         </div>
         <GoogleAnalytics />
+        <PosthogAnalytics />
       </body>
     </html>
   );

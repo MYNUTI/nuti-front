@@ -22,7 +22,8 @@ export default function GoalPage() {
           보고 계신가요?
         </h1>
 
-        <ul className="mt-7 flex flex-col gap-2.5">
+        {/* ph-no-capture: 화면 기록(PostHog)에서 고른 목표가 보이지 않게 통째로 가린다 */}
+        <ul className="ph-no-capture mt-7 flex flex-col gap-2.5">
           {GOALS.map(({ name, description }) => (
             <li key={name}>
               <Link
