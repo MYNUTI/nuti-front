@@ -76,7 +76,7 @@ src/
     <도메인>/   # product, onboarding, goal, search, saved, me, auth, contribution, logging
                 # 기본 types → mapper → api → keys → queries
     scan/       # 스캔 상태 기계, GTIN 정규화, 바코드 조회
-    *.ts        # grade, mock-catalog(목), pwa(SPLASH_COLOR), utils(cn)
+    *.ts        # grade, pwa(SPLASH_COLOR), utils(cn)
   proxy.ts      # 상품 상세 이동 전 토큰 갱신
   test/         # 테스트 헬퍼
 scripts/        # PWA 이미지 생성 스크립트

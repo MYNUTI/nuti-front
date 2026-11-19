@@ -243,7 +243,7 @@
 
 주의할 것:
 
-- 기존 목 카탈로그 `src/lib/product.ts`와 새 `src/lib/product/` 폴더는 import 경로(`@/lib/product`)가 겹친다. 06단계에서 목 카탈로그를 다른 이름(예: `src/lib/mock-catalog.ts`)으로 옮긴다. 홈 「최근 본 제품」은 계속 쓴다. `src/lib/product.test.ts`, `src/lib/scan/lookup.test.ts`의 import도 함께 고친다
+- 기존 목 카탈로그 `src/lib/product.ts`와 새 `src/lib/product/` 폴더는 import 경로(`@/lib/product`)가 겹친다. 06단계에서 목 카탈로그를 다른 이름(예: `src/lib/mock-catalog.ts`)으로 옮긴다. `src/lib/product.test.ts`, `src/lib/scan/lookup.test.ts`의 import도 함께 고친다(12-1에서 삭제)
 - `server-only`는 Next가 타입을 선언해 두어(`next/types/global.d.ts`) 설치하지 않아도 typecheck는 통과한다. vitest는 Next 컴파일러를 거치지 않아 서버 모듈을 import하면 패키지를 못 찾는다(04단계에서 확인). 정해짐: `vitest.config.mts`에서 빈 모듈로 별칭한다. 패키지를 설치해도 `react-server` 조건이 아니면 import 즉시 throw해 해결되지 않는다
 
 ### 06단계 상세
@@ -252,7 +252,7 @@
 - `productKeys` 쿼리 키 팩토리. 스캔 시트의 기존 `["product", gtin]` 키도 여기로 옮긴다
 - 조회 훅: `useProductByBarcode`, `useProductDetail`, `useGradeReason`
 - `lookup.ts`를 실제 API에 연결한다. 404 `PRODUCT_NOT_FOUND`는 에러가 아니라 not-found 결과로, 400 `BARCODE_CHECKSUM_INVALID`는 따로 구분한다
-- 상세 페이지의 데이터 소스도 같은 단계에서 API로 바꾼다. 스캔 결과 id와 상세 조회 id가 같은 소스에서 나와야 스캔 → 상세가 `notFound()`로 떨어지지 않는다. 홈 「최근 본 제품」은 맞는 1차 API가 없어 목으로 둔다. 서버에서 쿠키의 식별을 붙여 조회하고, 조회 함수는 React `cache()`로 감싼다. 서버 조회 결과는 `HydrationBoundary`로 클라이언트 캐시에 넣어 `useProductDetail`과 같은 키로 이어 쓴다
+- 상세 페이지의 데이터 소스도 같은 단계에서 API로 바꾼다. 스캔 결과 id와 상세 조회 id가 같은 소스에서 나와야 스캔 → 상세가 `notFound()`로 떨어지지 않는다. 홈 「최근 본 제품」은 맞는 1차 API가 없어 fixture(`app/home/_fixtures.ts`)로 둔다. 서버에서 쿠키의 식별을 붙여 조회하고, 조회 함수는 React `cache()`로 감싼다. 서버 조회 결과는 `HydrationBoundary`로 클라이언트 캐시에 넣어 `useProductDetail`과 같은 키로 이어 쓴다
 - path 값은 `encodeURIComponent`로 넣고, 이상한 id로 상세에 들어오면 `notFound()`
 - 등급 없음 응답(200 + `INSUFFICIENT`, grade·topReason 없음) 처리
 - 테스트: mapper, lookup. 기존 테스트로 고정한 성질(프로토타입 키 방어, not-found 계약)이 유지되는지 확인
@@ -406,3 +406,4 @@ UI 브랜치(`feat/ui`)가 `main`에 머지한 화면만 연결한다(2026-11-19
 | 2026-11-04 | 11단계 인증 데이터 레이어: 로그인하면 토큰을 저장하고, 계정에 병합된 익명 ID는 지운 뒤 사용자 조회를 무효화한다. 로그아웃은 응답의 새 익명 ID로, 탈퇴는 익명 ID까지 지우고 사용자 캐시를 비운다(`resetUserQueries`). 토큰은 갱신 락 안에서 지워 다른 탭의 갱신 응답이 다시 써 넣지 않게 한다. 네트워크·5xx 실패는 쿠키를 두고, 401은 서버 세션이 이미 없어 이 기기만 정리한다. 갱신 거절도 같은 캐시를 비운다. 로그인 상태는 refresh 토큰 쿠키로 판단한다                                                                                         |
 | 2026-11-04 | 로그인·로그아웃(탈퇴·세션 만료 포함)은 `BroadcastChannel`로 다른 탭에 알려, 받은 탭도 사용자 캐시를 다시 부르거나 비우고 로그인 상태를 다시 읽는다. 쿠키는 탭끼리 공유하지만 캐시는 탭마다 따로라 공용 기기에서 이전 계정의 개인 정보가 남기 때문이다. `LOGIN_FAILED`는 서버 기본 문구(비밀번호 문구)가 소셜 로그인과 맞지 않아 클라이언트 문구로 바꿔 쓴다                                                                                                                                                                                       |
 | 2026-11-19 | 화면 연결을 12단계로 둔다. UI 브랜치가 `main`에 머지한 화면만 `_fixtures.ts` 자리를 쿼리 훅 + mapper로 바꾸고, 06단계에서 미룬 스캔·상세 연결도 여기서 한다(2026-11-03 결정을 이어받음). 맞는 1차 API가 없는 값은 fixture로 남긴다. 스캔(12-1)과 상세(12-2)는 같이 머지한다. 스캔만 먼저 머지하면 실제 상품 id가 fixture 상세에 없어 「자세히 보기」가 404가 된다                                                                                                                                                                                 |
+| 2026-11-19 | 12-1 스캔: 앞자리가 0이 아닌 14자리(묶음 포장 GTIN-14)는 입력 단계에서 막지 않고 서버 400 `BAD_REQUEST`를 조회 실패(「다시 시도」)로 보인다. 결과 시트의 점수 구간은 목 때와 같이 등급 A–E를 1–5로 옮기고, 목표 문구는 GENERAL이면 뺀다(「결정할 것」 1·2가 정해지면 바꾼다). 등급 없음·체크섬 오류는 3-6 화면이 생길 때까지 기존 안내 시트로 보인다                                                                                                                                                                                              |

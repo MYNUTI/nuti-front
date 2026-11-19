@@ -1,6 +1,5 @@
 "use client";
 
-import { skipToken, useQuery } from "@tanstack/react-query";
 import { useEffect, useEffectEvent, useState } from "react";
 import Link from "next/link";
 import { CtaButton } from "@/components/common/cta-button";
@@ -9,10 +8,6 @@ import { TopBar, TopBarButton } from "@/components/common/top-bar";
 import { IconClose, IconHash, IconImage, IconSearch } from "@/components/icons";
 import { BarcodeScan } from "@/components/scan/barcode-scan";
 import { useImageBarcode } from "@/components/scan/scan-image-input";
-import {
-  FIXTURE_SCAN_EXTRA,
-  FIXTURE_SCAN_GOAL_LABEL,
-} from "@/components/scan/_fixtures";
 import { ScanManualSheet } from "@/components/scan/scan-manual-sheet";
 import {
   PhotoMissSheet,
@@ -21,11 +16,11 @@ import {
 import {
   ScanMessageSheet,
   ScanResultSheet,
-  type ScanSheetProduct,
 } from "@/components/scan/scan-result-sheet";
-import { lookupProduct } from "@/lib/scan/lookup";
+import { toSheetProduct } from "@/components/scan/sheet-product";
+import { useProductByBarcode } from "@/lib/product/queries";
 import type { ScanState } from "@/lib/scan/machine";
-import type { Gtin, ScanResult, ScanSource } from "@/lib/scan/types";
+import type { Gtin, ScanSource } from "@/lib/scan/types";
 import { cn } from "@/lib/utils";
 
 /*
@@ -72,10 +67,7 @@ export function ScanStage({
     setReadRound((n) => n + 1);
   };
 
-  const lookup = useQuery({
-    queryKey: ["product", gtin],
-    queryFn: gtin ? ({ signal }) => lookupProduct(gtin, signal) : skipToken,
-  });
+  const lookup = useProductByBarcode(gtin);
 
   const handleGtin = (value: Gtin, source: ScanSource) => {
     setGtin(value);
@@ -92,13 +84,16 @@ export function ScanStage({
   // 3-1(읽힌 뒤 찾는 중). 디자인 메모: 결과가 오면 바로 3-2. 짧은 진동은 스캐너가 읽은 순간 낸다(use-scanner)
   const finding = gtin !== null && lookup.isPending;
   const found =
-    lookup.data?.status === "found" ? toSheetProduct(lookup.data.result) : null;
+    lookup.data?.status === "found" && lookup.data.product.status === "ANALYZED"
+      ? toSheetProduct(lookup.data.product)
+      : null;
   // 비교함 담기는 아직 화면 안 상태만 둔다(UI 플랜 「데이터」: 서버 변경이 필요한 동작)
   const [addedIds, setAddedIds] = useState<ReadonlySet<string>>(new Set());
 
   const renderSheet = () => {
     // 찾는 중 시트는 화면 아래에 따로 그린다(ScanFindingSheet)
     if (gtin === null || lookup.isPending) return null;
+    // 앞자리가 0이 아닌 14자리(400 BAD_REQUEST)도 여기로 온다. 입력 단계에서 막지 않기로 했다(API 플랜 결정 기록 2026-11-19)
     if (lookup.isError) {
       return (
         <ScanMessageSheet
@@ -117,6 +112,24 @@ export function ScanStage({
         <ScanMessageSheet
           title="등록되지 않은 상품이에요"
           description={`바코드 ${lookup.data.gtin} · 다른 상품을 찍어 보세요`}
+        />
+      );
+    }
+    // 카메라·숫자 입력은 체크섬을 먼저 확인해 보통 오지 않는다. 다시 보내도 같아 다시 시도를 두지 않는다
+    if (lookup.data.status === "checksum-invalid") {
+      return (
+        <ScanMessageSheet
+          title="바코드 숫자가 맞지 않아요"
+          description={`바코드 ${lookup.data.gtin} · 다시 비추거나 번호를 확인해 주세요`}
+        />
+      );
+    }
+    if (lookup.data.product.status === "INSUFFICIENT") {
+      // TODO: IA 3-6 「아직 등급이 없는 제품」 화면이 생기면 그쪽으로 보낸다.
+      return (
+        <ScanMessageSheet
+          title="아직 등급이 없는 제품이에요"
+          description={`${lookup.data.product.product.name} · 영양정보가 모자라 등급을 매기지 못했어요`}
         />
       );
     }
@@ -376,23 +389,4 @@ function ScanFindingSheet() {
 /** 카메라가 실제로 바코드를 읽는 중인지. 사진·번호 단계나 다른 앱이 카메라를 쓰는 중이면 아니다 */
 function cameraReading(state: ScanState) {
   return state.stage === "camera" && state.retryable === null;
-}
-
-// 목 등급 A–E를 점수 구간 1(잘 맞음)~5(안 맞음)로. 실제 API도 등급 글자를 주므로 같은 대응을 쓴다
-const GRADE_BAND = { A: 1, B: 2, C: 3, D: 4, E: 5 } as const;
-
-/** 목 조회 결과 → 결과 시트 모양. 목에 없는 값은 fixture로 채운다(_fixtures.ts) */
-function toSheetProduct(result: ScanResult): ScanSheetProduct {
-  const extra = FIXTURE_SCAN_EXTRA[result.id];
-  return {
-    id: result.id,
-    name: result.name,
-    brand: extra?.brand ?? null,
-    imageUrl: extra?.imageUrl ?? null,
-    score: extra?.score ?? 0,
-    band: GRADE_BAND[result.grade],
-    rank: extra?.rank ?? null,
-    goalLabel: FIXTURE_SCAN_GOAL_LABEL,
-    summary: result.summary,
-  };
 }

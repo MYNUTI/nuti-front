@@ -102,7 +102,7 @@ export type GradeFactorDto = {
 // ── 화면 모델 ────────────────────────────────────────────────────────────────
 
 export type ProductSummary = {
-  /** 상세 경로(`/product/[id]`)와 스캔 결과(`ScanResult.id`)가 문자열이라 문자열로 바꾼다 */
+  /** 상세 경로(`/product/[id]`)가 문자열이라 문자열로 바꾼다 */
   id: string;
   name: string;
   brandName: string | null;
