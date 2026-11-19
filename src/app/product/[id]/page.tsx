@@ -21,6 +21,7 @@ import {
   SaveButton,
   ShareButton,
 } from "./product-actions";
+import { ProductError } from "./product-error";
 import { ProductLoading, ProductTopBar } from "./product-loading";
 import { ProductPhoto } from "./product-photo";
 import { ReportButton } from "./report-sheet";
@@ -52,7 +53,7 @@ function Band() {
 /*
  * 3-2 제품 결과. 위에서부터 제품 머리 · 점수 · 이 점수인 이유 · 영양성분 · 더 맞는 제품 · 쿠팡 고지, 아래 고정 줄.
  *
- * ?state=loading — 3-2 불러오는 중(확인용) · ?state=no-goal — 3-2 공유 링크·목표 없음
+ * ?state=loading|error — 3-2 불러오는 중·불러오지 못했을 때(확인용) · ?state=no-goal — 3-2 공유 링크·목표 없음
  * ?preview=muscle|diet — 3-2 다른 목표로 보기. 점수·순위·이유만 그 목표 기준으로 바꿔 보이고 내 목표 설정은 바꾸지 않는다.
  */
 export default async function ProductPage({
@@ -70,6 +71,8 @@ export default async function ProductPage({
   };
   // 3-2 불러오는 중 확인용. 실제 로딩은 loading.tsx가 같은 화면을 그린다
   if (state === "loading") return <ProductLoading />;
+  // 3-2 불러오지 못했을 때 확인용. 실제 실패는 error.tsx가 같은 화면을 그린다
+  if (state === "error") return <ProductError />;
   // 3-2 공유 링크·목표 없음: 목표를 고른 적 없는 사람은 다이어트 기준으로 보인다(디자인 메모).
   // 1-5에서 고르고 돌아오면 ?goal=로 그 목표를 내 목표로 본다. 목표 저장·조회는 API 연결 때 사용자 정보로 바꾼다
   const noGoal = state === "no-goal";
