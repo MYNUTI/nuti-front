@@ -93,9 +93,18 @@ export function NutritionSection({
             ))}
             {/* 디자인 메모(11-04): 기준치 설명은 펼친 영양성분 안에만 */}
             <p className="px-5 pt-1 pb-4 text-caption break-keep text-text-sub">
-              {bodyFitKcal
-                ? `등급은 내 몸에 맞춘 칼로리(하루 약 ${bodyFitKcal.toLocaleString("ko-KR")}kcal)로 계산했어요. 표의 %는 식품 표시 기준(2,000kcal)이에요.`
-                : "1일 영양성분 기준치(성인 2,000kcal)와 비교했어요"}
+              {bodyFitKcal ? (
+                <>
+                  등급은 내 몸에 맞춘 칼로리(하루 약{" "}
+                  {/* 몸 정보로 계산한 값이라 화면 기록(PostHog)에서 가린다. 낱말 목록은 「kcal 기준」 모양만 찾는다 */}
+                  <span className="ph-mask">
+                    {bodyFitKcal.toLocaleString("ko-KR")}kcal
+                  </span>
+                  )로 계산했어요. 표의 %는 식품 표시 기준(2,000kcal)이에요.
+                </>
+              ) : (
+                "1일 영양성분 기준치(성인 2,000kcal)와 비교했어요"
+              )}
             </p>
           </>
         )}
