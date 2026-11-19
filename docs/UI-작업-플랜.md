@@ -1,6 +1,6 @@
 # UI 작업 플랜
 
-> 상태: **04단계 제품 결과 진행 중** (2026-11-19). 03단계 바코드는 만들 수 있는 화면을 모두 만들었다(3-1 여러 개·이 제품인가요·3-2 이 제품으로 이었을 때는 「남은 질문」 4로 보류). 04단계는 3-2 기본 화면·영양성분 펼침·다른 목표로 보기·담고 저장·공유 주소 복사·정보가 틀렸어요·더 맞는 제품이 없을 때·사진이 없을 때·생산 중단·내 몸에 맞춤·쿠팡 상품이 없을 때·공유 링크 목표 없음·불러오는 중·불러오지 못했을 때 완료, 즐겨찾기했을 때·비교함에 담았을 때는 대조만(바뀐 점은 「디자인 수정분」 8~10). 이 문서는 범위·순서·결정만 기록한다. 화면 하나가 끝날 때마다 확인받고 다음 화면으로 넘어간다.
+> 상태: **04단계 제품 결과 완료** (2026-11-19). 다음은 「디자인 수정분」 반영 또는 05단계. 03단계 바코드는 만들 수 있는 화면을 모두 만들었다(3-1 여러 개·이 제품인가요·3-2 이 제품으로 이었을 때는 「남은 질문」 4로 보류). 04단계는 3-2 기본 화면·영양성분 펼침·다른 목표로 보기·담고 저장·공유 주소 복사·정보가 틀렸어요·더 맞는 제품이 없을 때·사진이 없을 때·생산 중단·내 몸에 맞춤·쿠팡 상품이 없을 때·공유 링크 목표 없음·불러오는 중·불러오지 못했을 때 완료, 즐겨찾기했을 때·비교함에 담았을 때는 대조만(바뀐 점은 「디자인 수정분」 8~10), 5-4 점수 기준 완료. 이 문서는 범위·순서·결정만 기록한다. 화면 하나가 끝날 때마다 확인받고 다음 화면으로 넘어간다.
 
 ## 목적
 
@@ -29,7 +29,7 @@
 - `globals.css`에 v3 CHIPS 토큰(색·등급 색·글자 스타일 12개·모서리)이 있다. 예전 토큰과 `rounded-xl` 이상은 임시 화면용으로 남아 있고 13단계에서 지운다
 - 글꼴은 Pretendard 서브셋(400·500·700)
 - 아이콘: `components/icons.tsx`에 피그마 v2/Icon 39개
-- v3 공통 부품: `components/common/`의 button, bottom-cta, top-bar, search-field, tab-bar, grade(GradeBadge·GradeTag, GradeBar 제외), status-tag, chip, select-card, check-row, check-mark, text-field, product-row, list-row, toggle, reason-row, section-header, thumb, category-tile, product-hero, camera-frame, sheet(BottomSheet·ConfirmSheet), empty-state(EmptyState·ErrorState), loading-state, skeleton, step-dots, score-ring, back-button, coachmark, toast, step-list, reason-chip, product-card, notice. 그 밖의 `components/common/`(cta-button, layer, card-tutorial, choice-card)과 `components/ui/`(shadcn button, checkbox, radio-group)는 임시 화면용이다
+- v3 공통 부품: `components/common/`의 button, bottom-cta, top-bar, search-field, tab-bar, grade(GradeBadge·GradeTag, GradeBar 제외), status-tag, chip, select-card, check-row, check-mark, text-field, product-row, list-row, toggle, reason-row, section-header, thumb, category-tile, product-hero, camera-frame, sheet(BottomSheet·ConfirmSheet), empty-state(EmptyState·ErrorState), loading-state, skeleton, step-dots, score-ring, back-button, coachmark, toast, step-list, numbered-list, reason-chip, product-card, notice. 그 밖의 `components/common/`(cta-button, layer, card-tutorial, choice-card)과 `components/ui/`(shadcn button, checkbox, radio-group)는 임시 화면용이다
 - 스캔: `components/scan/`가 `lib/scan` 상태 기계·lookup에 붙어 있다. UI 작업은 겉모양만 바꾸고 이 연결은 유지한다
 - 라우트는 임시본이다(`home`, `scan`, `history`, `settings`, `product/[id]`, `onboarding/*` 9개). v3 화면 구성과 맞지 않는다
 
@@ -48,7 +48,7 @@ v3 페이지 화면 프레임 약 120장(같은 화면의 상태 포함). 화면
 |             | 3-1                   | 스캔                                                    | 8(못 읽음, 숫자 입력, 카메라 불가, 여러 개, 이 제품인가요, 찾는 중, 사진 못 읽음)                          |
 |             | 3-2 시트              | 스캔 직후 결과 시트                                     | 3                                                                                                          |
 | ④ 등급 이해 | 3-2                   | 제품 결과                                               | 15(다른 목표, 정보가 틀렸어요, 대안 없음, 사진 없음, 생산 중단, 담기·저장, 공유, 내 몸 맞춤, 쿠팡 없음 등) |
-|             | 5-4                   | 등급은 어떻게 매기나                                    | 1                                                                                                          |
+|             | 5-4                   | 점수는 어떻게 매기나                                    | 1                                                                                                          |
 | ⑤ 대안·비교 | 3-4                   | 더 맞는 제품                                            | 2                                                                                                          |
 |             | 3-5                   | 제품 비교                                               | 3                                                                                                          |
 | ⑥ 찾기      | 2-3                   | 검색                                                    | 3                                                                                                          |
@@ -179,6 +179,7 @@ API 연결은 API 브랜치 08·09단계 이후에 붙인다. 그 전까지 화�
 13. **3-2 내 몸에 맞춤 + 다른 목표로 보기** — 근육 증가 목표에서 다이어트로 미리 볼 때 등급은 맞춘 칼로리 기준인데, 미리 보기 칩(「다이어트 · 미리 보기」)에 그 표시가 디자인에 없다. 지금은 칩 글자를 그대로 두고 펼친 영양성분 설명만 바꾼다. 디자이너 확인
 14. **3-2 공유 링크·목표 없음의 「내 목표」 표현** — 목표를 고른 적 없는데 칩이 「다이어트 · 내 목표」(디자인 그대로)이고, 다른 목표로 미리 보면 「내 목표(다이어트)로는 n점」이 된다. 「다이어트 · 기본」 등으로 바꿀지 디자이너 확인
 15. **3-2 목표 칩을 누르면 5-2로 가는지** — 3-2 기본 메모는 「목표 칩 → 5-2 목표 바꾸기」인데, 「즐겨찾기했을 때」·「비교함에 담았을 때」 프레임은 「표시만 · 누름 없음」이다. 어느 쪽인지 디자이너 확인(「디자인 수정분」 3·10)
+16. **점수 구간 이름** — 5-4 「점수 구간」은 「매우 높음 · 높음 · 중간 · 낮음 · 매우 낮음」인데, 점수 링 부품 설명과 코드의 화면 읽기용 이름(`SCORE_BAND_LABEL`)은 「잘 맞음 · 맞는 편 · 보통 · 안 맞는 편 · 안 맞음」이다. 한쪽으로 맞출지 디자이너 확인(지금 5-4는 디자인 문구 그대로)
 
 ## 디자인 수정분(반영 대기)
 
@@ -197,7 +198,7 @@ API 연결은 API 브랜치 08·09단계 이후에 붙인다. 그 전까지 화�
 | 9   | 3-2    | ♡ 알림 「즐겨찾기에 넣었어요. 기록 탭에서 볼 수 있어요.」(즐겨찾기했을 때 프레임)                                                                                    | 「…내 기록에서 볼 수 있어요.」 |
 | 10  | 3-2    | 목표 칩이 「즐겨찾기했을 때」·「비교함에 담았을 때」 프레임에서는 「표시만 · 누름 없음」이라 3번(→ 5-2)과 메모끼리 다르다. 반영 전에 디자이너 확인(「남은 질문」 15) | 누르는 동작 없음               |
 
-다른 화면(홈·스캔 등)도 같은 기간에 손질됐을 수 있어, 반영할 때 화면마다 메모의 11-09 이후 줄을 다시 본다.
+다른 화면(홈·스캔 등)도 같은 기간에 손질됐을 수 있어, 반영할 때 화면마다 메모의 11-09 이후 줄을 다시 본다. 3-2 구역에 새로 생긴 「더 맞는 제품이 없을 때, 즐겨찾기했을 때」(8288:16571) 프레임은 아직 대조하지 않았다. 수정분을 반영할 때 함께 대조한다.
 
 ## 결정 기록
 
