@@ -209,6 +209,8 @@ export function RankingList({
                   </div>
                 )
               )}
+              {/* 목록 끝 여백(피그마 「내려 볼 때」의 여백 43). 마지막 줄과 「다시 시도」가 가운데 솟은 스캔 버튼에 가리지 않게 한다 */}
+              <div aria-hidden className="h-[43px]" />
             </>
           )}
         </div>

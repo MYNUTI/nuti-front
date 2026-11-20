@@ -172,8 +172,9 @@ export function RankingHome({
                 </section>
               ))}
               {failedGroups > 0 && (
-                // 일부 대분류만 실패했을 때의 모양은 그림에 없다. 받은 묶음은 보이고 다시 시도만 둔다
-                <div className="flex flex-col items-center gap-2 py-2 text-body2 text-text-sub">
+                // 일부 대분류만 실패했을 때의 모양은 그림에 없다. 받은 묶음은 보이고 다시 시도만 둔다.
+                // 아래 여백은 버튼이 가운데 솟은 스캔 버튼에 가리지 않게 하는 값
+                <div className="flex flex-col items-center gap-2 pt-2 pb-6 text-body2 text-text-sub">
                   불러오지 못한 종류가 있어요
                   <Button kind="secondary" size="M" onClick={retry}>
                     다시 시도
