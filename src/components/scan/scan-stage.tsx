@@ -5,6 +5,8 @@ import { useEffect, useEffectEvent, useState } from "react";
 import Link from "next/link";
 import { CtaButton } from "@/components/common/cta-button";
 import { Skeleton } from "@/components/common/skeleton";
+import { Toast } from "@/components/common/toast";
+import { addToCompare, useCompare } from "@/components/compare/compare-store";
 import { TopBar, TopBarButton } from "@/components/common/top-bar";
 import { IconClose, IconHash, IconImage, IconSearch } from "@/components/icons";
 import { BarcodeScan } from "@/components/scan/barcode-scan";
@@ -93,8 +95,18 @@ export function ScanStage({
   const finding = gtin !== null && lookup.isPending;
   const found =
     lookup.data?.status === "found" ? toSheetProduct(lookup.data.result) : null;
-  // 비교함 담기는 아직 화면 안 상태만 둔다(UI 플랜 「데이터」: 서버 변경이 필요한 동작)
-  const [addedIds, setAddedIds] = useState<ReadonlySet<string>>(new Set());
+  // 비교함은 3-2·3-4와 같은 저장소를 쓴다(화면 사이에 유지 — UI 플랜 결정 2026-11-21)
+  const compare = useCompare();
+  const [fullToast, setFullToast] = useState(0);
+  const addFound = (product: ScanSheetProduct) => {
+    const result = addToCompare({
+      id: product.id,
+      name: product.name,
+      image: product.imageUrl,
+    });
+    // 디자인의 「하나를 빼고 담기」(3-4 비교함이 다 찼을 때)를 만들기 전까지 3-2와 같은 임시 안내
+    if (result === "full") setFullToast((n) => n + 1);
+  };
 
   const renderSheet = () => {
     // 찾는 중 시트는 화면 아래에 따로 그린다(ScanFindingSheet)
@@ -139,6 +151,9 @@ export function ScanStage({
       <p role="status" className="sr-only">
         {found && `${found.name}, ${found.score}점`}
       </p>
+      {fullToast > 0 && (
+        <Toast key={fullToast} message="비교함은 4개까지 담을 수 있어요" />
+      )}
       <BarcodeScan
         className="flex-1"
         cameraOff={cameraOff}
@@ -201,9 +216,9 @@ export function ScanStage({
                 // 카메라가 읽고 있을 때만 디자인대로 화면 아래에 붙인다. 카메라가 안 읽는 단계(사진·번호·점유 중)에서는
                 // 다른 제품을 더 찾을 아래 버튼 줄을 가리지 않게 카메라 자리 안에 띄운다(UI 플랜 「남은 질문」 6)
                 placement={cameraReading(state) ? "bottom" : "inline"}
-                added={addedIds.has(found.id)}
-                compareCount={addedIds.size}
-                onAdd={() => setAddedIds((ids) => new Set(ids).add(found.id))}
+                added={compare.some((item) => item.id === found.id)}
+                compareCount={compare.length}
+                onAdd={() => addFound(found)}
               />
             )}
           </>

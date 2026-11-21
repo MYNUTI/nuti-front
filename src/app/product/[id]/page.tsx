@@ -132,7 +132,14 @@ export default async function ProductPage({
   const noCoupang = product.coupangUrl === null;
 
   return (
-    <ProductActions previewing={Boolean(previewView)}>
+    <ProductActions
+      product={{
+        id: product.id,
+        name: product.name,
+        image: product.image?.src ?? null,
+      }}
+      previewing={Boolean(previewView)}
+    >
       <div className="flex min-h-dvh flex-col bg-bg-page pt-safe">
         <ProductTopBar />
         {previewView && (
@@ -318,10 +325,7 @@ export default async function ProductPage({
           )}
         </main>
 
-        <ProductBottomBar
-          coupangUrl={coupangUrl}
-          thumbnail={product.image?.src ?? null}
-        />
+        <ProductBottomBar coupangUrl={coupangUrl} />
       </div>
     </ProductActions>
   );
