@@ -1,6 +1,6 @@
 # UI 작업 플랜
 
-> 상태: **05단계 대안·비교 진행 중** (2026-11-21). 비교함 저장소 · 3-4 더 맞는 제품(전체) 완료, 다음은 3-4 더 맞는 제품(골라 비교). 04단계 제품 결과는 완료(2026-11-19). 03단계 바코드는 만들 수 있는 화면을 모두 만들었다(3-1 여러 개·이 제품인가요·3-2 이 제품으로 이었을 때는 「남은 질문」 4로 보류). 04단계는 3-2 기본 화면·영양성분 펼침·다른 목표로 보기·담고 저장·공유 주소 복사·정보가 틀렸어요·더 맞는 제품이 없을 때·사진이 없을 때·생산 중단·내 몸에 맞춤·쿠팡 상품이 없을 때·공유 링크 목표 없음·불러오는 중·불러오지 못했을 때 완료, 즐겨찾기했을 때·비교함에 담았을 때는 대조만(바뀐 점은 「디자인 수정분」 8~10), 5-4 점수 기준 완료. 이 문서는 범위·순서·결정만 기록한다. 화면 하나가 끝날 때마다 확인받고 다음 화면으로 넘어간다.
+> 상태: **05단계 대안·비교 진행 중** (2026-11-21). 비교함 저장소 · 3-4 더 맞는 제품(전체) · 3-4 더 맞는 제품(골라 비교) 완료, 다음은 3-4 비교함이 다 찼을 때. 04단계 제품 결과는 완료(2026-11-19). 03단계 바코드는 만들 수 있는 화면을 모두 만들었다(3-1 여러 개·이 제품인가요·3-2 이 제품으로 이었을 때는 「남은 질문」 4로 보류). 04단계는 3-2 기본 화면·영양성분 펼침·다른 목표로 보기·담고 저장·공유 주소 복사·정보가 틀렸어요·더 맞는 제품이 없을 때·사진이 없을 때·생산 중단·내 몸에 맞춤·쿠팡 상품이 없을 때·공유 링크 목표 없음·불러오는 중·불러오지 못했을 때 완료, 즐겨찾기했을 때·비교함에 담았을 때는 대조만(바뀐 점은 「디자인 수정분」 8~10), 5-4 점수 기준 완료. 이 문서는 범위·순서·결정만 기록한다. 화면 하나가 끝날 때마다 확인받고 다음 화면으로 넘어간다.
 
 ## 목적
 
@@ -29,7 +29,7 @@
 - `globals.css`에 v3 CHIPS 토큰(색·등급 색·글자 스타일 12개·모서리)이 있다. 예전 토큰과 `rounded-xl` 이상은 임시 화면용으로 남아 있고 13단계에서 지운다
 - 글꼴은 Pretendard 서브셋(400·500·700)
 - 아이콘: `components/icons.tsx`에 피그마 v2/Icon 39개
-- v3 공통 부품: `components/common/`의 button, bottom-cta, top-bar, search-field, tab-bar, grade(GradeBadge·GradeTag, GradeBar 제외), status-tag, chip, select-card, check-row, check-mark, text-field, product-row, list-row, toggle, reason-row, section-header, thumb, category-tile, product-hero, camera-frame, sheet(BottomSheet·ConfirmSheet), empty-state(EmptyState·ErrorState), loading-state, skeleton, step-dots, score-ring, back-button, coachmark, toast, step-list, numbered-list, reason-chip, product-card, notice. 그 밖의 `components/common/`(cta-button, layer, card-tutorial, choice-card)과 `components/ui/`(shadcn button, checkbox, radio-group)는 임시 화면용이다
+- v3 공통 부품: `components/common/`의 button, bottom-cta, top-bar, search-field, tab-bar, grade(GradeBadge·GradeTag, GradeBar 제외), status-tag, chip, select-card, check-row, check-mark, text-field, product-row, list-row, toggle, reason-row, section-header, thumb, category-tile, product-hero, camera-frame, sheet(BottomSheet·ConfirmSheet), empty-state(EmptyState·ErrorState), loading-state, skeleton, step-dots, score-ring, back-button, coachmark, toast, step-list, numbered-list, reason-chip, product-card, notice, compare-bar(`components/compare`). 그 밖의 `components/common/`(cta-button, layer, card-tutorial, choice-card)과 `components/ui/`(shadcn button, checkbox, radio-group)는 임시 화면용이다
 - 스캔: `components/scan/`가 `lib/scan` 상태 기계·lookup에 붙어 있다. UI 작업은 겉모양만 바꾸고 이 연결은 유지한다
 - 라우트는 임시본이다(`home`, `scan`, `history`, `settings`, `product/[id]`, `onboarding/*` 9개). v3 화면 구성과 맞지 않는다
 
@@ -182,6 +182,7 @@ API 연결은 API 브랜치 08·09단계 이후에 붙인다. 그 전까지 화�
 16. **점수 구간 이름** — 5-4 「점수 구간」은 「매우 높음 · 높음 · 중간 · 낮음 · 매우 낮음」인데, 점수 링 부품 설명과 코드의 화면 읽기용 이름(`SCORE_BAND_LABEL`)은 「잘 맞음 · 맞는 편 · 보통 · 안 맞는 편 · 안 맞음」이다. 한쪽으로 맞출지 디자이너 확인(지금 5-4는 디자인 문구 그대로)
 17. **비교함을 언제 비우나** — 비교함은 브라우저에 계속 남는다. 로그아웃·계정 삭제 때 비울지(같은 기기 다른 사람), 담은 지 오래된 것을 정리할지 기획 확인. 비우려면 로그인 상태 변화를 비교함 저장소가 들어야 한다(`src/lib/auth`는 API 작업 영역)
 18. **3-4 불러오는 중·불러오지 못했을 때** — 디자인은 3-2 화면의 상태만 있다. 3-4에는 경계를 두지 않아 API 연결 뒤 응답이 올 때까지 이전 화면에 머문다. 3-4 전용 회색 자리·오류 화면을 둘지 디자이너 확인
+19. **3-4 골라 비교의 지금 보는 제품** — 디자인 그림은 지금 보는 제품이 처음부터 담긴(점) 모습인데 메모에는 자동으로 담는다는 말이 없다. 비교함은 브라우저에 남으므로 들어올 때마다 자동으로 담으면 다른 제품을 담아 둔 사람의 비교함이 바뀐다. 지금은 다른 줄처럼 직접 고르게 했다. 디자이너 확인
 
 ## 디자인 수정분(반영 대기)
 

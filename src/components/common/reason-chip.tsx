@@ -19,7 +19,7 @@ export function ReasonChip({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-2xl py-1.5 pr-3 pl-2.5 text-body2 text-text-strong",
+        "inline-flex items-center gap-1 rounded-lg py-1.5 pr-3 pl-2.5 text-body2 text-text-strong",
         good ? "bg-[#edfae0]" : "bg-[#ffeded]",
       )}
     >

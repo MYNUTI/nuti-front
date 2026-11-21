@@ -1,7 +1,5 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { createContext, use, useRef, useState } from "react";
 
 import { BottomCta } from "@/components/common/bottom-cta";
@@ -13,6 +11,7 @@ import {
   IconHeartFill,
   IconShare,
 } from "@/components/icons";
+import { CompareBar } from "@/components/compare/compare-bar";
 import {
   addToCompare,
   removeFromCompare,
@@ -221,36 +220,13 @@ export function ProductBottomBar({
       {count > 0 && <div aria-hidden className="h-[61px]" />}
       {count > 0 && (
         // 아래 고정 줄(위 선 1 + 위 여백 12 + 버튼 52 + 아래 여백) 바로 위에 붙인다. 바 높이 61 = 선 1 + 12 + 버튼 44 + 4
-        <div className="fixed-app bottom-[calc(65px+max(var(--safe-bottom),12px))] z-30 flex items-center gap-2 border-t border-line-default bg-bg-page px-5 pt-3 pb-1">
-          {compare.map((item) => (
-            <span
-              key={item.id}
-              className="size-8 shrink-0 overflow-hidden rounded-sm bg-bg-tint"
-            >
-              <CompareThumb key={item.image} src={item.image} />
-            </span>
-          ))}
-          {/* 사진 4장이면 좁은 화면(320 이하)에서 글자가 줄바꿈돼 바 높이가 깨지지 않게 한 줄로 줄인다 */}
-          <p className="min-w-0 flex-1 truncate text-body1-bold text-text-strong">
-            비교함 {count}
-          </p>
-          {count < 2 ? (
-            // 디자인 메모: 1개만 담고 비교하기 → 「비교하려면 하나 더 담아 주세요」
-            <Button
-              type="button"
-              size="M"
-              onClick={() =>
-                showToast({ message: "비교하려면 하나 더 담아 주세요" })
-              }
-            >
-              비교하기
-            </Button>
-          ) : (
-            <Button size="M" asChild>
-              <Link href="/compare">비교하기</Link>
-            </Button>
-          )}
-        </div>
+        <CompareBar
+          items={compare}
+          onTooFew={() =>
+            showToast({ message: "비교하려면 하나 더 담아 주세요" })
+          }
+          className="bottom-[calc(65px+max(var(--safe-bottom),12px))] pb-1"
+        />
       )}
 
       {/* 디자인 메모(11-04): 아래 고정 줄은 [비교함 담기] [쿠팡에서 보기]만, 위에 얇은 선 */}
@@ -296,32 +272,5 @@ export function ProductBottomBar({
         />
       )}
     </>
-  );
-}
-
-/** 비교함 바의 작은 사진. 사진이 없거나 깨지면 3-2 「사진이 없을 때」 그림만(작은 칸은 글 없이) */
-function CompareThumb({ src }: { src: string | null }) {
-  const [broken, setBroken] = useState(false);
-  if (!src || broken) {
-    // 로컬 그림이라 작은 칸 크기로 줄여 받는다
-    return (
-      <Image
-        src="/common/no-photo.png"
-        width={32}
-        height={32}
-        alt=""
-        className="size-full"
-      />
-    );
-  }
-  return (
-    // 서버 사진 주소라 next/image 허용 도메인을 정하기 전까지 img로 둔다
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt=""
-      className="size-full object-contain"
-      onError={() => setBroken(true)}
-    />
   );
 }

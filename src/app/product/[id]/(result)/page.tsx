@@ -226,7 +226,7 @@ export default async function ProductPage({
                 </div>
               )}
               {stopped && (
-                <p className="rounded-xl bg-bg-band px-4 py-3 text-[14px] leading-[21px] text-text-body">
+                <p className="rounded-md bg-bg-band px-4 py-3 text-[14px] leading-[21px] text-text-body">
                   제조사가 생산을 멈춘 제품이에요.
                   {/* 더 맞는 제품이 없으면 아래 「아직 찾지 못했어요」와 어긋나 뺀다(디자인에 없는 조합, UI 플랜 「남은 질문」 12) */}
                   {product.better.length > 0 && (

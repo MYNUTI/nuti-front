@@ -32,14 +32,14 @@ export function ProductLoading() {
         skeleton={
           <>
             <div className="flex flex-col gap-2.5 px-5 pt-2 pb-5">
-              <Skeleton className="size-64 self-center rounded-xl" />
+              <Skeleton className="size-64 self-center rounded-md" />
               <Skeleton className="h-3.5 w-24" />
               <Skeleton className="h-[22px] w-[220px]" />
               <Skeleton className="h-3.5 w-30" />
             </div>
             <div className="flex flex-col gap-3 px-5 pt-2 pb-5">
               <div className="flex items-center gap-3.5">
-                <Skeleton className="size-13 rounded-xl" />
+                <Skeleton className="size-13 rounded-md" />
                 <div className="flex flex-col gap-2">
                   <Skeleton className="h-5 w-[110px]" />
                   <Skeleton className="h-3.5 w-[70px]" />

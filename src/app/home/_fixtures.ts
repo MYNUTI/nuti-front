@@ -42,7 +42,7 @@ export const FIXTURE_POPULAR: PopularProduct[] = [
     ],
   },
   {
-    id: "2",
+    id: "11",
     brand: "마이프로틴",
     name: "하이프로틴바 초콜렛 오렌지",
     image: "/fixtures/product-2.png",

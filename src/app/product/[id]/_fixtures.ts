@@ -4,7 +4,7 @@
  * "4"는 디자인 3-2 화면 값 그대로, "1"·"2"는 스캔 목 조회(lib/mock-catalog.ts)와 같은 상품이라 스캔에서 「자세히 보기」로 와도 열린다.
  * "3"은 「더 맞는 제품」 칼만스 카드가 404가 되지 않게 카드와 같은 이름·사진·점수로 둔다.
  * "5"는 디자인 「더 맞는 제품이 없을 때」 값 그대로(커클랜드 카드도 이 주소로 연다).
- * "6"은 디자인 「생산 중단」(재고 판매 중), "7"은 단종(쿠팡 버튼 없음), "8"·"9"는 「내 몸에 맞춤」(다이어트·근육 증가 목표), "10"은 「쿠팡 상품이 없을 때」.
+ * "6"은 디자인 「생산 중단」(재고 판매 중), "7"은 단종(쿠팡 버튼 없음), "8"·"9"는 「내 몸에 맞춤」(다이어트·근육 증가 목표), "10"은 「쿠팡 상품이 없을 때」, "11"은 더 맞는 제품 · 홈 카드의 마이프로틴.
  * 상태 확인용: "1"은 더 맞는 제품이 없는 C~E 등급·사진 없음, "2"는 아쉬운 점이 없는 제품·사진 주소가 깨진 제품.
  * 순위는 API에 없다(인수인계 백엔드 질문 8).
  */
@@ -70,7 +70,7 @@ export type ProductResult = {
     /** 「다른 영양성분 n개 더 보기」로 펼치는 줄 */
     more: NutrientValue[];
   };
-  better: ProductCardItem[];
+  better: BetterItem[];
   /**
    * 생산 중단·단종. label은 받은 상태 글자 그대로(「단종」·「생산 중단 · 재고 판매 중」), 재고가 없으면(단종) 쿠팡 버튼을 뺀다.
    * 판매 중이면 null. API에 아직 이 값이 없다(인수인계 백엔드 질문 10)
@@ -80,7 +80,14 @@ export type ProductResult = {
   coupangUrl: string | null;
 };
 
-const BETTER: ProductCardItem[] = [
+/**
+ * 더 맞는 제품 하나. diff는 지금 제품과 100g당 값을 비교해 나아진 성분 두 개(3-4 골라 비교 줄 · API의 items[].diffs).
+ * 지금 제품에 따라 달라지는 값이지만 fixture는 디자인 그림의 숫자(디자인 상품 4 기준)를 그대로 모든 제품에 같이 쓴다.
+ * 상세 fixture의 영양성분으로 계산한 값이 아니다
+ */
+export type BetterItem = ProductCardItem & { diff: string };
+
+const BETTER: BetterItem[] = [
   {
     id: "5",
     brand: "커클랜드 시그니처",
@@ -94,9 +101,10 @@ const BETTER: ProductCardItem[] = [
       { label: "고단백" },
       { label: "저당" },
     ],
+    diff: "칼로리 −97kcal, 당류 −9.3g",
   },
   {
-    id: "2",
+    id: "11",
     brand: "마이프로틴",
     name: "하이프로틴바 초콜렛 오렌지",
     image: "/fixtures/product-2.png",
@@ -104,6 +112,7 @@ const BETTER: ProductCardItem[] = [
     score: 89,
     band: 1,
     tags: [{ label: "고단백" }, { label: "저당" }],
+    diff: "칼로리 −90kcal, 당류 −8.3g",
   },
   {
     id: "3",
@@ -114,6 +123,7 @@ const BETTER: ProductCardItem[] = [
     score: 86,
     band: 1,
     tags: [{ label: "고단백" }],
+    diff: "칼로리 −83kcal, 당류 −8.0g",
   },
 ];
 
@@ -338,7 +348,7 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
     band: 1,
     reasons: { good: ["단백질이 많아요", "당류가 적어요"], bad: [] },
     // 더 맞는 제품은 자기보다 점수가 높은 다른 제품만(API가 걸러 준다고 본다)
-    better: BETTER.filter((p) => p.id !== "2" && p.score > 88),
+    better: BETTER.filter((p) => p.score > 88),
   },
   "3": {
     ...DESIGN,
@@ -387,4 +397,20 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
   },
   // 디자인 「쿠팡 상품이 없을 때」(A 등급, 더 맞는 제품 없음)
   "10": { ...KIRKLAND, id: "10", coupangUrl: null },
+  // 더 맞는 제품 · 홈 인기 상품 카드의 마이프로틴. 카드와 같은 이름·사진·점수로 둬 비교함에 담아도 다른 상품과 섞이지 않게 한다
+  "11": {
+    ...DESIGN,
+    id: "11",
+    brand: "마이프로틴",
+    name: "하이프로틴바 초콜렛 오렌지",
+    image: { src: "/fixtures/product-2.png", size: 400 },
+    score: 89,
+    band: 1,
+    rank: null,
+    // 순위가 없는 상품이라 미리 보기에서도 순위를 빼 디자인 상품 값이 새지 않게 한다
+    preview: {
+      muscle: { ...DESIGN.preview.muscle!, rank: null },
+    },
+    better: BETTER.filter((p) => p.id !== "11" && p.score > 89),
+  },
 };
