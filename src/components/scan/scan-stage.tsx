@@ -152,7 +152,12 @@ export function ScanStage({
         {found && `${found.name}, ${found.score}점`}
       </p>
       {fullToast > 0 && (
-        <Toast key={fullToast} message="비교함은 4개까지 담을 수 있어요" />
+        <Toast
+          key={fullToast}
+          message="비교함은 4개까지 담을 수 있어요"
+          // 결과 시트·아래 버튼 줄에 겹치지 않게 그 위에 띄운다
+          className="bottom-[calc(186px+8px+var(--safe-bottom))]"
+        />
       )}
       <BarcodeScan
         className="flex-1"

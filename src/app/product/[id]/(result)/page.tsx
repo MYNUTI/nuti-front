@@ -12,19 +12,19 @@ import { SectionHeader } from "@/components/common/section-header";
 import { IconChevronRight } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
-import { FIXTURE_PRODUCTS, type Goal, type GoalView } from "./_fixtures";
-import { NutritionSection } from "./nutrition-section";
-import { FocusTarget, PreviewLink } from "./preview-focus";
+import { FIXTURE_PRODUCTS, type Goal, type GoalView } from "../_fixtures";
+import { NutritionSection } from "../nutrition-section";
+import { FocusTarget, PreviewLink } from "../preview-focus";
 import {
   ProductActions,
   ProductBottomBar,
   SaveButton,
   ShareButton,
-} from "./product-actions";
-import { ProductError } from "./product-error";
-import { ProductLoading, ProductTopBar } from "./product-loading";
-import { ProductPhoto } from "./product-photo";
-import { ReportButton } from "./report-sheet";
+} from "../product-actions";
+import { ProductError } from "../product-error";
+import { ProductLoading, ProductTopBar } from "../product-loading";
+import { ProductPhoto } from "../product-photo";
+import { ReportButton } from "../report-sheet";
 
 export async function generateMetadata({
   params,

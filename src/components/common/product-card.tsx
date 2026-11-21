@@ -18,22 +18,36 @@ export type ProductCardItem = {
 };
 
 /*
- * 가로로 미는 제품 사진 카드(폭 114). 2-1 홈 「편의점 인기 상품」, 3-2 「더 맞는 제품」이 같은 카드를 쓴다.
+ * 제품 사진 카드. 2-1 홈 「편의점 인기 상품」, 3-2 「더 맞는 제품」은 가로로 미는 줄(폭 114),
+ * 3-4 더 맞는 제품(전체)는 3열 격자(fluid — 칸 폭을 채운다)로 같은 카드를 쓴다.
  * 사진 · 브랜드 + 점수 링 · 이름 두 줄 · 태그 두 줄.
  */
-export function ProductCard({ product }: { product: ProductCardItem }) {
+export function ProductCard({
+  product,
+  fluid = false,
+}: {
+  product: ProductCardItem;
+  /** 격자 칸 폭을 채운다. 기본은 가로로 미는 줄의 폭 114 */
+  fluid?: boolean;
+}) {
   return (
     <Link
       href={`/product/${product.id}`}
-      className="flex w-[114px] shrink-0 flex-col gap-1.5"
+      className={cn(
+        "flex shrink-0 flex-col gap-1.5",
+        fluid ? "min-w-0" : "w-[114px]",
+      )}
     >
       <Image
         src={product.image}
         width={product.imageSize}
         height={product.imageSize}
-        sizes="114px"
+        sizes={fluid ? "120px" : "114px"}
         alt=""
-        className="size-[114px] rounded-sm border border-line-default bg-white object-contain"
+        className={cn(
+          "aspect-square rounded-sm border border-line-default bg-white object-contain",
+          fluid ? "w-full" : "size-[114px]",
+        )}
       />
       <span className="flex items-center gap-1.5">
         <span className="min-w-0 flex-1 truncate text-[12px] leading-4 text-text-sub">

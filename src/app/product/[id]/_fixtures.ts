@@ -337,6 +337,8 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
     score: 88,
     band: 1,
     reasons: { good: ["단백질이 많아요", "당류가 적어요"], bad: [] },
+    // 더 맞는 제품은 자기보다 점수가 높은 다른 제품만(API가 걸러 준다고 본다)
+    better: BETTER.filter((p) => p.id !== "2" && p.score > 88),
   },
   "3": {
     ...DESIGN,
@@ -346,6 +348,7 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
     image: { src: "/fixtures/product-3.png", size: 400 },
     score: 86,
     band: 1,
+    better: BETTER.filter((p) => p.id !== "3" && p.score > 86),
     rank: null,
     // 순위가 없는 상품이라 미리 보기에서도 순위를 빼 디자인 상품 값이 새지 않게 한다
     preview: {
