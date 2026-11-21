@@ -45,14 +45,18 @@ describe("api (브라우저)", () => {
     expect(headers.get("X-Session-Id")).toBe("session-1");
   });
 
-  it("식별이 없어도 세션 ID는 새로 만들어 보낸다", async () => {
+  it("익명 ID·세션 ID가 없으면 새로 만들어 저장하고 보낸다", async () => {
     const cookies = stubDocumentCookie();
     const { requests } = useAdapter();
 
     await api.get("/app/bootstrap");
     const headers = requests[0].headers;
     expect(headers.has("Authorization")).toBe(false);
-    expect(headers.has("X-Anonymous-Id")).toBe(false);
+    const anonymousId = headers.get("X-Anonymous-Id");
+    expect(anonymousId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+    );
+    expect(cookies.get(IDENTITY_COOKIES.anonymousId)).toBe(anonymousId);
     const sessionId = headers.get("X-Session-Id");
     expect(sessionId).toMatch(/^[0-9a-f-]{36}$/);
     expect(cookies.get(IDENTITY_COOKIES.sessionId)).toBe(sessionId);

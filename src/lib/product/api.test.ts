@@ -25,7 +25,7 @@ describe("상품 API", () => {
     const { http: client, requests } = http({
       status: "INSUFFICIENT",
       product,
-      appliedGoal: "GENERAL",
+      appliedGoal: "WEIGHT_LOSS",
     });
 
     await expect(
@@ -38,7 +38,7 @@ describe("상품 API", () => {
     const { http: client, requests } = http({
       status: "INSUFFICIENT",
       product,
-      appliedGoal: "GENERAL",
+      appliedGoal: "WEIGHT_LOSS",
       saved: false,
     });
 

@@ -56,11 +56,10 @@ describe("toSheetProduct", () => {
     ).toBe(band);
   });
 
-  it.each([
-    ["MUSCLE_GAIN", "근육 증가 목표"],
-    ["GENERAL", null],
-  ] as const)("목표 %s의 문구는 %s다", (appliedGoal, label) => {
-    expect(toSheetProduct(analyzed({ appliedGoal })).goalLabel).toBe(label);
+  it("근육 증가 목표의 문구", () => {
+    expect(
+      toSheetProduct(analyzed({ appliedGoal: "MUSCLE_GAIN" })).goalLabel,
+    ).toBe("근육 증가 목표");
   });
 
   it("감점 요인이 없으면 설명이 없다", () => {

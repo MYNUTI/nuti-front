@@ -17,7 +17,7 @@ function client(data: unknown) {
 
 const settings = {
   clipboardLinkDetection: false,
-  goal: { code: "GENERAL", label: "일반" },
+  goal: { code: "WEIGHT_LOSS", label: "체중 감량" },
   policies: {},
   appVersion: "2.0.0-web",
 };
@@ -26,7 +26,7 @@ describe("마이·설정 API", () => {
   it("조회 경로", async () => {
     const summary = client({
       isLoggedIn: false,
-      goal: { code: "GENERAL", label: "일반" },
+      goal: { code: "WEIGHT_LOSS", label: "체중 감량" },
       recordCount: 0,
       contribution: { requestCount: 0, publishedCount: 0 },
     });

@@ -53,7 +53,7 @@ export function fetchHealthConsent(http: AxiosInstance, signal?: AbortSignal) {
     .then(toHealthConsent);
 }
 
-/** 목표가 GENERAL로 돌아간다. 이미 철회 상태여도 200 */
+/** 목표가 기본값으로 돌아간다. 이미 철회 상태여도 200. v3에서 없어진 API라 13-3에서 지운다 */
 export function deleteHealthConsent(http: AxiosInstance) {
   return http
     .delete<ApiSuccess<HealthConsentDto>>("/me/health-consent")

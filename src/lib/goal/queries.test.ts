@@ -84,8 +84,8 @@ describe("goalMutations.update", () => {
   it("재계산 상품이 없으면 키를 보내지 않는다", async () => {
     const mock = mockAdapter(() =>
       success({
-        goal: "GENERAL",
-        label: "일반",
+        goal: "WEIGHT_LOSS",
+        label: "체중 감량",
         appliedAt: "2026-11-03T10:00:00",
         recalculation: null,
       }),
@@ -93,10 +93,10 @@ describe("goalMutations.update", () => {
     api.defaults.adapter = mock.adapter;
 
     await run(goalMutations.update(queryClient), queryClient, {
-      goal: "GENERAL",
+      goal: "WEIGHT_LOSS",
     });
     expect(JSON.parse(mock.requests[0].data as string)).toEqual({
-      goal: "GENERAL",
+      goal: "WEIGHT_LOSS",
     });
   });
 });

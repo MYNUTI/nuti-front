@@ -17,7 +17,7 @@ describe("검색 API", () => {
     const empty = { total: 0, items: [] };
     const { http, requests } = client({
       query: "두유",
-      appliedGoal: "GENERAL",
+      appliedGoal: "WEIGHT_LOSS",
       exactMatches: empty,
       similarProducts: empty,
       sameCategoryTop: [],

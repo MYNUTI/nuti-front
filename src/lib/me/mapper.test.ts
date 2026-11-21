@@ -6,14 +6,14 @@ describe("me mapper", () => {
     expect(
       toMeSummary({
         isLoggedIn: false,
-        goal: { code: "GENERAL", label: "일반" },
+        goal: { code: "WEIGHT_LOSS", label: "체중 감량" },
         recordCount: 3,
         contribution: { requestCount: 1, publishedCount: 0 },
       }),
     ).toEqual({
       isLoggedIn: false,
       profile: null,
-      goal: { goal: "GENERAL", label: "일반" },
+      goal: { goal: "WEIGHT_LOSS", label: "체중 감량" },
       recordCount: 3,
       contribution: { requestCount: 1, publishedCount: 0 },
       footerNotice: null,

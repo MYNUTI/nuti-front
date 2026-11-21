@@ -20,7 +20,7 @@ const body = (data: unknown) => JSON.parse(data as string);
 
 describe("온보딩 API", () => {
   it("bootstrap을 조회한다", async () => {
-    const { http, requests } = client({ goal: "GENERAL" });
+    const { http, requests } = client({ goal: "WEIGHT_LOSS" });
     await expect(fetchBootstrap(http)).resolves.toMatchObject({
       currentPolicyVersion: null,
     });

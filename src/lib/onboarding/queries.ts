@@ -118,7 +118,7 @@ export const onboardingMutations = {
       mutationFn: () => deleteHealthConsent(api),
       onSuccess: (healthConsent) => {
         queryClient.setQueryData(onboardingKeys.healthConsent(), healthConsent);
-        // 목표가 GENERAL로 돌아간다
+        // 목표가 기본값으로 돌아간다
         return invalidateGoalDependents(queryClient);
       },
     }),

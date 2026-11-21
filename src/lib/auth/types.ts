@@ -28,9 +28,6 @@ export type LoginDto = {
   };
 };
 
-/** `POST /auth/logout`. 서버가 새로 발급한 익명 ID(로그인 전 개인정보 동의를 옮겨 둔다) */
-export type LogoutDto = { anonymousId: string };
-
 // ── 화면 모델 ────────────────────────────────────────────────────────────────
 
 export type LoginResult = {

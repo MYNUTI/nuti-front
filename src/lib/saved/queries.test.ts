@@ -61,7 +61,7 @@ describe("savedMutations", () => {
       queryClient.setQueryData(meKeys.summary(), {});
       const searchPage: SearchResult = {
         query: "두유",
-        appliedGoal: "GENERAL",
+        appliedGoal: "WEIGHT_LOSS",
         exactMatches: {
           total: 1,
           items: [

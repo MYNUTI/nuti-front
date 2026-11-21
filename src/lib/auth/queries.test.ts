@@ -58,7 +58,7 @@ describe("authMutations", () => {
     return mock;
   }
 
-  it("로그인은 익명 ID를 보내 병합하고, 토큰을 저장하고 익명 ID를 지운 뒤 사용자 조회를 다시 부른다", async () => {
+  it("로그인은 익명 ID를 보내 병합하고, 토큰을 저장한 뒤 사용자 조회를 다시 부른다. 익명 ID는 그대로 둔다", async () => {
     const cookies = stubDocumentCookie({
       [IDENTITY_COOKIES.anonymousId]: "anon-1",
     });
@@ -83,7 +83,8 @@ describe("authMutations", () => {
     expect(requests[0].headers.get("X-Anonymous-Id")).toBe("anon-1");
     expect(cookies.get(IDENTITY_COOKIES.accessToken)).toBe(accessToken);
     expect(cookies.get(IDENTITY_COOKIES.refreshToken)).toBe("refresh-1");
-    expect(cookies.get(IDENTITY_COOKIES.anonymousId)).toBeUndefined();
+    // 서버가 병합에 실패하면 다음 로그인 때 같은 익명 ID로 다시 옮긴다
+    expect(cookies.get(IDENTITY_COOKIES.anonymousId)).toBe("anon-1");
     expect(queryClient.getQueryState(savedKeys.list())?.isInvalidated).toBe(
       true,
     );
@@ -110,18 +111,23 @@ describe("authMutations", () => {
     expect(channel.posted).toEqual([]);
   });
 
-  it("로그아웃은 토큰을 지우고 새 익명 ID를 저장한 뒤 사용자 캐시만 비운다", async () => {
+  it("로그아웃은 토큰을 지우고 익명 ID를 새로 만든 뒤 사용자 캐시만 비운다", async () => {
     const cookies = stubDocumentCookie({
       [IDENTITY_COOKIES.accessToken]: jwtExpiringIn(600_000),
       [IDENTITY_COOKIES.refreshToken]: "refresh-1",
+      [IDENTITY_COOKIES.anonymousId]: "anon-1",
     });
-    reply(() => success({ anonymousId: "anon-2" }));
+    reply(() => success(null));
 
     await run(authMutations.logout(queryClient), queryClient, undefined);
 
     expect(cookies.get(IDENTITY_COOKIES.accessToken)).toBeUndefined();
     expect(cookies.get(IDENTITY_COOKIES.refreshToken)).toBeUndefined();
-    expect(cookies.get(IDENTITY_COOKIES.anonymousId)).toBe("anon-2");
+    const anonymousId = cookies.get(IDENTITY_COOKIES.anonymousId);
+    expect(anonymousId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+    );
+    expect(anonymousId).not.toBe("anon-1");
     expect(queryClient.getQueryData(savedKeys.list())).toBeUndefined();
     expect(
       queryClient.getQueryData(onboardingKeys.bootstrap()),
@@ -154,7 +160,7 @@ describe("authMutations", () => {
       ).catch(() => undefined);
 
       expect(cookies.get(IDENTITY_COOKIES.refreshToken)).toBeUndefined();
-      expect(cookies.get(IDENTITY_COOKIES.anonymousId)).toBeUndefined();
+      expect(cookies.get(IDENTITY_COOKIES.anonymousId)).not.toBe("anon-1");
       expect(queryClient.getQueryData(savedKeys.list())).toBeUndefined();
       expect(channel.posted).toEqual([
         { name: "nuti-session", data: "logout" },
@@ -178,7 +184,7 @@ describe("authMutations", () => {
     expect(channel.posted).toEqual([]);
   });
 
-  it("탈퇴는 사유를 query로 보내고 토큰·익명 ID를 모두 지운다", async () => {
+  it("탈퇴는 사유를 query로 보내고 토큰을 지운 뒤 익명 ID를 새로 만든다", async () => {
     const cookies = stubDocumentCookie({
       [IDENTITY_COOKIES.accessToken]: jwtExpiringIn(600_000),
       [IDENTITY_COOKIES.refreshToken]: "refresh-1",
@@ -190,7 +196,11 @@ describe("authMutations", () => {
 
     expect(requests[0]).toMatchObject({ method: "delete", url: "/users/me" });
     expect(cookies.get(IDENTITY_COOKIES.refreshToken)).toBeUndefined();
-    expect(cookies.get(IDENTITY_COOKIES.anonymousId)).toBeUndefined();
+    const anonymousId = cookies.get(IDENTITY_COOKIES.anonymousId);
+    expect(anonymousId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+    );
+    expect(anonymousId).not.toBe("anon-1");
     expect(queryClient.getQueryData(savedKeys.list())).toBeUndefined();
   });
 });

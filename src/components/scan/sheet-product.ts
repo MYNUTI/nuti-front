@@ -12,9 +12,7 @@ const GRADE_BAND: Record<GradeLetter, ScoreBand> = {
   E: 5,
 };
 
-// GENERAL(목표 미설정)은 화면에 대응하는 목표가 없어 문구를 빼 둔다(API 플랜 12단계 「결정할 것」 1)
-const GOAL_LABEL: Record<Goal, string | null> = {
-  GENERAL: null,
+const GOAL_LABEL: Record<Goal, string> = {
   WEIGHT_LOSS: "다이어트 목표",
   MUSCLE_GAIN: "근육 증가 목표",
 };

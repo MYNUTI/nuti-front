@@ -66,7 +66,7 @@ describe("getProductDetail", () => {
           imageUrl: null,
           servingSize: null,
         },
-        appliedGoal: "GENERAL",
+        appliedGoal: "WEIGHT_LOSS",
         saved: true,
       }),
     );

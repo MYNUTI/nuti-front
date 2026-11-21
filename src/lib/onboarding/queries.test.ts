@@ -46,7 +46,7 @@ const bootstrap: Bootstrap = {
   consentAgreed: false,
   healthConsented: false,
   onboardingCompleted: false,
-  goal: "GENERAL",
+  goal: "WEIGHT_LOSS",
   clipboardLinkDetection: true,
   currentPolicyVersion: "v1",
 };
@@ -113,12 +113,14 @@ describe("onboarding queries", () => {
     },
   );
 
-  it("응답의 익명 ID가 null이면 저장하지 않는다", async () => {
-    reply(() =>
+  it("응답의 익명 ID가 null이면 기기가 만든 익명 ID를 덮어쓰지 않는다", async () => {
+    const { requests } = reply(() =>
       success({ anonymousId: null, agreedAt: "2026-11-03T10:00:00" }),
     );
     await run(onboardingMutations.agreePrivacy(queryClient), queryClient, "v1");
-    expect(cookies.get(IDENTITY_COOKIES.anonymousId)).toBeUndefined();
+    expect(cookies.get(IDENTITY_COOKIES.anonymousId)).toBe(
+      requests[0].headers.get("X-Anonymous-Id"),
+    );
   });
 
   it("건강정보 동의는 동의 상태를 바꾸고 bootstrap·목표를 다시 부른다", async () => {

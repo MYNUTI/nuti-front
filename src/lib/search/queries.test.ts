@@ -15,7 +15,7 @@ const item = (id: string, saved = false): SearchItem => ({
 
 const page = (over: Partial<SearchResult> = {}): SearchResult => ({
   query: "두유",
-  appliedGoal: "GENERAL",
+  appliedGoal: "WEIGHT_LOSS",
   exactMatches: { total: 0, items: [] },
   similarProducts: { total: 0, items: [] },
   didYouMean: null,

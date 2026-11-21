@@ -1,11 +1,7 @@
 import type { AxiosInstance } from "axios";
 import { unwrap } from "@/lib/api/response";
 import type { ApiSuccess } from "@/lib/api/types";
-import type {
-  LoginDto,
-  LogoutDto,
-  OAuthLoginRequestDto,
-} from "@/lib/auth/types";
+import type { LoginDto, OAuthLoginRequestDto } from "@/lib/auth/types";
 
 /**
  * 요청에 익명 ID 헤더가 있으면 서버가 그 기록을 계정으로 옮긴다. 인가 코드 교환·사용자 조회에 실패하면
@@ -18,7 +14,7 @@ export function postOAuthLogin(
   return http.post<ApiSuccess<LoginDto>>("/auth/oauth", body).then(unwrap);
 }
 
-/** 로그인 전용. 서버는 이 사용자의 토큰을 모두 지우고 새 익명 ID를 준다 */
+/** 로그인 전용. 서버는 이 사용자의 refresh 토큰을 모두 지운다. 새 익명 ID는 주지 않는다(클라이언트가 만든다) */
 export function postLogout(http: AxiosInstance) {
-  return http.post<ApiSuccess<LogoutDto>>("/auth/logout").then(unwrap);
+  return http.post<ApiSuccess<null>>("/auth/logout").then(unwrap);
 }

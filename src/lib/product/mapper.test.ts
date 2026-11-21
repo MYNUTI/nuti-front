@@ -29,7 +29,7 @@ const analyzedScan: BarcodeScanDto = {
   },
   grade,
   topReason: "당류가 1회 제공량에 12g 들어 있어요",
-  appliedGoal: "GENERAL",
+  appliedGoal: "WEIGHT_LOSS",
 };
 
 // 서버는 INSUFFICIENT면 grade·topReason 키를 빼고 보낸다
@@ -69,7 +69,7 @@ describe("toScannedProduct", () => {
         servingSize: "100g",
         sourceNote: null,
       },
-      appliedGoal: "GENERAL",
+      appliedGoal: "WEIGHT_LOSS",
     });
   });
 

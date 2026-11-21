@@ -17,7 +17,7 @@ export type BootstrapDto = {
   consentAgreed: boolean;
   healthConsented: boolean;
   onboardingCompleted: boolean;
-  /** 미설정·동의 전은 GENERAL */
+  /** 미설정·식별 없음은 WEIGHT_LOSS */
   goal: Goal;
   clipboardLinkDetection: boolean;
   /** 현재 개인정보 처리방침 버전. 정책이 아직 없으면 없다 */

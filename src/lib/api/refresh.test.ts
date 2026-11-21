@@ -149,7 +149,7 @@ describe("getFreshAccessToken", () => {
   });
 
   it.each(["TOKEN_EXPIRED", "INVALID_TOKEN"])(
-    "갱신이 %s로 거절되면 토큰과 익명 ID를 지우고 null이다",
+    "갱신이 %s로 거절되면 토큰을 지우고 익명 ID를 새로 만든 뒤 null이다",
     async (code) => {
       const cookies = stubDocumentCookie({
         [IDENTITY_COOKIES.accessToken]: jwtExpiringIn(-1_000),
@@ -162,7 +162,11 @@ describe("getFreshAccessToken", () => {
       await expect(getFreshAccessToken(http)).resolves.toBeNull();
       expect(cookies.get(IDENTITY_COOKIES.accessToken)).toBeUndefined();
       expect(cookies.get(IDENTITY_COOKIES.refreshToken)).toBeUndefined();
-      expect(cookies.get(IDENTITY_COOKIES.anonymousId)).toBeUndefined();
+      const anonymousId = cookies.get(IDENTITY_COOKIES.anonymousId);
+      expect(anonymousId).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+      );
+      expect(anonymousId).not.toBe("anon-1");
       expect(cookies.get(IDENTITY_COOKIES.sessionId)).toBe("session-1");
     },
   );

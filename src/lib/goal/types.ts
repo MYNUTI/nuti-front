@@ -5,12 +5,12 @@
  */
 import type { GradeLetter } from "@/lib/product/types";
 
-/** 목표는 상품·온보딩·설정이 같이 쓴다 */
-export type Goal = "GENERAL" | "WEIGHT_LOSS" | "MUSCLE_GAIN";
+/** 목표는 상품·온보딩·설정이 같이 쓴다. v3에서 GENERAL이 없어지고 미설정은 WEIGHT_LOSS로 온다 */
+export type Goal = "WEIGHT_LOSS" | "MUSCLE_GAIN";
 
 // ── DTO ──────────────────────────────────────────────────────────────────────
 
-/** `GET /me/goal`. 식별이 없거나 미설정이어도 GENERAL로 정상 응답한다 */
+/** `GET /me/goal`. 식별이 없거나 미설정이어도 WEIGHT_LOSS로 정상 응답한다 */
 export type GoalDto = {
   goal: Goal;
   label: string;

@@ -34,7 +34,7 @@ describe("lookupBarcode (API)", () => {
           imageUrl: null,
           servingSize: null,
         },
-        appliedGoal: "GENERAL",
+        appliedGoal: "WEIGHT_LOSS",
       }),
     );
     await expect(lookupBarcode("08801062633029")).resolves.toMatchObject({

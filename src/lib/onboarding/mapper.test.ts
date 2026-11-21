@@ -11,7 +11,7 @@ const bootstrap: BootstrapDto = {
   consentAgreed: true,
   healthConsented: false,
   onboardingCompleted: true,
-  goal: "GENERAL",
+  goal: "WEIGHT_LOSS",
   clipboardLinkDetection: true,
   currentPolicyVersion: "2026-10",
 };

@@ -31,8 +31,8 @@ export type ScanSheetProduct = {
   band: ScoreBand;
   /** 같은 종류 안 순위. API에 없어 없을 수 있다 */
   rank: { position: number; total: number } | null;
-  /** 「다이어트 목표」처럼 점수를 매긴 기준. 목표를 정하지 않았으면 없다 */
-  goalLabel: string | null;
+  /** 「다이어트 목표」처럼 점수를 매긴 기준 */
+  goalLabel: string;
   /** 한 줄 설명(감점이 큰 이유). 없을 수 있다 */
   summary: string | null;
 };
