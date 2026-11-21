@@ -174,6 +174,76 @@ describe("sanitizeEvent", () => {
       sanitizeEvent(event("$autocapture", { $pathname: "/home" })),
     ).not.toBeNull();
   });
+
+  it("클릭 기록은 버튼 글자를 남기고 목표 · 몸 정보 · 이메일 낱말만 가린다", () => {
+    const result = sanitizeEvent(
+      event("$autocapture", {
+        $pathname: "/my",
+        $el_text: "다이어트로 보기",
+        $elements_chain:
+          'button:text="키 172cm 몸무게 64kg"nth-child="1";a:text="user@mail.com"nth-child="2";div:text="다음"',
+        $elements: [
+          { tag_name: "button", $el_text: "근육 증가", text: "1998년생" },
+          { tag_name: "a", $el_text: "다음" },
+          null,
+        ],
+      }),
+    );
+    expect(result?.properties.$el_text).toBe("***로 보기");
+    expect(result?.properties.$elements_chain).toBe(
+      'button:text="키 *** 몸무게 ***"nth-child="1";a:text="***"nth-child="2";div:text="다음"',
+    );
+    const elements = result?.properties.$elements as Record<string, unknown>[];
+    expect(elements[0]).toEqual({
+      tag_name: "button",
+      $el_text: "***",
+      text: "***",
+    });
+    expect(elements[1].$el_text).toBe("다음");
+  });
+
+  it("255자에서 잘린 클릭 글자는 가린 뒤 끝 세 조각을 버린다(띄어 쓴 몸 정보 · 낱말 · 이메일)", () => {
+    // SDK 처럼 빈칸 하나로 이어진 글자를 255자에서 자른다
+    const head = "가나다 ".repeat(62); // 248자
+    const cut = (tail: string) => (head + tail).slice(0, 255);
+    const leaks: [string, RegExp][] = [
+      [cut("키 172 cm"), /172/],
+      [cut("2000 kcal 기준"), /2000|kcal/],
+      [cut("목표 다이어트"), /다이/],
+      [cut("o'connor@example.com"), /connor|@/],
+    ];
+    for (const [text, leak] of leaks) {
+      expect(text.length).toBe(255);
+      const result = sanitizeEvent(
+        event("$autocapture", {
+          $pathname: "/product/3",
+          $el_text: text,
+          $elements_chain: `p:text="${text}"nth-child="1"`,
+        }),
+      );
+      expect(result?.properties.$el_text).not.toMatch(leak);
+      expect(result?.properties.$el_text).toMatch(/^가나다/);
+      expect(result?.properties.$elements_chain).not.toMatch(leak);
+    }
+  });
+
+  it("작은따옴표가 든 이메일도 통째로 가린다", () => {
+    expect(maskSensitiveText("o'connor@example.com 로그인")).toBe("*** 로그인");
+  });
+
+  it("버튼 이름 같은 보통 글자는 그대로 보낸다", () => {
+    const result = sanitizeEvent(
+      event("$rageclick", {
+        $pathname: "/product/3",
+        $el_text: "쿠팡에서 보기",
+        $elements_chain: 'button:text="쿠팡에서 보기"nth-child="1"',
+      }),
+    );
+    expect(result?.properties.$el_text).toBe("쿠팡에서 보기");
+    expect(result?.properties.$elements_chain).toBe(
+      'button:text="쿠팡에서 보기"nth-child="1"',
+    );
+  });
 });
 
 describe("isSensitivePath", () => {
@@ -186,10 +256,11 @@ describe("isSensitivePath", () => {
 });
 
 describe("posthogConfig", () => {
-  it("EU 서버 · 입력 가림 · 콘솔 · 네트워크 기록 끔 · 클릭 글자와 속성 안 보냄", () => {
+  it("EU 서버 · 입력 가림 · 콘솔 · 네트워크 기록 끔 · 클릭 글자는 보내고 속성은 안 보냄", () => {
     const config = posthogConfig();
     expect(config.api_host).toBe("https://eu.i.posthog.com");
-    expect(config.mask_all_text).toBe(true);
+    // 클릭 글자는 before_send(sanitizeEvent)에서 낱말을 가린 뒤 보낸다
+    expect(config.mask_all_text).toBe(false);
     expect(config.mask_all_element_attributes).toBe(true);
     expect(config.enable_recording_console_log).toBe(false);
     expect(config.capture_performance).toBe(false);

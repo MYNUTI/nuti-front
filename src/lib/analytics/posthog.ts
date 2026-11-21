@@ -10,7 +10,8 @@ import type {
  * - 주소의 「?」 · 「#」 뒤(`goal` · `next` 같은 값)는 보내지 않는다 — 이벤트의 주소 칸, 녹화 속 링크 · 요청 주소 모두
  * - 고른 목표 · 몸 정보 낱말은 녹화에서 「***」로 가린다(길이로 짐작하지 못하게 늘 세 글자). 목표를 고르는
  *   화면은 `ph-no-capture` 로 통째로 가리고, 그 화면의 클릭 · 히트맵 이벤트는 버린다
- * - 입력 칸 값은 가린다(기본값) · 클릭한 요소의 글자 · 속성은 보내지 않는다 · user_id 를 쓰지 않는다(identify 안 함)
+ * - 입력 칸 값은 가린다(기본값) · user_id 를 쓰지 않는다(identify 안 함)
+ * - 클릭 기록에는 누른 요소의 글자(버튼 이름)를 남기되 녹화와 같은 낱말을 「***」로 가린다. 요소 속성(링크 주소 · class)은 보내지 않는다
  * 키(`NEXT_PUBLIC_POSTHOG_KEY`)가 비어 있으면 아무것도 하지 않는다. Preview · 개발에서는 비워 둔다
  */
 
@@ -29,9 +30,10 @@ export function stripQuery(value: string): string {
 }
 
 // 목표 이름 · 몸 정보 · 이메일 주소. 화면 글자에 섞여 나오는 것까지 낱말 단위로 찾는다.
-// 닉네임 같은 이름은 글자 모양으로 못 찾는다 — 이름을 보여 주는 곳(내 정보 계정 줄 등)에는 `ph-mask` 를 붙인다
+// 닉네임 같은 이름은 글자 모양으로 못 찾는다 — 이름을 보여 주는 곳(내 정보 계정 줄 등)에는 `ph-mask ph-sensitive` 를
+// 같이 붙인다(`ph-mask` = 녹화 글자 가림 · `ph-sensitive` = 그 안의 클릭을 클릭 기록에서 뺌 — posthog-js 가 아는 이름)
 const SENSITIVE_TEXT =
-  /다이어트|근육\s*증가|체중\s*감량|벌크업|\d+(?:\.\d+)?\s*(?:cm|kg|㎝|㎏)|\d[\d,]*\s*kcal\s*기준|\d{4}\s*년생|[\w.+-]+@[\w-]+(?:\.[\w-]+)+/gi;
+  /다이어트|근육\s*증가|체중\s*감량|벌크업|\d+(?:\.\d+)?\s*(?:cm|kg|㎝|㎏)|\d[\d,]*\s*kcal\s*기준|\d{4}\s*년생|[\w.!#$%&'*+/=?^`{|}~-]+@[\w-]+(?:\.[\w-]+)+/gi;
 const MASK = "***";
 
 /** 녹화 글자 가리기(`maskTextSelector: "*"` 와 함께 모든 글자에 불린다). `ph-mask` 안의 글자는 통째로 가린다 */
@@ -109,6 +111,53 @@ function maskInputRecords(properties: Record<string, unknown> | undefined) {
   }
 }
 
+// 클릭 기록(autocapture · rageclick · dead click)의 요소 글자. `$el_text` = 누른 요소의 글자,
+// `$elements_chain` = 누른 요소부터 위로 요소마다 `text="…"` 가 붙은 한 줄(원격 설정 elementsChainAsString),
+// `$elements` = 같은 내용의 배열(옛 형식). 셋 다 녹화 글자와 같은 낱말 가리기를 거친다
+type ElementLike = { $el_text?: unknown; text?: unknown };
+
+// posthog-js 는 요소 글자의 줄바꿈을 빈칸으로 바꾸고 255자에서 자른다(1.450 getSafeText). 잘린 끝 구절
+// (「다이어」 · 「172 c」 · 「2,500 kcal 기」 · 「user@ma」)은 정규식에 안 걸린다. 가릴 구절은 길어야 세 조각
+// (「2,500 kcal 기준」)이라, 잘린 글자는 먼저 가린 뒤 끝 세 조각을 버린다
+const SDK_TEXT_LIMIT = 255;
+const LAST_THREE_PIECES = /(?:\s*\S+){1,3}\s*$/;
+
+function maskClickText(text: string): string {
+  const masked = maskSensitiveText(text);
+  return text.length >= SDK_TEXT_LIMIT
+    ? masked.replace(LAST_THREE_PIECES, "")
+    : masked;
+}
+
+// 체인 한 줄 안의 요소 글자 칸: text="…"(안쪽 큰따옴표는 \" 로 이스케이프)
+const CHAIN_TEXT = /text="((?:[^"\\]|\\.)*)"/g;
+
+function maskChain(chain: string): string {
+  return maskSensitiveText(
+    chain.replace(
+      CHAIN_TEXT,
+      (_, value: string) => `text="${maskClickText(value)}"`,
+    ),
+  );
+}
+
+function maskElementText(properties: Record<string, unknown> | undefined) {
+  if (!properties) return;
+  if (typeof properties.$el_text === "string")
+    properties.$el_text = maskClickText(properties.$el_text);
+  if (typeof properties.$elements_chain === "string")
+    properties.$elements_chain = maskChain(properties.$elements_chain);
+  if (Array.isArray(properties.$elements)) {
+    for (const element of properties.$elements as ElementLike[]) {
+      if (!element || typeof element !== "object") continue;
+      if (typeof element.$el_text === "string")
+        element.$el_text = maskClickText(element.$el_text);
+      if (typeof element.text === "string")
+        element.text = maskClickText(element.text);
+    }
+  }
+}
+
 /** 보내기 직전 모든 이벤트(녹화 묶음 $snapshot 포함)에 불린다. null 이면 보내지 않는다 */
 export function sanitizeEvent(
   event: CaptureResult | null,
@@ -122,6 +171,7 @@ export function sanitizeEvent(
   )
     return null;
   if (event.event === "$snapshot") maskInputRecords(event.properties);
+  else maskElementText(event.properties);
   stripUrlValues(event.properties);
   stripUrlValues(event.$set);
   stripUrlValues(event.$set_once);
@@ -136,9 +186,10 @@ export function posthogConfig(): Partial<PostHogConfig> {
     person_profiles: "identified_only",
     capture_pageview: "history_change",
     capture_pageleave: true,
-    // 클릭 · 히트맵은 모은다. 클릭한 요소의 글자와 속성(링크 주소 포함)은 보내지 않는다
+    // 클릭 · 히트맵은 모은다. 클릭한 요소의 글자는 남기고(버튼 이름으로 세려고 · 11-19 사용자 결정)
+    // before_send 에서 녹화와 같은 낱말을 가린다. 속성(링크 주소 · class 포함)은 보내지 않는다
     autocapture: true,
-    mask_all_text: true,
+    mask_all_text: false,
     mask_all_element_attributes: true,
     // 개발용 안내문 · 서버 요청 기록은 녹화에 넣지 않는다(검색 요청 주소에 목표 값이 붙는다)
     enable_recording_console_log: false,
