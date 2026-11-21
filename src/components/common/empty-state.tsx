@@ -75,7 +75,8 @@ export function ErrorState({
   return (
     <EmptyState
       title={title}
-      description="잠시 문제가 생겼어요. 조금 뒤에 다시 시도해 주세요."
+      // 디자인 메모(11-12 화면 손질): 제목 아래 한 줄
+      description="인터넷 연결을 확인하고 다시 시도해 주세요."
       className={className}
       actions={
         <>

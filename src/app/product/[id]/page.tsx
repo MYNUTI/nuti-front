@@ -2,14 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { BackButton } from "@/components/common/back-button";
 import { Button } from "@/components/common/button";
 import { Notice } from "@/components/common/notice";
 import { ProductCard } from "@/components/common/product-card";
 import { ProductHero } from "@/components/common/product-hero";
 import { ReasonChip } from "@/components/common/reason-chip";
 import { ScoreRing } from "@/components/common/score-ring";
-import { SearchFieldLink } from "@/components/common/search-field";
 import { SectionHeader } from "@/components/common/section-header";
 import { IconChevronRight } from "@/components/icons";
 import { cn } from "@/lib/utils";
@@ -23,6 +21,8 @@ import {
   SaveButton,
   ShareButton,
 } from "./product-actions";
+import { ProductError } from "./product-error";
+import { ProductLoading, ProductTopBar } from "./product-loading";
 import { ProductPhoto } from "./product-photo";
 import { ReportButton } from "./report-sheet";
 
@@ -53,6 +53,7 @@ function Band() {
 /*
  * 3-2 제품 결과. 위에서부터 제품 머리 · 점수 · 이 점수인 이유 · 영양성분 · 더 맞는 제품 · 쿠팡 고지, 아래 고정 줄.
  *
+ * ?state=loading|error — 3-2 불러오는 중·불러오지 못했을 때(확인용) · ?state=no-goal — 3-2 공유 링크·목표 없음
  * ?preview=muscle|diet — 3-2 다른 목표로 보기. 점수·순위·이유만 그 목표 기준으로 바꿔 보이고 내 목표 설정은 바꾸지 않는다.
  */
 export default async function ProductPage({
@@ -68,6 +69,10 @@ export default async function ProductPage({
     ...product.preview,
     [product.goal]: product,
   };
+  // 3-2 불러오는 중 확인용. 실제 로딩은 loading.tsx가 같은 화면을 그린다
+  if (state === "loading") return <ProductLoading />;
+  // 3-2 불러오지 못했을 때 확인용. 실제 실패는 error.tsx가 같은 화면을 그린다
+  if (state === "error") return <ProductError />;
   // 3-2 공유 링크·목표 없음: 목표를 고른 적 없는 사람은 다이어트 기준으로 보인다(디자인 메모).
   // 1-5에서 고르고 돌아오면 ?goal=로 그 목표를 내 목표로 본다. 목표 저장·조회는 API 연결 때 사용자 정보로 바꾼다
   const noGoal = state === "no-goal";
@@ -129,15 +134,7 @@ export default async function ProductPage({
   return (
     <ProductActions previewing={Boolean(previewView)}>
       <div className="flex min-h-dvh flex-col bg-bg-page pt-safe">
-        <header className="flex h-14 items-center gap-1 pr-4 pl-1">
-          <BackButton fallbackHref="/home" />
-          {/* 디자인 메모: 검색칸 → 2-3 검색 */}
-          <SearchFieldLink
-            href="/search"
-            placeholder="제품명, 브랜드로 검색"
-            className="min-w-0 flex-1"
-          />
-        </header>
+        <ProductTopBar />
         {previewView && (
           // 디자인: 미리보기 알림 줄(고정). 스크롤해도 화면 위에 붙어 있다
           <div className="sticky top-0 z-20 flex items-center bg-bg-tint pr-2">
