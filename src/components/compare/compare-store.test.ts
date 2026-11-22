@@ -68,6 +68,32 @@ describe("비교함 저장소", () => {
     expect(map.has("nuti_compare_v1")).toBe(false);
   });
 
+  it("하나를 빼고 담으면 한 번만 알리고 뺀 자리 대신 끝에 담는다", async () => {
+    vi.useFakeTimers({ now: 1000 });
+    stubStorage();
+    const store = await load();
+    for (const id of ["1", "2", "3", "4"]) store.addToCompare(item(id));
+    vi.setSystemTime(5000);
+    const onChange = vi.fn();
+    store.subscribeCompare(onChange);
+    expect(store.replaceInCompare("2", item("5"))).toBe(true);
+    expect(store.readCompare().map((i) => i.id)).toEqual(["1", "3", "4", "5"]);
+    // 남은 제품은 원래 담은 시각 그대로, 새로 담은 제품만 지금 시각
+    expect(store.readCompare().map((i) => i.addedAt)).toEqual([
+      1000, 1000, 1000, 5000,
+    ]);
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+
+  it("뺄 제품이 없거나 담을 제품이 이미 있으면 바꾸지 않는다", async () => {
+    stubStorage();
+    const store = await load();
+    for (const id of ["1", "2"]) store.addToCompare(item(id));
+    expect(store.replaceInCompare("9", item("5"))).toBe(false);
+    expect(store.replaceInCompare("1", item("2"))).toBe(false);
+    expect(store.readCompare().map((i) => i.id)).toEqual(["1", "2"]);
+  });
+
   it("내용이 바뀌지 않으면 같은 배열을 돌려준다", async () => {
     stubStorage();
     const store = await load();

@@ -10,6 +10,7 @@ import { SectionHeader } from "@/components/common/section-header";
 import { Thumb } from "@/components/common/thumb";
 import { Toast } from "@/components/common/toast";
 import { CompareBar } from "@/components/compare/compare-bar";
+import { CompareFullSheet } from "@/components/compare/compare-full-sheet";
 import {
   addToCompare,
   removeFromCompare,
@@ -45,6 +46,8 @@ export function PickList({
   const [toast, setToast] = useState<{ key: number; message: string } | null>(
     null,
   );
+  // 꽉 찼을 때 담으려던 제품(3-4 비교함이 다 찼을 때 시트)
+  const [pending, setPending] = useState<CompareItem | null>(null);
   const showToast = (message: string) =>
     setToast((prev) => ({ key: (prev?.key ?? 0) + 1, message }));
 
@@ -54,9 +57,7 @@ export function PickList({
       removeFromCompare(item.id);
       return;
     }
-    // 디자인의 「하나를 빼고 담기」(3-4 비교함이 다 찼을 때)를 만들기 전까지 3-2와 같은 임시 안내
-    if (addToCompare(item) === "full")
-      showToast("비교함은 4개까지 담을 수 있어요");
+    if (addToCompare(item) === "full") setPending(item);
   };
 
   return (
@@ -150,6 +151,11 @@ export function PickList({
           className="bottom-0 pb-[max(var(--safe-bottom),12px)]"
         />
       )}
+      <CompareFullSheet
+        key={pending?.id}
+        pending={pending}
+        onClose={() => setPending(null)}
+      />
       {toast && (
         <Toast
           key={toast.key}

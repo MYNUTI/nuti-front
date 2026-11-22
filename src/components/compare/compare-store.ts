@@ -89,6 +89,24 @@ export function addToCompare(item: CompareItem): "added" | "exists" | "full" {
   return "added";
 }
 
+/**
+ * 꽉 찼을 때 하나를 빼고 담는다(3-4 비교함이 다 찼을 때 「빼고 담기」). 한 번에 저장해 중간 상태(3개)가 보이지 않는다.
+ * 뺄 제품이 없거나 담을 제품이 이미 있으면 바꾸지 않고 false
+ */
+export function replaceInCompare(removeId: string, item: CompareItem): boolean {
+  const items = readCompare();
+  if (
+    !items.some((other) => other.id === removeId) ||
+    items.some((other) => other.id === item.id)
+  )
+    return false;
+  write([
+    ...items.filter((other) => other.id !== removeId),
+    { ...item, addedAt: Date.now() },
+  ]);
+  return true;
+}
+
 export function removeFromCompare(id: string) {
   const items = readCompare();
   if (!items.some((item) => item.id === id)) return;

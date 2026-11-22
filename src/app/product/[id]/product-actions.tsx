@@ -12,6 +12,7 @@ import {
   IconShare,
 } from "@/components/icons";
 import { CompareBar } from "@/components/compare/compare-bar";
+import { CompareFullSheet } from "@/components/compare/compare-full-sheet";
 import {
   addToCompare,
   removeFromCompare,
@@ -75,6 +76,8 @@ export function ProductActions({
   const compare = useCompare();
   const added = compare.some((item) => item.id === product.id);
   const [toast, setToast] = useState<ToastState | null>(null);
+  // 꽉 찼을 때 담으려던 이 제품(3-4 비교함이 다 찼을 때 시트)
+  const [pending, setPending] = useState<CompareItem | null>(null);
 
   const showToast = (t: Omit<ToastState, "key">) =>
     setToast((prev) => ({ ...t, key: (prev?.key ?? 0) + 1 }));
@@ -107,14 +110,16 @@ export function ProductActions({
       return;
     }
     if (addToCompare(product) === "full") {
-      // 디자인의 「하나를 빼고 담기」(3-4 비교함이 다 찼을 때)를 만들기 전까지 임시 안내
-      showToast({ message: "비교함은 4개까지 담을 수 있어요" });
+      setPending(product);
       return;
     }
+    showAdded();
+  };
+
+  const showAdded = () =>
     showToast({
       message: previewing ? "내 목표 기준으로 담았어요" : "비교함에 담았어요",
     });
-  };
 
   return (
     <ActionsContext
@@ -131,6 +136,13 @@ export function ProductActions({
       }}
     >
       {children}
+      <CompareFullSheet
+        key={pending?.id}
+        pending={pending}
+        onClose={() => setPending(null)}
+        // 빼고 담은 것도 담은 것이라 담기와 같은 알림
+        onReplaced={showAdded}
+      />
     </ActionsContext>
   );
 }

@@ -1,6 +1,6 @@
 # UI 작업 플랜
 
-> 상태: **05단계 대안·비교 진행 중** (2026-11-21). 비교함 저장소 · 3-4 더 맞는 제품(전체) · 3-4 더 맞는 제품(골라 비교) 완료, 다음은 3-4 비교함이 다 찼을 때. 04단계 제품 결과는 완료(2026-11-19). 03단계 바코드는 만들 수 있는 화면을 모두 만들었다(3-1 여러 개·이 제품인가요·3-2 이 제품으로 이었을 때는 「남은 질문」 4로 보류). 04단계는 3-2 기본 화면·영양성분 펼침·다른 목표로 보기·담고 저장·공유 주소 복사·정보가 틀렸어요·더 맞는 제품이 없을 때·사진이 없을 때·생산 중단·내 몸에 맞춤·쿠팡 상품이 없을 때·공유 링크 목표 없음·불러오는 중·불러오지 못했을 때 완료, 즐겨찾기했을 때·비교함에 담았을 때는 대조만(바뀐 점은 「디자인 수정분」 8~10), 5-4 점수 기준 완료. 이 문서는 범위·순서·결정만 기록한다. 화면 하나가 끝날 때마다 확인받고 다음 화면으로 넘어간다.
+> 상태: **05단계 대안·비교 진행 중** (2026-11-21). 비교함 저장소 · 3-4 더 맞는 제품(전체) · 3-4 더 맞는 제품(골라 비교) · 3-4 비교함이 다 찼을 때 완료, 다음은 3-5 제품 비교. 04단계 제품 결과는 완료(2026-11-19). 03단계 바코드는 만들 수 있는 화면을 모두 만들었다(3-1 여러 개·이 제품인가요·3-2 이 제품으로 이었을 때는 「남은 질문」 4로 보류). 04단계는 3-2 기본 화면·영양성분 펼침·다른 목표로 보기·담고 저장·공유 주소 복사·정보가 틀렸어요·더 맞는 제품이 없을 때·사진이 없을 때·생산 중단·내 몸에 맞춤·쿠팡 상품이 없을 때·공유 링크 목표 없음·불러오는 중·불러오지 못했을 때 완료, 즐겨찾기했을 때·비교함에 담았을 때는 대조만(바뀐 점은 「디자인 수정분」 8~10), 5-4 점수 기준 완료. 이 문서는 범위·순서·결정만 기록한다. 화면 하나가 끝날 때마다 확인받고 다음 화면으로 넘어간다.
 
 ## 목적
 
@@ -29,7 +29,7 @@
 - `globals.css`에 v3 CHIPS 토큰(색·등급 색·글자 스타일 12개·모서리)이 있다. 예전 토큰과 `rounded-xl` 이상은 임시 화면용으로 남아 있고 13단계에서 지운다
 - 글꼴은 Pretendard 서브셋(400·500·700)
 - 아이콘: `components/icons.tsx`에 피그마 v2/Icon 39개
-- v3 공통 부품: `components/common/`의 button, bottom-cta, top-bar, search-field, tab-bar, grade(GradeBadge·GradeTag, GradeBar 제외), status-tag, chip, select-card, check-row, check-mark, text-field, product-row, list-row, toggle, reason-row, section-header, thumb, category-tile, product-hero, camera-frame, sheet(BottomSheet·ConfirmSheet), empty-state(EmptyState·ErrorState), loading-state, skeleton, step-dots, score-ring, back-button, coachmark, toast, step-list, numbered-list, reason-chip, product-card, notice, compare-bar(`components/compare`). 그 밖의 `components/common/`(cta-button, layer, card-tutorial, choice-card)과 `components/ui/`(shadcn button, checkbox, radio-group)는 임시 화면용이다
+- v3 공통 부품: `components/common/`의 button, bottom-cta, top-bar, search-field, tab-bar, grade(GradeBadge·GradeTag, GradeBar 제외), status-tag, chip, select-card, check-row, check-mark, text-field, product-row, list-row, toggle, reason-row, section-header, thumb, category-tile, product-hero, camera-frame, sheet(BottomSheet·ConfirmSheet), empty-state(EmptyState·ErrorState), loading-state, skeleton, step-dots, score-ring, back-button, coachmark, toast, step-list, numbered-list, reason-chip, product-card, notice, compare-bar·compare-full-sheet(`components/compare`). 그 밖의 `components/common/`(cta-button, layer, card-tutorial, choice-card)과 `components/ui/`(shadcn button, checkbox, radio-group)는 임시 화면용이다
 - 스캔: `components/scan/`가 `lib/scan` 상태 기계·lookup에 붙어 있다. UI 작업은 겉모양만 바꾸고 이 연결은 유지한다
 - 라우트는 임시본이다(`home`, `scan`, `history`, `settings`, `product/[id]`, `onboarding/*` 9개). v3 화면 구성과 맞지 않는다
 
