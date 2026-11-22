@@ -18,7 +18,6 @@ describe("invalidateGoalDependents", () => {
       onboardingKeys.bootstrap(),
       productKeys.detail("7"),
       productKeys.barcode("08801062633029"),
-      productKeys.gradeReason("7"),
       searchKeys.result("두유"),
       savedKeys.list(),
     ];

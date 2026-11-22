@@ -7,12 +7,12 @@ describe("goal mapper", () => {
       toMyGoal({
         goal: "WEIGHT_LOSS",
         label: "체중 감량",
-        healthConsented: false,
+        goalAccountConsented: false,
       }),
     ).toEqual({
       goal: "WEIGHT_LOSS",
       label: "체중 감량",
-      healthConsented: false,
+      goalAccountConsented: false,
       appliedAt: null,
     });
   });

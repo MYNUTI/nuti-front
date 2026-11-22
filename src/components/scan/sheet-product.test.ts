@@ -1,38 +1,40 @@
 import { describe, expect, it } from "vitest";
 
-import type { ScannedProduct } from "@/lib/product/types";
+import type { Goal } from "@/lib/goal/types";
+import { toProductResult } from "@/lib/product/mapper";
+import type { GoalResult, ProductResult } from "@/lib/product/types";
+import { goalResultDto, productResultDto } from "@/test/product";
 
 import { toSheetProduct } from "./sheet-product";
 
-type Analyzed = Extract<ScannedProduct, { status: "ANALYZED" }>;
+type Scored = ProductResult & { goals: Record<Goal, GoalResult> };
 
-function analyzed(overrides: Partial<Analyzed> = {}): Analyzed {
-  return {
-    status: "ANALYZED",
-    grade: {
-      score: 88,
-      grade: "B",
-      label: "괜찮아요",
-      badgeText: null,
-      fiberIncluded: true,
-    },
-    topReason: "당이 조금 높아요",
-    product: {
-      id: "7",
-      name: "두유",
-      brandName: "정식품",
-      imageUrl: "https://example.com/7.png",
-      servingSize: "190ml",
-      sourceNote: null,
-    },
-    appliedGoal: "WEIGHT_LOSS",
-    ...overrides,
-  };
+function scored(...args: Parameters<typeof productResultDto>): Scored {
+  const product = toProductResult(productResultDto(...args));
+  if (!product.goals) throw new Error("두 목표 점수가 있는 제품이어야 한다");
+  return { ...product, goals: product.goals };
 }
 
 describe("toSheetProduct", () => {
-  it("조회 결과를 시트 모양으로 옮긴다", () => {
-    expect(toSheetProduct(analyzed())).toEqual({
+  it("결과를 시트 모양으로 옮긴다. 점수·한 줄 해석은 내 목표 기준이다", () => {
+    const product = scored({
+      brandLine: "정식품",
+      imageUrl: "https://example.com/7.png",
+      goals: [
+        goalResultDto("WEIGHT_LOSS", {
+          score: 88,
+          grade: "B",
+          summary: "당이 조금 높아요",
+        }),
+        goalResultDto("MUSCLE_GAIN", {
+          score: 40,
+          grade: "D",
+          summary: "단백질이 적어요",
+        }),
+      ],
+    });
+
+    expect(toSheetProduct(product, "WEIGHT_LOSS")).toEqual({
       id: "7",
       name: "두유",
       brand: "정식품",
@@ -43,6 +45,12 @@ describe("toSheetProduct", () => {
       goalLabel: "다이어트 목표",
       summary: "당이 조금 높아요",
     });
+    expect(toSheetProduct(product, "MUSCLE_GAIN")).toMatchObject({
+      score: 40,
+      band: 4,
+      goalLabel: "근육 증가 목표",
+      summary: "단백질이 적어요",
+    });
   });
 
   it.each([
@@ -50,19 +58,12 @@ describe("toSheetProduct", () => {
     ["C", 3],
     ["E", 5],
   ] as const)("등급 %s는 점수 구간 %i이다", (grade, band) => {
-    const scanned = analyzed();
-    expect(
-      toSheetProduct({ ...scanned, grade: { ...scanned.grade, grade } }).band,
-    ).toBe(band);
-  });
-
-  it("근육 증가 목표의 문구", () => {
-    expect(
-      toSheetProduct(analyzed({ appliedGoal: "MUSCLE_GAIN" })).goalLabel,
-    ).toBe("근육 증가 목표");
-  });
-
-  it("감점 요인이 없으면 설명이 없다", () => {
-    expect(toSheetProduct(analyzed({ topReason: null })).summary).toBeNull();
+    const product = scored({
+      goals: [
+        goalResultDto("WEIGHT_LOSS", { grade }),
+        goalResultDto("MUSCLE_GAIN"),
+      ],
+    });
+    expect(toSheetProduct(product, "WEIGHT_LOSS").band).toBe(band);
   });
 });

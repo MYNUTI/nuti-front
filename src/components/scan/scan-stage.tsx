@@ -18,6 +18,7 @@ import {
   ScanResultSheet,
 } from "@/components/scan/scan-result-sheet";
 import { toSheetProduct } from "@/components/scan/sheet-product";
+import { useMyGoal } from "@/lib/goal/queries";
 import { useProductByBarcode } from "@/lib/product/queries";
 import type { ScanState } from "@/lib/scan/machine";
 import type { Gtin, ScanSource } from "@/lib/scan/types";
@@ -68,6 +69,8 @@ export function ScanStage({
   };
 
   const lookup = useProductByBarcode(gtin);
+  // 결과는 두 목표 점수를 함께 주고, 시트는 내 목표 점수를 보인다. 들어오자마자 불러 둔다
+  const myGoal = useMyGoal();
 
   const handleGtin = (value: Gtin, source: ScanSource) => {
     setGtin(value);
@@ -81,55 +84,78 @@ export function ScanStage({
     if (source === "manual") setManualOpen(false);
   };
 
+  const scanned =
+    lookup.data && "product" in lookup.data ? lookup.data.product : null;
+  const goals = scanned?.goals;
+  // 내 목표는 점수 시트에만 필요하다. 목표 조회가 늦거나 실패해도 미등록·여러 개 같은 결과는 그대로 보인다
+  const needsGoal = Boolean(goals);
   // 3-1(읽힌 뒤 찾는 중). 디자인 메모: 결과가 오면 바로 3-2. 짧은 진동은 스캐너가 읽은 순간 낸다(use-scanner)
-  const finding = gtin !== null && lookup.isPending;
+  const finding =
+    gtin !== null && (lookup.isPending || (needsGoal && myGoal.isPending));
   const found =
-    lookup.data?.status === "found" && lookup.data.product.status === "ANALYZED"
-      ? toSheetProduct(lookup.data.product)
+    scanned && goals && myGoal.data
+      ? toSheetProduct({ ...scanned, goals }, myGoal.data.goal)
       : null;
   // 비교함 담기는 아직 화면 안 상태만 둔다(UI 플랜 「데이터」: 서버 변경이 필요한 동작)
   const [addedIds, setAddedIds] = useState<ReadonlySet<string>>(new Set());
 
   const renderSheet = () => {
     // 찾는 중 시트는 화면 아래에 따로 그린다(ScanFindingSheet)
-    if (gtin === null || lookup.isPending) return null;
+    if (gtin === null || lookup.isPending || (needsGoal && myGoal.isPending))
+      return null;
     // 앞자리가 0이 아닌 14자리(400 BAD_REQUEST)도 여기로 온다. 입력 단계에서 막지 않기로 했다(API 플랜 결정 기록 2026-11-19)
-    if (lookup.isError) {
+    if (lookup.isError || (needsGoal && myGoal.isError)) {
       return (
         <ScanMessageSheet
           title="상품 정보를 불러오지 못했어요"
           action={
-            <CtaButton tone="secondary" onClick={() => lookup.refetch()}>
+            <CtaButton
+              tone="secondary"
+              onClick={() => {
+                if (lookup.isError) lookup.refetch();
+                if (myGoal.isError) myGoal.refetch();
+              }}
+            >
               다시 시도
             </CtaButton>
           }
         />
       );
     }
-    if (lookup.data.status === "not-found") {
+    const outcome = lookup.data;
+    if (outcome.outcome === "NOT_FOUND") {
       // TODO: IA 3-6 미등록 화면이 생기면 그쪽으로 보낸다.
       return (
         <ScanMessageSheet
           title="등록되지 않은 상품이에요"
-          description={`바코드 ${lookup.data.gtin} · 다른 상품을 찍어 보세요`}
+          description={`바코드 ${outcome.barcode} · 다른 상품을 찍어 보세요`}
         />
       );
     }
     // 카메라·숫자 입력은 체크섬을 먼저 확인해 보통 오지 않는다. 다시 보내도 같아 다시 시도를 두지 않는다
-    if (lookup.data.status === "checksum-invalid") {
+    if (outcome.outcome === "CHECKSUM_INVALID") {
       return (
         <ScanMessageSheet
           title="바코드 숫자가 맞지 않아요"
-          description={`바코드 ${lookup.data.gtin} · 다시 비추거나 번호를 확인해 주세요`}
+          description={`바코드 ${outcome.gtin} · 다시 비추거나 번호를 확인해 주세요`}
         />
       );
     }
-    if (lookup.data.product.status === "INSUFFICIENT") {
+    if (outcome.outcome === "MULTIPLE") {
+      // TODO: 3-1 「바코드에 제품이 여러 개일 때」 시트가 정해지면 후보(outcome.candidates)를 보인다(UI 플랜 「남은 질문」 4)
+      return (
+        <ScanMessageSheet
+          title="이 바코드에 제품이 여러 개예요"
+          description="이름으로 찾아 주세요"
+        />
+      );
+    }
+    if (!found) {
       // TODO: IA 3-6 「아직 등급이 없는 제품」 화면이 생기면 그쪽으로 보낸다.
       return (
         <ScanMessageSheet
           title="아직 등급이 없는 제품이에요"
-          description={`${lookup.data.product.product.name} · 영양정보가 모자라 등급을 매기지 못했어요`}
+          description={`${outcome.product.name} · 영양정보가 모자라 등급을 매기지 못했어요`}
         />
       );
     }

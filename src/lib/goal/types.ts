@@ -14,7 +14,8 @@ export type Goal = "WEIGHT_LOSS" | "MUSCLE_GAIN";
 export type GoalDto = {
   goal: Goal;
   label: string;
-  healthConsented: boolean;
+  /** 「목표 계정 저장」 동의. false면 목표는 기기에만 둔다 */
+  goalAccountConsented: boolean;
   /** 미설정이면 없다 */
   appliedAt?: string;
 };

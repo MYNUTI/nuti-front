@@ -3,7 +3,7 @@ import { cache } from "react";
 import { serverApi } from "@/lib/api/server";
 import { ApiError } from "@/lib/api/errors";
 import { fetchProductDetail } from "@/lib/product/api";
-import type { ProductDetail } from "@/lib/product/types";
+import type { ProductResult } from "@/lib/product/types";
 
 // 서버 경로의 상품 ID는 Long이다. 숫자가 아니거나 Long을 넘는 id는 서버가 404가 아닌 500으로 답해,
 // 보내지 않고 없는 상품으로 본다. 19자리는 Long 최댓값을 넘을 수 있어 18자리까지만 보낸다
@@ -15,7 +15,7 @@ const PRODUCT_ID = /^[1-9]\d{0,17}$/;
  * 감싸 같은 렌더의 `generateMetadata`와 페이지가 한 번만 부르게 한다.
  */
 export const getProductDetail = cache(
-  async (productId: string): Promise<ProductDetail | null> => {
+  async (productId: string): Promise<ProductResult | null> => {
     if (!PRODUCT_ID.test(productId)) return null;
     try {
       return await fetchProductDetail(serverApi, productId);

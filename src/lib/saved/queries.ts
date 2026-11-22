@@ -9,7 +9,7 @@ import {
 import { api } from "@/lib/api/client";
 import { meKeys } from "@/lib/me/keys";
 import { productKeys } from "@/lib/product/keys";
-import type { ProductDetail } from "@/lib/product/types";
+import type { ProductResult } from "@/lib/product/types";
 import {
   deleteSavedProduct,
   fetchSavedProducts,
@@ -51,7 +51,7 @@ function setDetailSaved(
   productId: string,
   saved: boolean,
 ) {
-  queryClient.setQueryData<ProductDetail>(
+  queryClient.setQueryData<ProductResult>(
     productKeys.detail(productId),
     (detail) => detail && { ...detail, saved },
   );

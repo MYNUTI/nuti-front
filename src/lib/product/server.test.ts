@@ -3,6 +3,7 @@ import { ApiError } from "@/lib/api/errors";
 import { serverApi } from "@/lib/api/server";
 import { getProductDetail } from "@/lib/product/server";
 import { failure, mockAdapter, success, type Reply } from "@/test/http";
+import { productResultDto } from "@/test/product";
 
 vi.mock("next/headers", () => ({
   cookies: async () => ({ get: () => undefined }),
@@ -56,23 +57,9 @@ describe("getProductDetail", () => {
   });
 
   it("찾으면 화면 모델로 돌려준다", async () => {
-    useAdapter(() =>
-      success({
-        status: "INSUFFICIENT",
-        product: {
-          productId: 7,
-          name: "두유",
-          brandName: null,
-          imageUrl: null,
-          servingSize: null,
-        },
-        appliedGoal: "WEIGHT_LOSS",
-        saved: true,
-      }),
-    );
+    useAdapter(() => success(productResultDto({ saved: true })));
     await expect(getProductDetail("7")).resolves.toMatchObject({
-      status: "INSUFFICIENT",
-      product: { id: "7" },
+      id: "7",
       saved: true,
     });
   });
