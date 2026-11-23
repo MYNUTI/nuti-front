@@ -37,7 +37,10 @@ describe("authMutations", () => {
     stubWebLocks();
     channel = stubBroadcastChannel();
     queryClient = new QueryClient();
-    queryClient.setQueryData(savedKeys.list(), { pages: [], pageParams: [] });
+    queryClient.setQueryData(savedKeys.list("WEIGHT_LOSS"), {
+      pages: [],
+      pageParams: [],
+    });
     queryClient.setQueryData(onboardingKeys.bootstrap(), { isLoggedIn: true });
     queryClient.setQueryData(metaKeys.policies(), { privacy: null });
     queryClient.setQueryData(searchKeys.popularKeywords(), []);
@@ -80,9 +83,9 @@ describe("authMutations", () => {
     expect(cookies.get(IDENTITY_COOKIES.refreshToken)).toBe("refresh-1");
     // 서버가 병합에 실패하면 다음 로그인 때 같은 익명 ID로 다시 옮긴다
     expect(cookies.get(IDENTITY_COOKIES.anonymousId)).toBe("anon-1");
-    expect(queryClient.getQueryState(savedKeys.list())?.isInvalidated).toBe(
-      true,
-    );
+    expect(
+      queryClient.getQueryState(savedKeys.list("WEIGHT_LOSS"))?.isInvalidated,
+    ).toBe(true);
     expect(queryClient.getQueryState(metaKeys.policies())?.isInvalidated).toBe(
       false,
     );
@@ -142,7 +145,9 @@ describe("authMutations", () => {
 
     expect(cookies.get(IDENTITY_COOKIES.refreshToken)).toBeUndefined();
     expect(cookies.get(IDENTITY_COOKIES.anonymousId)).toBe("anon-1");
-    expect(queryClient.getQueryData(savedKeys.list())).toBeDefined();
+    expect(
+      queryClient.getQueryData(savedKeys.list("WEIGHT_LOSS")),
+    ).toBeDefined();
     expect(channel.posted).toEqual([]);
   });
 
@@ -163,7 +168,9 @@ describe("authMutations", () => {
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
     );
     expect(anonymousId).not.toBe("anon-1");
-    expect(queryClient.getQueryData(savedKeys.list())).toBeUndefined();
+    expect(
+      queryClient.getQueryData(savedKeys.list("WEIGHT_LOSS")),
+    ).toBeUndefined();
     expect(
       queryClient.getQueryData(onboardingKeys.bootstrap()),
     ).toBeUndefined();
@@ -196,7 +203,9 @@ describe("authMutations", () => {
 
       expect(cookies.get(IDENTITY_COOKIES.refreshToken)).toBeUndefined();
       expect(cookies.get(IDENTITY_COOKIES.anonymousId)).not.toBe("anon-1");
-      expect(queryClient.getQueryData(savedKeys.list())).toBeUndefined();
+      expect(
+        queryClient.getQueryData(savedKeys.list("WEIGHT_LOSS")),
+      ).toBeUndefined();
       expect(channel.posted).toEqual([
         { name: "nuti-session", data: "logout" },
       ]);
@@ -215,7 +224,9 @@ describe("authMutations", () => {
     );
 
     expect(cookies.get(IDENTITY_COOKIES.refreshToken)).toBe("refresh-1");
-    expect(queryClient.getQueryData(savedKeys.list())).toBeDefined();
+    expect(
+      queryClient.getQueryData(savedKeys.list("WEIGHT_LOSS")),
+    ).toBeDefined();
     expect(channel.posted).toEqual([]);
   });
 
@@ -236,7 +247,9 @@ describe("authMutations", () => {
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
     );
     expect(anonymousId).not.toBe("anon-1");
-    expect(queryClient.getQueryData(savedKeys.list())).toBeUndefined();
+    expect(
+      queryClient.getQueryData(savedKeys.list("WEIGHT_LOSS")),
+    ).toBeUndefined();
   });
 
   it("탈퇴하면 기기 목표도 지워 처음 방문 상태로 돌린다. 로그아웃은 남긴다", async () => {

@@ -1,27 +1,25 @@
 /**
- * 저장 API의 DTO(서버 필드 그대로)와 화면 모델.
- * 기준: 백엔드 커밋 c164ec0의 `SavedProductPageResponse`, `SaveResultResponse`.
+ * 저장(즐겨찾기) API의 DTO(서버 필드 그대로)와 화면 모델.
+ * 기준: 배포 Swagger(2026-11-21)와 백엔드 `main` `1ddb9b4`의 `SavedProductPageResponse`, `SaveResultResponse`.
+ * 항목 모양은 Swagger의 스키마 이름 충돌로 가려져 백엔드 소스로 확인했다(API v3 동기화 문서).
  * 날짜는 타임존 없는 ISO 문자열(`yyyy-MM-ddTHH:mm:ss`)이다.
  */
-import type { OffsetPageDto } from "@/lib/api/types";
-import type { GradeLetter, ProductStatus } from "@/lib/product/types";
+import type { Goal } from "@/lib/goal/types";
+import type { ProductCardData, ProductCardDto } from "@/lib/product/types";
 
 // ── DTO ──────────────────────────────────────────────────────────────────────
 
-/** `GET /me/saved-products`의 항목. 등급은 사용자 목표 기준이고, 서버는 등급이 없으면 INSUFFICIENT로 둔다 */
-export type SavedProductDto = {
-  productId: number;
-  name: string;
-  imageUrl: string | null;
-  status: ProductStatus;
-  /** INSUFFICIENT면 null */
-  grade: GradeLetter | null;
-  /** INSUFFICIENT면 null. 등급이 있으면 서버가 기본 문구로라도 채운다 */
-  label: string | null;
-  savedAt: string;
+/**
+ * `GET /me/saved-products`. 저장한 순(최근 먼저). 단종·생산 중단 제품도 상태(`product.state`)로 남고
+ * 비활성 제품만 빠진다. 카드의 태그·`better`는 요청한 `goal` 기준이다
+ */
+export type SavedProductPageDto = {
+  goal: Goal;
+  kcalBand: number;
+  totalCount: number;
+  hasNext: boolean;
+  items: { product: ProductCardDto; savedAt: string }[];
 };
-
-export type SavedProductPageDto = OffsetPageDto<SavedProductDto>;
 
 /** `POST`·`DELETE /me/saved-products/{productId}`. 둘 다 멱등이다 */
 export type SaveResultDto = {
@@ -32,17 +30,10 @@ export type SaveResultDto = {
 
 // ── 화면 모델 ────────────────────────────────────────────────────────────────
 
-/** 상품 결과와 같은 방식으로 등급 유무를 status로 나눈다 */
 export type SavedProduct = {
-  /** 상세 경로와 맞춰 문자열 */
-  id: string;
-  name: string;
-  imageUrl: string | null;
+  product: ProductCardData;
   savedAt: string;
-} & (
-  | { status: "ANALYZED"; grade: GradeLetter; label: string }
-  | { status: "INSUFFICIENT" }
-);
+};
 
 export type SavedProductPage = {
   items: SavedProduct[];

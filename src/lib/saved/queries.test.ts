@@ -25,8 +25,10 @@ function run<TData, TVariables>(
 }
 
 describe("savedQueries.list", () => {
-  it("hasNext면 다음 페이지 번호를, 아니면 undefined를 준다", () => {
-    const { getNextPageParam } = savedQueries.list();
+  it("1쪽부터 hasNext면 다음 페이지 번호를, 아니면 undefined를 준다", () => {
+    const { getNextPageParam, initialPageParam } =
+      savedQueries.list("WEIGHT_LOSS");
+    expect(initialPageParam).toBe(1);
     const page = (hasNext: boolean) => ({ items: [], totalCount: 0, hasNext });
     expect(getNextPageParam(page(true), [], 1, [1])).toBe(2);
     expect(getNextPageParam(page(false), [], 3, [1, 2, 3])).toBeUndefined();
@@ -57,7 +59,10 @@ describe("savedMutations", () => {
         status: "INSUFFICIENT",
         saved: !saved,
       });
-      queryClient.setQueryData(savedKeys.list(), { pages: [], pageParams: [] });
+      queryClient.setQueryData(savedKeys.list("WEIGHT_LOSS"), {
+        pages: [],
+        pageParams: [],
+      });
       queryClient.setQueryData(meKeys.summary(), {});
       const searchPage: SearchResult = {
         query: "두유",
@@ -94,9 +99,9 @@ describe("savedMutations", () => {
       expect(
         queryClient.getQueryState(productKeys.detail("7"))?.isInvalidated,
       ).toBe(false);
-      expect(queryClient.getQueryState(savedKeys.list())?.isInvalidated).toBe(
-        true,
-      );
+      expect(
+        queryClient.getQueryState(savedKeys.list("WEIGHT_LOSS"))?.isInvalidated,
+      ).toBe(true);
       expect(queryClient.getQueryState(meKeys.summary())?.isInvalidated).toBe(
         true,
       );
