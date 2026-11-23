@@ -221,8 +221,11 @@ export function SaveButton() {
 /** 아래 고정 줄 [비교함 담기][쿠팡에서 보기] + 비교함에 담은 제품이 있으면 그 위 비교함 바 + 알림 띠 */
 export function ProductBottomBar({
   coupangUrl,
+  soldOut,
 }: {
   coupangUrl: string | null;
+  /** 쿠팡 품절이면 「쿠팡에서 찾아보기」(주소는 쿠팡 검색 결과) */
+  soldOut: boolean;
 }) {
   const { compare, added, toggleAdd, toast, showToast } = useActions();
   // 다른 화면에서 담은 제품도 센다(비교함은 화면 사이에 유지된다)
@@ -267,7 +270,7 @@ export function ProductBottomBar({
         {coupangUrl && (
           <Button className="flex-1" asChild>
             <a href={coupangUrl} target="_blank" rel="noopener noreferrer">
-              쿠팡에서 보기
+              {soldOut ? "쿠팡에서 찾아보기" : "쿠팡에서 보기"}
             </a>
           </Button>
         )}

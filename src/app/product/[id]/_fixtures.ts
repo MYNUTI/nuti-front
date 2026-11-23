@@ -4,9 +4,11 @@
  * "4"는 디자인 3-2 화면 값 그대로, "1"·"2"는 스캔 목 조회(lib/mock-catalog.ts)와 같은 상품이라 스캔에서 「자세히 보기」로 와도 열린다.
  * "3"은 「더 맞는 제품」 칼만스 카드가 404가 되지 않게 카드와 같은 이름·사진·점수로 둔다.
  * "5"는 디자인 「더 맞는 제품이 없을 때」 값 그대로(커클랜드 카드도 이 주소로 연다).
- * "6"은 디자인 「생산 중단」(재고 판매 중), "7"은 단종(쿠팡 버튼 없음), "8"·"9"는 「내 몸에 맞춤」(다이어트·근육 증가 목표), "10"은 「쿠팡 상품이 없을 때」, "11"은 더 맞는 제품 · 홈 카드의 마이프로틴.
+ * "6"은 디자인 「생산 중단」(재고 판매 중), "7"은 단종(쿠팡 상품 없음 — 【최종】은 쿠팡 링크가 없으면 단종), "8"·"9"는 「내 몸에 맞춤」(다이어트·근육 증가 목표), "10"은 「쿠팡 상품이 없을 때」, "11"은 더 맞는 제품 · 홈 카드의 마이프로틴.
  * 상태 확인용: "1"은 더 맞는 제품이 없는 C~E 등급·사진 없음, "2"는 아쉬운 점이 없는 제품·사진 주소가 깨진 제품,
- * "12"는 환자용 균형영양식(이름 아래 「환자용 식품이에요」, 디자인 수정분 #6).
+ * "12"는 환자용 균형영양식(이름 아래 「환자용 식품이에요」, 디자인 수정분 #6),
+ * "13"은 쿠팡 품절, "14"는 쿠팡에 묶음 상품만(6개 묶음), "15"는 묶음인데 개수를 못 읽음(「다른 용량」).
+ * 더 맞는 제품 칸은 점수 중간 이하("4" 등)에서만 보인다. "2"·"3"·"11"은 높음인데 더 높은 제품이 있어 칸도 ✓ 줄도 없다.
  * 순위(「같은 종류 N개 중 M위」)는 지금 API 응답에 없어 백엔드에 줄 수 있는지 물어 둔 상태다.
  */
 import type { ProductCardItem } from "@/components/common/product-card";
@@ -75,13 +77,29 @@ export type ProductResult = {
   };
   better: BetterItem[];
   /**
-   * 생산 중단·단종. label은 받은 상태 글자 그대로(「단종」·「생산 중단 · 재고 판매 중」), 재고가 없으면(단종) 쿠팡 버튼을 뺀다.
+   * 생산 중단·단종. label은 받은 상태 글자 그대로(「단종」·「생산 중단 · 재고 판매 중」).
    * 판매 중이면 null. API에 아직 이 값이 없다(지금 `ProductStatus`는 `ANALYZED`·`INSUFFICIENT`뿐, 백엔드에 물어 둔 상태)
    */
-  production: { label: string; inStock: boolean } | null;
-  /** 쿠팡 상품 주소. 없으면 쿠팡 버튼·고지를 뺀다 */
+  production: { label: string } | null;
+  /**
+   * 쿠팡 상품 주소. 없으면 쿠팡 버튼·고지를 뺀다(【최종】: 쿠팡 링크가 없으면 단종으로 본다).
+   * 품절이면 제품 이름으로 찾은 쿠팡 검색 결과(제휴) 주소
+   */
   coupangUrl: string | null;
+  /** 쿠팡 품절(3-2 쿠팡 상품이 품절일 때). 가격 줄을 빼고 버튼이 「쿠팡에서 찾아보기」가 된다 */
+  coupangSoldOut?: boolean;
+  /** 이름 아래 가격 줄(3-2 기본 · 묶음 상품만 이어졌을 때). 없으면 줄을 뺀다 */
+  coupangPrice?: CoupangPrice | null;
 };
+
+/**
+ * 쿠팡 판매가. date는 판매가를 받은 날(새 값을 못 받으면 서버가 직전 값과 그날 날짜를 준다 — 【최종】 메모).
+ * 묶음 상품만 이어졌으면 bundle(개수)과 1개당 값, 상품명에서 개수 · 용량을 못 읽으면 otherSize(가격 · 날짜 없이 「다른 용량」만)
+ */
+export type CoupangPrice =
+  | { kind: "single"; amount: number; date: string }
+  | { kind: "bundle"; count: number; unitAmount: number; date: string }
+  | { kind: "otherSize" };
 
 /**
  * 더 맞는 제품 하나. diff는 지금 제품과 100g당 값을 비교해 나아진 성분 두 개(3-4 골라 비교 줄 · API의 items[].diffs).
@@ -219,6 +237,8 @@ const DESIGN: ProductResult = {
   better: BETTER,
   production: null,
   coupangUrl: "https://www.coupang.com/",
+  // 디자인 「3-2 제품 결과」 가격 줄
+  coupangPrice: { kind: "single", amount: 12900, date: "2026-11-16" },
 };
 
 // 디자인 「더 맞는 제품이 없을 때」·「쿠팡 상품이 없을 때」의 커클랜드
@@ -373,12 +393,14 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
   "6": {
     ...DESIGN,
     id: "6",
-    production: { label: "생산 중단 · 재고 판매 중", inStock: true },
+    production: { label: "생산 중단 · 재고 판매 중" },
   },
   "7": {
     ...DESIGN,
     id: "7",
-    production: { label: "단종", inStock: false },
+    production: { label: "단종" },
+    coupangUrl: null,
+    coupangPrice: null,
   },
   // 디자인 「내 몸에 맞춤」(다이어트 목표). 등급·문장은 자리 표시용이라 디자인 상품 값 그대로
   "8": { ...DESIGN, id: "8", bodyFitKcal: 2680 },
@@ -430,4 +452,26 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
     nutrition: { ...DESIGN.nutrition, unit: "mL", serving: null },
     better: [],
   },
+  // 디자인 「쿠팡 상품이 품절일 때」(9717:18491)
+  "13": {
+    ...DESIGN,
+    id: "13",
+    coupangUrl:
+      "https://www.coupang.com/np/search?q=%EC%B9%B4%EC%B9%B4%EC%98%A4%EC%B4%88%EC%BD%94",
+    coupangSoldOut: true,
+    coupangPrice: null,
+  },
+  // 디자인 「쿠팡에 묶음 상품만 이어졌을 때」(9722:19111)
+  "14": {
+    ...DESIGN,
+    id: "14",
+    coupangPrice: {
+      kind: "bundle",
+      count: 6,
+      unitAmount: 2150,
+      date: "2026-11-16",
+    },
+  },
+  // 묶음 상품인데 상품명에서 개수 · 용량을 못 읽음(그림 없음, 메모 문장대로)
+  "15": { ...DESIGN, id: "15", coupangPrice: { kind: "otherSize" } },
 };

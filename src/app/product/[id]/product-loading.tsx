@@ -1,19 +1,35 @@
-import { BackButton } from "@/components/common/back-button";
+import Link from "next/link";
+
 import { LoadingState } from "@/components/common/loading-state";
 import { SearchFieldLink } from "@/components/common/search-field";
 import { Skeleton } from "@/components/common/skeleton";
+import { TopBarButton } from "@/components/common/top-bar";
+import { IconBack, IconBarcode } from "@/components/icons";
 
-/** 3-2 위 줄(뒤로 + 검색칸). 불러오는 중에도 그대로 둔다(디자인 메모) */
+/*
+ * 3-2 위 줄(뒤로 + 검색칸 + 바코드). 불러오는 중에도 그대로 둔다(디자인 메모).
+ * 【최종】 메모: ‹ → 어디서 왔든 2-1 홈(이전 화면은 기기 뒤로 가기로). 홈이 상태(첫 방문 · 담아 둔 비교함)를 스스로 고른다.
+ * 바코드 → 3-1 스캔(연달아 찍기).
+ */
 export function ProductTopBar() {
   return (
-    <header className="flex h-14 items-center gap-1 pr-4 pl-1">
-      <BackButton fallbackHref="/home" />
+    <header className="flex h-14 items-center gap-1 px-1">
+      <TopBarButton asChild aria-label="홈으로">
+        <Link href="/home">
+          <IconBack />
+        </Link>
+      </TopBarButton>
       {/* 디자인 메모: 검색칸 → 2-3 검색 */}
       <SearchFieldLink
         href="/search"
         placeholder="제품, 브랜드, 종류로 검색"
         className="min-w-0 flex-1"
       />
+      <TopBarButton asChild aria-label="바코드 찍기">
+        <Link href="/scan">
+          <IconBarcode />
+        </Link>
+      </TopBarButton>
     </header>
   );
 }
