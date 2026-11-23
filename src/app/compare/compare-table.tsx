@@ -14,6 +14,7 @@ import {
   COMPARE_MAX,
   clearCompare,
   removeFromCompare,
+  restoreToCompare,
   useCompare,
 } from "@/components/compare/compare-store";
 import { cn } from "@/lib/utils";
@@ -71,9 +72,15 @@ export function CompareTable() {
       .filter((p): p is CompareProduct => p !== null),
   );
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [toast, setToast] = useState<{ key: number; message: string } | null>(
-    null,
-  );
+  const [toast, setToast] = useState<{
+    key: number;
+    message: string;
+    action?: { label: string; onClick: () => void };
+  } | null>(null);
+  const showToast = (t: {
+    message: string;
+    action?: { label: string; onClick: () => void };
+  }) => setToast((prev) => ({ ...t, key: (prev?.key ?? 0) + 1 }));
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [scroll, setScroll] = useState({ start: 0, size: 1 });
 
@@ -102,12 +109,41 @@ export function CompareTable() {
 
   // 「제외하기」를 누르면 그 버튼이 열과 함께 사라진다. 옆 열의 「제외하기」로 포커스를 옮긴다
   const removeRefs = useRef(new Map<string, HTMLButtonElement>());
+  const focusRemove = (id: string) =>
+    requestAnimationFrame(() => removeRefs.current.get(id)?.focus());
   const remove = (id: string) => {
     const index = products.findIndex((p) => p.id === id);
     const next = products[index + 1] ?? products[index - 1];
+    // 되돌리기는 담은 자리 · 시각 그대로 넣는다
+    const storeIndex = compare.findIndex((item) => item.id === id);
+    const stored = compare[storeIndex];
+    if (!next) {
+      // 디자인 메모(1개 남았을 때): 남은 1개를 빼면 비교함이 비고 들어오기 전 화면으로
+      leaving.current = true;
+      removeFromCompare(id);
+      leave();
+      return;
+    }
     removeFromCompare(id);
-    if (next)
-      requestAnimationFrame(() => removeRefs.current.get(next.id)?.focus());
+    focusRemove(next.id);
+    // 디자인 「1개 남았을 때」의 알림. 다른 열을 뺄 때도 같은 알림으로 되돌릴 수 있게 한다(디자인에 없음, 「남은 질문」 23)
+    showToast({
+      message: "비교함에서 제외했어요",
+      action: {
+        label: "되돌리기",
+        onClick: () => {
+          if (stored) restoreToCompare(stored, storeIndex);
+          // 되돌리지 못해도(다른 탭에서 채움) 알림 띠째 사라진 버튼 대신 표로 포커스를 돌려놓는다
+          requestAnimationFrame(() =>
+            (
+              removeRefs.current.get(id) ??
+              removeRefs.current.values().next().value
+            )?.focus(),
+          );
+          setToast(null);
+        },
+      },
+    });
   };
 
   const leave = () => {
@@ -151,11 +187,14 @@ export function CompareTable() {
         >
           비교함 비우기
         </button>
-        <p className="min-w-0 flex-1 text-right text-caption text-text-sub">
-          굵은 글씨: 목표에 더 맞는 값({basis})
-          <br />
-          탄수화물과 지방은 점수에 넣지 않아요
-        </p>
+        {/* 디자인 메모(1개 남았을 때): 굵은 값이 없으니 설명도 없다 */}
+        {products.length >= 2 && (
+          <p className="min-w-0 flex-1 text-right text-caption text-text-sub">
+            굵은 글씨: 목표에 더 맞는 값({basis})
+            <br />
+            탄수화물과 지방은 점수에 넣지 않아요
+          </p>
+        )}
       </div>
 
       <div
@@ -275,11 +314,11 @@ export function CompareTable() {
         <AddColumn
           className={column}
           full={full}
+          needMore={products.length === 1}
           onFull={() =>
-            setToast((prev) => ({
-              key: (prev?.key ?? 0) + 1,
+            showToast({
               message: "4개가 다 찼어요. 하나를 제외하면 더 담을 수 있어요",
-            }))
+            })
           }
         />
       </div>
@@ -311,7 +350,9 @@ export function CompareTable() {
           leave();
         }}
       />
-      {toast && <Toast key={toast.key} message={toast.message} />}
+      {toast && (
+        <Toast key={toast.key} message={toast.message} action={toast.action} />
+      )}
     </main>
   );
 }
@@ -323,10 +364,13 @@ export function CompareTable() {
 function AddColumn({
   className,
   full,
+  needMore,
   onFull,
 }: {
   className: string;
   full: boolean;
+  /** 제품이 1개면 「비교하려면 하나 더 담아 주세요」를 함께(디자인 메모 1개 남았을 때) */
+  needMore: boolean;
   onFull: () => void;
 }) {
   const layout = (
@@ -336,8 +380,15 @@ function AddColumn({
         aria-hidden
         className="block h-20 border-b border-line-default bg-bg-band"
       />
-      <span className="absolute inset-0 flex items-center justify-center text-body1-bold text-brand-link">
-        + 제품 추가
+      <span className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center">
+        {needMore && (
+          <span className="text-body2 text-text-sub">
+            비교하려면
+            <br />
+            하나 더 담아 주세요
+          </span>
+        )}
+        <span className="text-body1-bold text-brand-link">+ 제품 추가</span>
       </span>
     </>
   );

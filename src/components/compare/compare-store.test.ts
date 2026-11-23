@@ -94,6 +94,41 @@ describe("비교함 저장소", () => {
     expect(store.readCompare().map((i) => i.id)).toEqual(["1", "2"]);
   });
 
+  it("뺀 제품을 원래 자리와 담은 시각 그대로 되돌린다", async () => {
+    vi.useFakeTimers({ now: 1000 });
+    stubStorage();
+    const store = await load();
+    for (const id of ["1", "2", "3"]) store.addToCompare(item(id));
+    const removed = store.readCompare()[1];
+    store.removeFromCompare("2");
+    vi.setSystemTime(9000);
+    expect(store.restoreToCompare(removed, 1)).toBe(true);
+    expect(store.readCompare().map((i) => i.id)).toEqual(["1", "2", "3"]);
+    expect(store.readCompare()[1].addedAt).toBe(1000);
+  });
+
+  it("이미 있으면 되돌리지 않고 알리지도 않는다", async () => {
+    stubStorage();
+    const store = await load();
+    for (const id of ["1", "2", "3"]) store.addToCompare(item(id));
+    const onChange = vi.fn();
+    store.subscribeCompare(onChange);
+    expect(store.restoreToCompare(store.readCompare()[0], 2)).toBe(false);
+    expect(store.readCompare().map((i) => i.id)).toEqual(["1", "2", "3"]);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("그 사이 꽉 찼으면 되돌리지 않고 알리지도 않는다", async () => {
+    stubStorage();
+    const store = await load();
+    for (const id of ["1", "2", "3", "4"]) store.addToCompare(item(id));
+    const onChange = vi.fn();
+    store.subscribeCompare(onChange);
+    expect(store.restoreToCompare({ ...item("5"), addedAt: 1 }, 0)).toBe(false);
+    expect(store.readCompare().map((i) => i.id)).toEqual(["1", "2", "3", "4"]);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it("비우면 저장소에서 지우고, 이미 비었으면 알리지 않는다", async () => {
     const map = stubStorage();
     const store = await load();

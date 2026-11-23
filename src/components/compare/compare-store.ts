@@ -113,6 +113,26 @@ export function removeFromCompare(id: string) {
   write(items.filter((item) => item.id !== id));
 }
 
+/**
+ * 뺀 제품을 원래 자리 · 담은 시각 그대로 되돌린다(3-5 「제외했어요 · 되돌리기」).
+ * 이미 있거나 그 사이 꽉 찼으면(다른 탭) 되돌리지 않고 false
+ */
+export function restoreToCompare(
+  item: StoredCompareItem,
+  index: number,
+): boolean {
+  const items = readCompare();
+  if (
+    items.some((other) => other.id === item.id) ||
+    items.length >= COMPARE_MAX
+  )
+    return false;
+  const next = [...items];
+  next.splice(Math.min(Math.max(index, 0), next.length), 0, item);
+  write(next);
+  return true;
+}
+
 /** 비교함을 비운다(3-5 「비교함 비우기」) */
 export function clearCompare() {
   if (readCompare().length === 0) return;
