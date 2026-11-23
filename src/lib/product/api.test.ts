@@ -1,8 +1,12 @@
 import axios from "axios";
 import { describe, expect, it } from "vitest";
-import { fetchProductByBarcode, fetchProductDetail } from "@/lib/product/api";
+import {
+  fetchAlternatives,
+  fetchProductByBarcode,
+  fetchProductDetail,
+} from "@/lib/product/api";
 import { mockAdapter, success } from "@/test/http";
-import { productResultDto } from "@/test/product";
+import { productCardDto, productResultDto } from "@/test/product";
 
 function http(data: unknown) {
   const mock = mockAdapter(() => success(data));
@@ -34,5 +38,29 @@ describe("상품 API", () => {
     expect(requests[0].url).toBe("/products/7%2F..%2Fx");
     expect(client.getUri(requests[0])).toBe("/products/7%2F..%2Fx");
     expect(client.getUri(requests[1])).toBe("/products/7?source=SEARCH");
+  });
+
+  it("더 맞는 제품은 목표·페이지를 query로 보낸다", async () => {
+    const { http: client, requests } = http({
+      current: productCardDto(),
+      goal: "MUSCLE_GAIN",
+      kcalBand: 2000,
+      total: 0,
+      page: 0,
+      size: 20,
+      hasNext: false,
+      items: [],
+    });
+
+    await expect(
+      fetchAlternatives(client, "7", {
+        goal: "MUSCLE_GAIN",
+        page: 0,
+        size: 20,
+      }),
+    ).resolves.toMatchObject({ current: { id: "7" }, items: [] });
+    expect(client.getUri(requests[0])).toBe(
+      "/products/7/alternatives?goal=MUSCLE_GAIN&page=0&size=20",
+    );
   });
 });

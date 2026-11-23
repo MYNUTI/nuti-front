@@ -1,8 +1,14 @@
 import type { Goal } from "@/lib/goal/types";
 import type {
+  AlternativesDto,
+  AlternativesPage,
   BarcodeScan,
+  GoalGrade,
+  GoalGradeDto,
   GoalResult,
   GoalResultDto,
+  ProductCardData,
+  ProductCardDto,
   ProductCandidate,
   ProductCandidateDto,
   ProductResult,
@@ -25,7 +31,7 @@ export function toProductResult(dto: ProductResultDto): ProductResult {
     serving: dto.serving,
     basis: dto.basis,
     kcalBand: dto.kcalBand,
-    goals: toGoals(dto.goals),
+    goals: toGoals<GoalResult>(dto.goals),
     nutrients: dto.nutrients,
     purchase: toPurchaseLink(dto.purchase),
     saved: dto.saved,
@@ -53,9 +59,41 @@ export function toBarcodeScan(dto: ScanResultDto): BarcodeScan {
   }
 }
 
+export function toProductCard(dto: ProductCardDto): ProductCardData {
+  return {
+    id: String(dto.productId),
+    name: dto.name,
+    brandLine: dto.brandLine,
+    imageUrl: dto.imageUrl,
+    state: dto.state,
+    stateLabel: dto.stateLabel,
+    goals: toGoals<GoalGrade>(dto.goals),
+    tags: dto.tags,
+    sortValue: dto.sortValue ?? null,
+    better: dto.better ?? null,
+    saved: dto.saved,
+  };
+}
+
+export function toAlternativesPage(dto: AlternativesDto): AlternativesPage {
+  return {
+    current: toProductCard(dto.current),
+    goal: dto.goal,
+    kcalBand: dto.kcalBand,
+    total: dto.total,
+    hasNext: dto.hasNext,
+    items: dto.items.map(({ product, diffs }) => ({
+      product: toProductCard(product),
+      diffs,
+    })),
+  };
+}
+
 // 서버는 두 목표를 함께 주거나(점수 있음) 빈 배열을 준다. 한 목표만 오면 다른 목표의 점수를 지어낼 수
 // 없으니 점수 없음으로 본다
-function toGoals(dtos: GoalResultDto[]): Record<Goal, GoalResult> | null {
+function toGoals<T extends GoalResultDto | GoalGradeDto>(
+  dtos: T[],
+): Record<Goal, T> | null {
   const weightLoss = dtos.find((g) => g.goal === "WEIGHT_LOSS");
   const muscleGain = dtos.find((g) => g.goal === "MUSCLE_GAIN");
   if (!weightLoss || !muscleGain) return null;

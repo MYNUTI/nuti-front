@@ -1,8 +1,14 @@
 import type { AxiosInstance } from "axios";
 import { unwrap } from "@/lib/api/response";
 import type { ApiSuccess } from "@/lib/api/types";
-import { toBarcodeScan, toProductResult } from "@/lib/product/mapper";
+import type { Goal } from "@/lib/goal/types";
+import {
+  toAlternativesPage,
+  toBarcodeScan,
+  toProductResult,
+} from "@/lib/product/mapper";
 import type {
+  AlternativesDto,
   ProductResultDto,
   ProductViewSource,
   ScanResultDto,
@@ -44,4 +50,23 @@ export function fetchProductDetail(
     )
     .then(unwrap)
     .then(toProductResult);
+}
+
+/**
+ * 같은 중분류에서 `goal` 점수가 더 높은 제품. `goal`을 빼면 서버가 내 목표가 아니라 WEIGHT_LOSS로 답해
+ * 늘 보낸다. `page`는 0부터. 없거나 비활성이면 404 `PRODUCT_NOT_FOUND`
+ */
+export function fetchAlternatives(
+  http: AxiosInstance,
+  productId: string,
+  params: { goal: Goal; page: number; size: number },
+  signal?: AbortSignal,
+) {
+  return http
+    .get<ApiSuccess<AlternativesDto>>(
+      `/products/${encodeURIComponent(productId)}/alternatives`,
+      { params, signal },
+    )
+    .then(unwrap)
+    .then(toAlternativesPage);
 }

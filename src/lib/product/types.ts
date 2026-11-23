@@ -161,6 +161,73 @@ export type ProductCandidateDto = {
   stateLabel: string;
 };
 
+/** 목록 카드의 목표별 점수·등급 */
+export type GoalGradeDto = {
+  goal: Goal;
+  /** 0~100 */
+  score: number;
+  grade: GradeLetter;
+  label: string;
+};
+
+/** 영양소 정렬일 때만 온다. 카드 태그 한 줄을 「단백질 21g · 100g당」으로 바꾼다 */
+export type SortValueDto = {
+  nutrient: string;
+  value: number | null;
+  unit: string;
+  basis: string;
+  text: string;
+};
+
+/**
+ * 목록 카드 한 장. 검색·랭킹·최근 본 제품·즐겨찾기·더 맞는 제품이 같은 모양을 쓴다.
+ * `sortValue`·`better`는 `@JsonInclude(NON_NULL)`이라 없으면 키가 빠진다
+ */
+export type ProductCardDto = {
+  productId: number;
+  name: string;
+  brandLine: string | null;
+  imageUrl: string | null;
+  state: ProductState;
+  stateLabel: string;
+  /** 두 목표의 점수·등급. 점수가 없으면 빈 배열 */
+  goals: GoalGradeDto[];
+  /**
+   * 요청 목표 기준 「이 점수인 이유」 짧은 말 최대 두 개. 좋은 점 1 + 아쉬운 점 1을 먼저 넣고, 한쪽이
+   * 없으면 다른 쪽으로 채운다(좋은 점만 2개·아쉬운 점만 2개도 온다). 좋은지 나쁜지 표시는 없다
+   * (백엔드 `NutrientEvaluator.tags`)
+   */
+  tags: string[];
+  sortValue?: SortValueDto;
+  /** 최근 본 제품·즐겨찾기·결과에서만 온다 */
+  better?: BetterChoiceDto;
+  saved: boolean;
+};
+
+/** 후보 − 지금 제품, 100g(음료 100mL)당. 예 「칼로리 −29kcal」 */
+export type AlternativeDiffDto = {
+  nutrient: string;
+  label: string;
+  unit: string;
+  diff: number;
+  text: string;
+};
+
+/**
+ * `GET /products/{productId}/alternatives`. 같은 중분류에서 요청 목표 점수가 더 높은 제품(분석 완료·생산 중),
+ * 점수 높은 순. 지금 제품에 점수나 중분류가 없으면 `items`가 빈 배열. `page`는 0부터
+ */
+export type AlternativesDto = {
+  current: ProductCardDto;
+  goal: Goal;
+  kcalBand: number;
+  total: number;
+  page: number;
+  size: number;
+  hasNext: boolean;
+  items: { product: ProductCardDto; diffs: AlternativeDiffDto[] }[];
+};
+
 /**
  * `GET /products/barcode/{barcode}`. 미등록도 200(`NOT_FOUND`)이다. 체크섬이 틀리면 400
  * `BARCODE_CHECKSUM_INVALID`. `barcode`는 서버가 13자리로 정규화한 값이다
@@ -222,6 +289,42 @@ export type ProductResult = {
 
 export type ProductCandidate = Omit<ProductCandidateDto, "productId"> & {
   id: string;
+};
+
+export type GoalGrade = GoalGradeDto;
+export type SortValue = SortValueDto;
+export type BetterChoice = BetterChoiceDto;
+export type AlternativeDiff = AlternativeDiffDto;
+
+/** 목록 카드. UI 부품 `ProductCard`와 이름이 겹치지 않게 `Data`를 붙인다 */
+export type ProductCardData = {
+  id: string;
+  name: string;
+  brandLine: string | null;
+  imageUrl: string | null;
+  state: ProductState;
+  stateLabel: string;
+  /** 목표별 점수·등급. 점수가 없는 제품은 null */
+  goals: Record<Goal, GoalGrade> | null;
+  tags: string[];
+  sortValue: SortValue | null;
+  better: BetterChoice | null;
+  saved: boolean;
+};
+
+export type Alternative = {
+  product: ProductCardData;
+  diffs: AlternativeDiff[];
+};
+
+/** 더 맞는 제품 한 페이지 */
+export type AlternativesPage = {
+  current: ProductCardData;
+  goal: Goal;
+  kcalBand: number;
+  total: number;
+  hasNext: boolean;
+  items: Alternative[];
 };
 
 export type BarcodeScan =

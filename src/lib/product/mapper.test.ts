@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { toBarcodeScan, toProductResult } from "@/lib/product/mapper";
-import { goalResultDto, productResultDto } from "@/test/product";
+import {
+  toAlternativesPage,
+  toBarcodeScan,
+  toProductCard,
+  toProductResult,
+} from "@/lib/product/mapper";
+import {
+  goalResultDto,
+  productCardDto,
+  productResultDto,
+} from "@/test/product";
 
 describe("toProductResult", () => {
   it("상품 ID를 문자열로 바꾸고 두 목표를 목표별로 묶는다", () => {
@@ -116,5 +125,80 @@ describe("toBarcodeScan", () => {
         candidates: null,
       }),
     ).toEqual({ outcome: "NOT_FOUND", barcode: "8801062633029" });
+  });
+});
+
+describe("toProductCard", () => {
+  it("ID를 문자열로 바꾸고 두 목표를 목표별로 묶는다. 빠진 sortValue·better는 null이다", () => {
+    expect(toProductCard(productCardDto())).toEqual({
+      id: "7",
+      name: "두유",
+      brandLine: "정식품",
+      imageUrl: null,
+      state: "ANALYZED",
+      stateLabel: "분석 완료",
+      goals: {
+        WEIGHT_LOSS: {
+          goal: "WEIGHT_LOSS",
+          score: 88,
+          grade: "B",
+          label: "맞는 편",
+        },
+        MUSCLE_GAIN: {
+          goal: "MUSCLE_GAIN",
+          score: 40,
+          grade: "D",
+          label: "안 맞는 편",
+        },
+      },
+      tags: ["단백질 많음", "당류 많음"],
+      sortValue: null,
+      better: null,
+      saved: false,
+    });
+  });
+
+  it("점수가 없는 카드는 goals가 null이다", () => {
+    expect(
+      toProductCard(productCardDto({ state: "NO_SCORE", goals: [] })).goals,
+    ).toBeNull();
+  });
+
+  it("더 맞는 제품 표시가 오면 담는다", () => {
+    expect(
+      toProductCard(
+        productCardDto({ better: { status: "AVAILABLE", count: 3 } }),
+      ).better,
+    ).toEqual({ status: "AVAILABLE", count: 3 });
+  });
+});
+
+describe("toAlternativesPage", () => {
+  it("지금 제품과 후보 카드를 바꾸고 성분 차이는 그대로 둔다", () => {
+    const diff = {
+      nutrient: "CALORIES",
+      label: "칼로리",
+      unit: "kcal",
+      diff: -29,
+      text: "칼로리 −29kcal",
+    };
+    expect(
+      toAlternativesPage({
+        current: productCardDto(),
+        goal: "WEIGHT_LOSS",
+        kcalBand: 2000,
+        total: 1,
+        page: 0,
+        size: 20,
+        hasNext: false,
+        items: [{ product: productCardDto({ productId: 8 }), diffs: [diff] }],
+      }),
+    ).toMatchObject({
+      current: { id: "7" },
+      goal: "WEIGHT_LOSS",
+      total: 1,
+      hasNext: false,
+      items: [{ product: { id: "8" }, diffs: [diff] }],
+    });
   });
 });

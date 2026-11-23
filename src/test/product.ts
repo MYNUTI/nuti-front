@@ -1,5 +1,9 @@
 import type { Goal } from "@/lib/goal/types";
-import type { GoalResultDto, ProductResultDto } from "@/lib/product/types";
+import type {
+  GoalResultDto,
+  ProductCardDto,
+  ProductResultDto,
+} from "@/lib/product/types";
 
 /** 서버 `GoalResult` 한 목표. 테스트마다 필요한 값만 덮어쓴다 */
 export function goalResultDto(
@@ -43,6 +47,27 @@ export function productResultDto(
     purchase: { matchType: "NONE", isAd: false },
     saved: false,
     sourceNote: null,
+    ...overrides,
+  };
+}
+
+/** 서버 `ProductCard`. 기본은 두 목표 점수가 있는 카드다 */
+export function productCardDto(
+  overrides: Partial<ProductCardDto> = {},
+): ProductCardDto {
+  return {
+    productId: 7,
+    name: "두유",
+    brandLine: "정식품",
+    imageUrl: null,
+    state: "ANALYZED",
+    stateLabel: "분석 완료",
+    goals: [
+      { goal: "WEIGHT_LOSS", score: 88, grade: "B", label: "맞는 편" },
+      { goal: "MUSCLE_GAIN", score: 40, grade: "D", label: "안 맞는 편" },
+    ],
+    tags: ["단백질 많음", "당류 많음"],
+    saved: false,
     ...overrides,
   };
 }
