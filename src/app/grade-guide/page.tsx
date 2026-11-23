@@ -4,7 +4,11 @@ import Link from "next/link";
 import { BackButton } from "@/components/common/back-button";
 import { ListRow } from "@/components/common/list-row";
 import { NumberedList } from "@/components/common/numbered-list";
-import { ScoreRing, type ScoreBand } from "@/components/common/score-ring";
+import {
+  SCORE_BAND_LABEL,
+  ScoreRing,
+  type ScoreBand,
+} from "@/components/common/score-ring";
 import { TopBar, TopBarButton } from "@/components/common/top-bar";
 import { IconSearch } from "@/components/icons";
 
@@ -41,12 +45,12 @@ const STEPS = [
 ] as const;
 
 // 디자인 「점수 구간」 표. 링 안 숫자는 예시(디자인 문구)
-const BANDS: { band: ScoreBand; example: number; label: string }[] = [
-  { band: 1, example: 92, label: "매우 높음" },
-  { band: 2, example: 76, label: "높음" },
-  { band: 3, example: 62, label: "중간" },
-  { band: 4, example: 45, label: "낮음" },
-  { band: 5, example: 21, label: "매우 낮음" },
+const BANDS: { band: ScoreBand; example: number }[] = [
+  { band: 1, example: 92 },
+  { band: 2, example: 76 },
+  { band: 3, example: 62 },
+  { band: 4, example: 45 },
+  { band: 5, example: 21 },
 ];
 
 function Band() {
@@ -92,7 +96,7 @@ export default function GradeGuidePage() {
               <li key={b.band} className="flex items-center gap-3">
                 <ScoreRing score={b.example} band={b.band} size="S" />
                 <span className="text-body1-medium text-text-strong">
-                  {b.label}
+                  {SCORE_BAND_LABEL[b.band]}
                 </span>
               </li>
             ))}

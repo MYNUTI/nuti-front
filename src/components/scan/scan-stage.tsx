@@ -402,7 +402,7 @@ function cameraReading(state: ScanState) {
   return state.stage === "camera" && state.retryable === null;
 }
 
-// 목 등급 A–E를 점수 구간 1(잘 맞음)~5(안 맞음)로. 실제 API도 등급 글자를 주므로 같은 대응을 쓴다
+// 목 등급 A–E를 점수 구간 1(매우 높음)~5(매우 낮음)로. 실제 API도 등급 글자를 주므로 같은 대응을 쓴다
 const GRADE_BAND = { A: 1, B: 2, C: 3, D: 4, E: 5 } as const;
 
 /** 목 조회 결과 → 결과 시트 모양. 목에 없는 값은 fixture로 채운다(_fixtures.ts) */

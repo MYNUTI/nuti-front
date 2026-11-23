@@ -113,6 +113,12 @@ export function removeFromCompare(id: string) {
   write(items.filter((item) => item.id !== id));
 }
 
+/** 비교함을 비운다(3-5 「비교함 비우기」) */
+export function clearCompare() {
+  if (readCompare().length === 0) return;
+  write([]);
+}
+
 /** useSyncExternalStore용. 이 탭에서 바꾼 것과 다른 탭에서 바꾼 것을 모두 듣는다 */
 export function subscribeCompare(onChange: () => void) {
   const onStorage = (event: StorageEvent) => {

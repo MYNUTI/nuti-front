@@ -45,10 +45,10 @@ export default async function BetterPage({
           title="같은 종류에서 점수가 더 높아요"
           description={`${product.name}(${product.score}점)보다 점수가 높아요`}
         />
-        <div className="flex justify-end px-5 pb-2">
+        <div className="px-5 pt-1 pb-2">
           <Link
             href={`/product/${id}/better/pick`}
-            className="text-body2-bold text-accent-blue-text"
+            className="flex h-11 items-center justify-center rounded-md bg-accent-blue-weak text-body2-bold text-accent-blue-text"
           >
             제품 골라 비교하기 <span aria-hidden>›</span>
           </Link>

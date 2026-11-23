@@ -64,7 +64,7 @@ export function CompareFullSheet({
         <BottomCta>
           <Button
             type="button"
-            kind="tertiary"
+            kind="secondary"
             className="flex-1"
             onClick={onClose}
           >

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
-import { RadioMark } from "@/components/common/check-mark";
+import { CircleCheckMark } from "@/components/common/check-mark";
 import { ScoreRing, type ScoreBand } from "@/components/common/score-ring";
 import { SectionHeader } from "@/components/common/section-header";
 import { Thumb } from "@/components/common/thumb";
@@ -172,7 +172,7 @@ export function PickList({
   );
 }
 
-/** 줄 왼쪽 동그라미. 빈 동그라미 = 안 담음, 안에 점 = 담음(디자인 메모) */
+/** 줄 왼쪽 동그라미. 빈 동그라미 = 안 담음, ✓ = 담음(【최종】 디자인 메모) */
 function PickMark({
   label,
   checked,
@@ -191,10 +191,7 @@ function PickMark({
         checked={checked}
         onChange={onChange}
       />
-      <RadioMark
-        tone="soft"
-        className="peer-focus-visible:rounded-full peer-focus-visible:outline-2 peer-focus-visible:outline-text-strong"
-      />
+      <CircleCheckMark className="peer-focus-visible:rounded-full peer-focus-visible:outline-2 peer-focus-visible:outline-text-strong" />
     </label>
   );
 }

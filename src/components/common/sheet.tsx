@@ -177,7 +177,7 @@ export function BottomSheet({
 
 /*
  * 되돌릴 수 없는 일을 묻는 확인 시트(5-7c 지우기 확인 등). 손잡이·닫기 버튼 없이 제목 + 설명 + 버튼 두 개.
- * 바깥을 눌러도 닫히지 않게 AlertDialog를 쓴다.
+ * 바깥을 눌러도 닫히지 않게 AlertDialog를 쓴다(dismissible이면 덮개로도 닫힌다).
  */
 export function ConfirmSheet({
   open,
@@ -188,6 +188,7 @@ export function ConfirmSheet({
   confirmLabel,
   onConfirm,
   danger = false,
+  dismissible = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -198,17 +199,36 @@ export function ConfirmSheet({
   onConfirm: () => void;
   /** 지우기·철회처럼 되돌릴 수 없는 일이면 확인 버튼을 빨간색으로 */
   danger?: boolean;
+  /** 덮개를 눌러도 닫는다(취소와 같음). 되돌릴 수 있는 확인(3-5 비교함 비우기)에서만 */
+  dismissible?: boolean;
 }) {
+  // BottomSheet와 같은 이유로 연 순간의 포커스 요소를 기억했다가 닫히면 돌려준다
+  const returnFocus = useRef<HTMLElement | null>(null);
+
   return (
     <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
       <AlertDialog.Portal>
-        <AlertDialog.Overlay className={overlayClass} />
+        <AlertDialog.Overlay
+          className={overlayClass}
+          onClick={dismissible ? () => onOpenChange(false) : undefined}
+        />
         <AlertDialog.Content
           {...(!description && { "aria-describedby": undefined })}
           className={cn(
             contentClass,
             "gap-3 px-5 pt-7 pb-[max(var(--safe-bottom),12px)]",
           )}
+          onOpenAutoFocus={() => {
+            returnFocus.current =
+              document.activeElement instanceof HTMLElement
+                ? document.activeElement
+                : null;
+          }}
+          onCloseAutoFocus={(event) => {
+            if (!returnFocus.current?.isConnected) return;
+            event.preventDefault();
+            returnFocus.current.focus();
+          }}
         >
           <AlertDialog.Title className="text-title2 text-text-strong">
             {title}

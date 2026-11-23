@@ -94,6 +94,19 @@ describe("비교함 저장소", () => {
     expect(store.readCompare().map((i) => i.id)).toEqual(["1", "2"]);
   });
 
+  it("비우면 저장소에서 지우고, 이미 비었으면 알리지 않는다", async () => {
+    const map = stubStorage();
+    const store = await load();
+    for (const id of ["1", "2"]) store.addToCompare(item(id));
+    const onChange = vi.fn();
+    store.subscribeCompare(onChange);
+    store.clearCompare();
+    expect(map.has("nuti_compare_v1")).toBe(false);
+    expect(store.readCompare()).toEqual([]);
+    store.clearCompare();
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+
   it("내용이 바뀌지 않으면 같은 배열을 돌려준다", async () => {
     stubStorage();
     const store = await load();

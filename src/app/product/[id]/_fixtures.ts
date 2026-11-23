@@ -97,9 +97,9 @@ const BETTER: BetterItem[] = [
     score: 92,
     band: 1,
     tags: [
-      { label: "고포화지방", warn: true },
       { label: "고단백" },
       { label: "저당" },
+      { label: "고포화지방", warn: true },
     ],
     diff: "칼로리 −97kcal, 당류 −9.3g",
   },
