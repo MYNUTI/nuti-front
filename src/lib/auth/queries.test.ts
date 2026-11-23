@@ -259,7 +259,13 @@ describe("authMutations", () => {
     ).toBeUndefined();
   });
 
-  it("탈퇴하면 기기 목표도 지워 처음 방문 상태로 돌린다. 로그아웃은 남긴다", async () => {
+  it("탈퇴하면 기기 목표·온보딩 완료 기록도 지워 처음 방문 상태로 돌린다. 로그아웃은 남긴다", async () => {
+    const store = new Map([["nuti_onboarding_completed", "1"]]);
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => store.set(key, value),
+      removeItem: (key: string) => store.delete(key),
+    });
     const cookies = stubDocumentCookie({
       [IDENTITY_COOKIES.accessToken]: jwtExpiringIn(600_000),
       [IDENTITY_COOKIES.refreshToken]: "refresh-1",
@@ -269,12 +275,20 @@ describe("authMutations", () => {
 
     await run(authMutations.logout(queryClient), queryClient, undefined);
     expect(cookies.get(DEVICE_GOAL_COOKIE)).toBe("MUSCLE_GAIN");
+    expect(store.get("nuti_onboarding_completed")).toBe("1");
 
     await run(authMutations.withdraw(queryClient), queryClient, undefined);
     expect(cookies.get(DEVICE_GOAL_COOKIE)).toBeUndefined();
+    expect(store.has("nuti_onboarding_completed")).toBe(false);
   });
 
   it("탈퇴가 401이어도 이 기기는 처음 방문 상태로 돌린다", async () => {
+    const store = new Map([["nuti_onboarding_completed", "1"]]);
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => store.set(key, value),
+      removeItem: (key: string) => store.delete(key),
+    });
     const cookies = stubDocumentCookie({
       [IDENTITY_COOKIES.accessToken]: jwtExpiringIn(600_000),
       [IDENTITY_COOKIES.refreshToken]: "refresh-1",
@@ -288,5 +302,6 @@ describe("authMutations", () => {
       undefined,
     ).catch(() => undefined);
     expect(cookies.get(DEVICE_GOAL_COOKIE)).toBeUndefined();
+    expect(store.has("nuti_onboarding_completed")).toBe(false);
   });
 });

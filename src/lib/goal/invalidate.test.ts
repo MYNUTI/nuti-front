@@ -26,8 +26,6 @@ describe("invalidateGoalDependents", () => {
       productKeys.alternatives("7", "WEIGHT_LOSS"),
       meKeys.user(),
       metaKeys.policies(),
-      onboardingKeys.healthConsent(),
-      onboardingKeys.samples(),
       searchKeys.suggestions("두유"),
       searchKeys.popularKeywords(),
     ];

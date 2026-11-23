@@ -1,10 +1,9 @@
-// 동의 전에 온보딩을 끝내면 서버에 저장할 ID가 없어(`persisted: false`) 완료를 이 기기에 기억한다.
-// 나중에 서버와 동기화하는 방식은 아직 정해지지 않았다(API 작업 플랜 「남은 질문」).
-// 사이트 데이터 저장을 막은 브라우저는 localStorage에 접근만 해도 SecurityError를 던진다. 읽기는 bootstrap
-// select 안에서, 쓰기는 온보딩 완료 onSuccess 안에서 불려 던지면 bootstrap 전체나 서버에 저장된 완료가
-// 실패로 바뀌므로 둘 다 삼킨다. 이때는 기억하지 못해 온보딩을 다시 보게 된다
+// v3는 첫 실행 여부와 온보딩 완료를 기기가 기억한다(기능명세 ONB_001 · ONB_004, 서버 API 없음).
+// 사이트 데이터 저장을 막은 브라우저는 localStorage에 접근만 해도 SecurityError를 던진다. 완료 기록은 화면 흐름을
+// 막으면 안 돼 둘 다 삼킨다. 이때는 기억하지 못해 다음 실행에 처음 실행 흐름을 다시 본다(ONB_004 「기기 저장이 막힘」)
 const ONBOARDING_COMPLETED_KEY = "nuti_onboarding_completed";
 
+/** 1-5 「이 목표로 시작」처럼 온보딩을 마친 순간 부른다 */
 export function rememberOnboardingCompleted() {
   try {
     localStorage.setItem(ONBOARDING_COMPLETED_KEY, "1");
@@ -13,12 +12,21 @@ export function rememberOnboardingCompleted() {
   }
 }
 
-/** 서버 렌더에는 localStorage가 없어 false다. 그래서 bootstrap은 서버에서 prefetch하지 않는다(hydration 불일치) */
+/** 서버 렌더에는 localStorage가 없어 false다. 첫 실행 분기는 브라우저에서 한다 */
 export function isOnboardingCompletedLocally(): boolean {
   try {
     if (typeof localStorage === "undefined") return false;
     return localStorage.getItem(ONBOARDING_COMPLETED_KEY) === "1";
   } catch {
     return false;
+  }
+}
+
+/** 계정 삭제 뒤 이 기기를 처음 방문 상태로 돌릴 때 부른다(ACCT_008) */
+export function forgetOnboardingCompleted() {
+  try {
+    localStorage.removeItem(ONBOARDING_COMPLETED_KEY);
+  } catch {
+    // 위 주석 참고
   }
 }

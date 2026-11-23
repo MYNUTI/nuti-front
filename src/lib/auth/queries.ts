@@ -8,6 +8,7 @@ import { api } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/errors";
 import { rotateAnonymousId, saveTokens } from "@/lib/api/identity";
 import { clearDeviceGoal } from "@/lib/goal/device";
+import { forgetOnboardingCompleted } from "@/lib/onboarding/storage";
 import { applyAccountGoal } from "@/lib/goal/queries";
 import { clearTokensAfterRefresh } from "@/lib/api/refresh";
 import { postLogout, postOAuthLogin } from "@/lib/auth/api";
@@ -66,13 +67,14 @@ export const authMutations = {
     }),
   /**
    * 화면 진입점이 정해지지 않아 훅은 두지 않는다. 기기는 처음 방문 상태로 돌아가야 해(ACCT_008) 익명 ID를
-   * 새로 만들고 기기 목표도 지운다
+   * 새로 만들고 기기 목표와 온보딩 완료 기록도 지운다
    */
   withdraw: (queryClient: QueryClient) =>
     mutationOptions({
       mutationFn: () => deleteUser(api),
       onSuccess: () => {
         clearDeviceGoal();
+        forgetOnboardingCompleted();
         return endSession(queryClient);
       },
       onError: (error) => {
@@ -80,6 +82,7 @@ export const authMutations = {
         // 계정이 이미 없거나 세션이 끝나 서버에서 지우지 못했어도 사용자는 탈퇴를 골랐다. 이 기기는 처음
         // 방문 상태로 돌린다
         clearDeviceGoal();
+        forgetOnboardingCompleted();
         return endSession(queryClient);
       },
     }),
