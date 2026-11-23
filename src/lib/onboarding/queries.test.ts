@@ -150,7 +150,7 @@ describe("onboarding queries", () => {
     reply(() => success({ healthConsented: false }));
     queryClient.setQueryData(productKeys.detail("7"), {});
     queryClient.setQueryData(goalKeys.mine(), {});
-    queryClient.setQueryData(searchKeys.result("두유"), {});
+    queryClient.setQueryData(searchKeys.result("두유", "WEIGHT_LOSS"), {});
     queryClient.setQueryData(meKeys.summary(), {});
     queryClient.setQueryData(meKeys.settings(), {});
     queryClient.setQueryData(savedKeys.list("WEIGHT_LOSS"), {});
@@ -169,8 +169,9 @@ describe("onboarding queries", () => {
       queryClient.getQueryState(productKeys.detail("7"))?.isInvalidated,
     ).toBe(false);
     expect(
-      queryClient.getQueryState(searchKeys.result("두유"))?.isInvalidated,
-    ).toBe(true);
+      queryClient.getQueryState(searchKeys.result("두유", "WEIGHT_LOSS"))
+        ?.isInvalidated,
+    ).toBe(false);
     expect(queryClient.getQueryState(meKeys.summary())?.isInvalidated).toBe(
       true,
     );

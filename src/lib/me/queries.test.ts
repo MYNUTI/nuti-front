@@ -25,15 +25,11 @@ function run<TData, TVariables>(
   return new MutationObserver(queryClient, options).mutate(variables);
 }
 
-// 계정 목표를 보여 주는 조회와 아직 계정 목표로 계산되는 검색. 상품 결과는 두 목표 점수를 함께 주고, 저장
-// 목록은 기기 목표를 실어 보낸다
-const goalDependent = [
-  goalKeys.mine(),
-  meKeys.summary(),
-  searchKeys.result("두유"),
-];
+// 계정 목표를 보여 주는 조회. 상품 결과는 두 목표 점수를 함께 주고, 목록(검색·저장)은 기기 목표를 실어 보낸다
+const goalDependent = [goalKeys.mine(), meKeys.summary()];
 const goalIndependent = [
   productKeys.detail("7"),
+  searchKeys.result("두유", "WEIGHT_LOSS"),
   savedKeys.list("WEIGHT_LOSS"),
 ];
 

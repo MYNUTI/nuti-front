@@ -43,7 +43,10 @@ describe("authMutations", () => {
     });
     queryClient.setQueryData(onboardingKeys.bootstrap(), { isLoggedIn: true });
     queryClient.setQueryData(metaKeys.policies(), { privacy: null });
-    queryClient.setQueryData(searchKeys.popularKeywords(), []);
+    queryClient.setQueryData(searchKeys.popularKeywords(), {
+      basedAt: null,
+      keywords: [],
+    });
   });
   afterEach(() => {
     api.defaults.adapter = originalAdapter;
@@ -177,7 +180,10 @@ describe("authMutations", () => {
     expect(queryClient.getQueryData(metaKeys.policies())).toEqual({
       privacy: null,
     });
-    expect(queryClient.getQueryData(searchKeys.popularKeywords())).toEqual([]);
+    expect(queryClient.getQueryData(searchKeys.popularKeywords())).toEqual({
+      basedAt: null,
+      keywords: [],
+    });
     expect(channel.posted).toEqual([{ name: "nuti-session", data: "logout" }]);
   });
 

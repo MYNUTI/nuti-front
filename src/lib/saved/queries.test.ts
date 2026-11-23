@@ -11,7 +11,9 @@ import { savedKeys } from "@/lib/saved/keys";
 import { savedMutations, savedQueries } from "@/lib/saved/queries";
 import { searchKeys } from "@/lib/search/keys";
 import type { SearchResult } from "@/lib/search/types";
+import { toProductCard } from "@/lib/product/mapper";
 import { stubDocumentCookie, stubWebLocks } from "@/test/browser";
+import { productCardDto } from "@/test/product";
 import { mockAdapter, success } from "@/test/http";
 
 const originalAdapter = api.defaults.adapter;
@@ -66,26 +68,19 @@ describe("savedMutations", () => {
       queryClient.setQueryData(meKeys.summary(), {});
       const searchPage: SearchResult = {
         query: "두유",
-        appliedGoal: "WEIGHT_LOSS",
-        exactMatches: {
-          total: 1,
-          items: [
-            {
-              id: "7",
-              name: "두유",
-              brandName: null,
-              imageUrl: null,
-              saved: !saved,
-              status: "INSUFFICIENT",
-            },
-          ],
-        },
-        similarProducts: { total: 0, items: [] },
+        goal: "WEIGHT_LOSS",
+        sort: "SCORE",
+        sortLabel: "점수 높은 순",
+        total: 1,
+        hasNext: false,
+        pinned: null,
+        category: null,
+        items: [toProductCard(productCardDto({ saved: !saved }))],
         didYouMean: null,
         sameCategoryTop: [],
         canRequestAnalysis: false,
       };
-      queryClient.setQueryData(searchKeys.result("두유"), {
+      queryClient.setQueryData(searchKeys.result("두유", "WEIGHT_LOSS"), {
         pages: [searchPage],
         pageParams: [0],
       });
@@ -106,9 +101,13 @@ describe("savedMutations", () => {
         true,
       );
       const search = queryClient.getQueryData<{ pages: SearchResult[] }>(
-        searchKeys.result("두유"),
+        searchKeys.result("두유", "WEIGHT_LOSS"),
       )!;
-      expect(search.pages[0].exactMatches.items[0].saved).toBe(saved);
+      expect(search.pages[0].items[0].saved).toBe(saved);
+      expect(
+        queryClient.getQueryState(searchKeys.result("두유", "WEIGHT_LOSS"))
+          ?.isInvalidated,
+      ).toBe(false);
     },
   );
 
