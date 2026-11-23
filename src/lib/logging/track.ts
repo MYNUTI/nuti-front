@@ -1,18 +1,16 @@
 import { api } from "@/lib/api/client";
 import {
   postCtaLog,
+  postEvents,
   postFilterLog,
-  postImpressionLog,
-  postOnboardingStepLog,
   postScanEventLog,
   postSearchLog,
   postViewLog,
 } from "@/lib/logging/api";
-import { toImpressionBody, toScanEventBody } from "@/lib/logging/mapper";
+import { toScanEventBody } from "@/lib/logging/mapper";
 import type {
+  AppEventName,
   FilterLogDto,
-  ImpressionInput,
-  OnboardingStepLogDto,
   ScanEventInput,
   SearchLogDto,
 } from "@/lib/logging/types";
@@ -51,16 +49,21 @@ export function logFilter(body: FilterLogDto) {
   send(() => postFilterLog(api, body));
 }
 
-export function logImpressions(input: ImpressionInput) {
-  // 서버도 빈 목록은 저장하지 않고 200으로 넘긴다
-  if (input.items.length === 0) return;
-  send(() => postImpressionLog(api, toImpressionBody(input)));
-}
-
 export function logScanEvent(input: ScanEventInput) {
   send(() => postScanEventLog(api, toScanEventBody(input)));
 }
 
-export function logOnboardingStep(body: OnboardingStepLogDto) {
-  send(() => postOnboardingStepLog(api, body));
+/**
+ * v3 앱 이벤트 하나를 보낸다. 시각은 기기 시각(ISO-8601)이고 세션 ID는 요청 헤더로 간다. 속성에 몸 정보를
+ * 넣지 않는다(서버도 지운다)
+ */
+export function logEvent(
+  name: AppEventName,
+  { screen, props }: { screen?: string; props?: Record<string, unknown> } = {},
+) {
+  send(() =>
+    postEvents(api, {
+      events: [{ name, screen, occurredAt: new Date().toISOString(), props }],
+    }),
+  );
 }

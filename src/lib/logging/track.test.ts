@@ -2,8 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "@/lib/api/client";
 import {
   isLoggingEnabled,
-  logImpressions,
-  logOnboardingStep,
+  logEvent,
   logProductCta,
   logProductView,
   logScanEvent,
@@ -64,7 +63,7 @@ describe("로그 전송", () => {
     expect(mock.requests).toHaveLength(0);
   });
 
-  it("켜져 있으면 CTA 외 6종을 각 경로로 보낸다", async () => {
+  it("켜져 있으면 CTA 외 4종을 각 경로로 보낸다", async () => {
     vi.stubEnv("NEXT_PUBLIC_LOGGING_ENABLED", "true");
     const mock = mockAdapter(() => success());
     api.defaults.adapter = mock.adapter;
@@ -72,21 +71,14 @@ describe("로그 전송", () => {
     logProductView("7");
     logSearch({ keyword: "두유", resultCount: 0 });
     logFilter({ filterType: "sort" });
-    logImpressions({
-      surface: "LIST",
-      items: [{ productId: "7", position: 0 }],
-    });
     logScanEvent({ result: "SCAN_FAIL" });
-    logOnboardingStep({ step: "CONSENT", action: "VIEW" });
     await flush();
 
     expect(mock.requests.map((request) => request.url)).toEqual([
       "/logging/view",
       "/logging/search",
       "/logging/filter",
-      "/logging/impression",
       "/logging/scan-event",
-      "/logging/onboarding-step",
     ]);
     expect(JSON.parse(mock.requests[0].data as string)).toEqual({
       productId: 7,
@@ -113,14 +105,28 @@ describe("로그 전송", () => {
     expect(await request.json()).toEqual({ productId: 7 });
   });
 
-  it("빈 노출 목록은 보내지 않는다", async () => {
+  it("앱 이벤트는 기기 시각을 붙여 /events로 fetch keepalive로 보낸다", async () => {
     vi.stubEnv("NEXT_PUBLIC_LOGGING_ENABLED", "true");
-    const mock = mockAdapter(() => success());
-    api.defaults.adapter = mock.adapter;
+    const fetch = vi.fn<typeof globalThis.fetch>(async () =>
+      Response.json({ isSuccess: true, data: { accepted: 1, dropped: 0 } }),
+    );
+    api.defaults.env = { ...api.defaults.env, fetch };
+    api.defaults.baseURL = "http://nuti.test/api";
 
-    logImpressions({ surface: "SEARCH", keyword: "두유", items: [] });
-    await flush();
-    expect(mock.requests).toHaveLength(0);
+    logEvent("goal_set", { screen: "1-5", props: { from_screen: "1-5" } });
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+
+    const [input, init] = fetch.mock.calls[0];
+    const request = input as Request;
+    expect(request.url).toBe("http://nuti.test/api/events");
+    expect(request.keepalive || init?.keepalive).toBe(true);
+    const body = await request.json();
+    expect(body).toMatchObject({
+      events: [
+        { name: "goal_set", screen: "1-5", props: { from_screen: "1-5" } },
+      ],
+    });
+    expect(Number.isNaN(Date.parse(body.events[0].occurredAt))).toBe(false);
   });
 
   it("실패해도 던지지 않는다", async () => {
