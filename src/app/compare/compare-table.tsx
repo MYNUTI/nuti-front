@@ -3,13 +3,20 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import { Button } from "@/components/common/button";
 import { SCORE_BAND_LABEL, ScoreRing } from "@/components/common/score-ring";
 import { ConfirmSheet } from "@/components/common/sheet";
 import { Thumb } from "@/components/common/thumb";
 import { Toast } from "@/components/common/toast";
+import { Toggle } from "@/components/common/toggle";
 import {
   COMPARE_MAX,
   clearCompare,
@@ -72,6 +79,11 @@ export function CompareTable() {
       .filter((p): p is CompareProduct => p !== null),
   );
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // 「1회 제공량으로 보기」. 끄면 100g당, 켜면 값 = 100g당 값 × 그 제품의 1회 양(점수는 그대로)
+  const [perServing, setPerServing] = useState(false);
+  const servingNoteId = useId();
+  // 1회 제공량으로 볼 때는 열 머리에 「1회 제공량 60g」 줄이 늘어 머리를 그만큼 키운다(왼쪽 기준 칸 · 끝 열도 같이)
+  const headerHeight = perServing ? "h-52" : "h-48";
   const [toast, setToast] = useState<{
     key: number;
     message: string;
@@ -152,17 +164,29 @@ export function CompareTable() {
     else router.replace("/home");
   };
 
-  // g 제품과 mL 제품이 섞이면 같은 줄을 견줄 수 없어 굵게를 끄고 열마다 기준을 적는다(디자인에 없음, 「남은 질문」 21)
+  // g 제품과 mL 제품이 섞이면 100g당으로는 같은 줄을 견줄 수 없어 굵게를 끄고 열마다 기준을 적는다(디자인에 없음,
+  // 「남은 질문」 21). 1회 제공량으로 볼 때는 한 번 먹는 양끼리라 견준다
   const units = new Set(products.map((p) => p.unit));
-  const mixed = units.size > 1;
-  const basis = mixed ? "100g·100mL당" : `100${products[0]?.unit ?? "g"}당`;
+  const mixed = units.size > 1 && !perServing;
+  const basis = perServing
+    ? "1회 제공량"
+    : mixed
+      ? "100g·100mL당"
+      : `100${products[0]?.unit ?? "g"}당`;
+  // 보이는 값. 1회 양을 모르는 제품은 1회 제공량으로 볼 때 값이 없다(「안 정함」 — 「남은 질문」 24)
+  const shown = (p: CompareProduct, key: CompareRowKey): number | null => {
+    const value = p.per100[key];
+    if (value === null) return null;
+    if (!perServing) return value;
+    return p.serving === null ? null : (value * p.serving) / 100;
+  };
   const best = Object.fromEntries(
     ROWS.map((row) => [
       row.key,
       row.scored && !mixed
         ? bestIds(
             products.map((p) => {
-              const value = p.per100[row.key];
+              const value = shown(p, row.key);
               return {
                 id: p.id,
                 value: value === null ? null : roundValue(value, row.unit),
@@ -210,7 +234,12 @@ export function CompareTable() {
       >
         {/* 행 이름 열. 옆으로 밀어도 왼쪽에 남는다 */}
         <div className="sticky left-0 z-10 w-[90px] shrink-0 bg-bg-page">
-          <div className="flex h-48 items-end border-b border-line-default pb-3 pl-7 text-body2 text-text-sub">
+          <div
+            className={cn(
+              "flex items-end border-b border-line-default pb-3 pl-7 text-body2 text-text-sub",
+              headerHeight,
+            )}
+          >
             {basis}
           </div>
           <div className="flex h-20 items-center border-b border-line-default bg-bg-band pl-4 text-body2 text-text-sub">
@@ -235,7 +264,10 @@ export function CompareTable() {
           >
             <Link
               href={`/product/${p.id}`}
-              className="flex h-48 flex-col items-center gap-1.5 border-b border-line-default px-2.5 pt-2.5"
+              className={cn(
+                "flex flex-col items-center gap-1.5 border-b border-line-default px-2.5 pt-2.5",
+                headerHeight,
+              )}
             >
               {/* 꼬리표 자리. 단위가 섞였을 때만 이 열의 기준을 적는다 */}
               <span className="h-5 text-caption text-text-sub">
@@ -252,6 +284,13 @@ export function CompareTable() {
               <span className="line-clamp-2 w-full text-center text-body2-medium break-keep text-text-strong">
                 {p.name}
               </span>
+              {perServing && (
+                <span className="w-full truncate text-center text-caption text-text-sub">
+                  {p.serving === null
+                    ? "1회 제공량 정보 없음"
+                    : `1회 제공량 ${p.serving}${p.unit}`}
+                </span>
+              )}
             </Link>
             <div className="flex h-20 flex-col items-center justify-center gap-1 border-b border-line-default bg-bg-band">
               <ScoreRing score={p.score} band={p.band} size="M" />
@@ -260,18 +299,22 @@ export function CompareTable() {
               </span>
             </div>
             {ROWS.map((row) => {
-              const value = p.per100[row.key];
+              const value = shown(p, row.key);
               return (
                 <div
                   key={row.key}
                   className="flex h-13 items-center justify-center border-b border-line-default px-1.5"
                 >
                   {value === null ? (
-                    // 디자인 메모: 값이 없는 칸은 회색 「표시 없음」
+                    // 디자인 메모: 값이 없는 칸은 회색 「표시 없음」. 1회 양을 몰라 못 구한 값은 따로 적는다(「남은 질문」 24)
                     <span className="text-body2 text-text-disabled">
                       {/* 열 단위로 그려 화면 읽기가 줄 이름을 모르니 칸마다 붙인다 */}
                       <span className="sr-only">{row.label} </span>
-                      표시 없음
+                      {perServing &&
+                      p.serving === null &&
+                      p.per100[row.key] !== null
+                        ? "1회 양 모름"
+                        : "표시 없음"}
                     </span>
                   ) : (
                     <span
@@ -315,6 +358,7 @@ export function CompareTable() {
           className={column}
           full={full}
           needMore={products.length === 1}
+          headerHeight={headerHeight}
           onFull={() =>
             showToast({
               message: "4개가 다 찼어요. 하나를 제외하면 더 담을 수 있어요",
@@ -334,6 +378,27 @@ export function CompareTable() {
             }}
           />
         </div>
+      </div>
+
+      {/* 내부 회의: 왼쪽 아래 켜고 끄기. 화면 아래에 붙인다 */}
+      <div className="mt-auto px-5 py-3">
+        {/* 설명은 label 밖에 두어 스위치 이름이 「1회 제공량으로 보기」로 고정되게 하고, describedby로 잇는다 */}
+        <label className="flex cursor-pointer items-start gap-2">
+          <Toggle
+            checked={perServing}
+            onChange={(event) => setPerServing(event.target.checked)}
+            aria-describedby={perServing ? servingNoteId : undefined}
+          />
+          <span className="pt-1 text-body2-medium text-text-strong">
+            1회 제공량으로 보기
+          </span>
+        </label>
+        {perServing && (
+          // 스위치 폭(48) + 간격(8)만큼 들여 이름 아래에 맞춘다
+          <p id={servingNoteId} className="pl-14 text-caption text-text-sub">
+            1회 제공량은 제품마다 달라요. 점수는 그대로예요.
+          </p>
+        )}
       </div>
 
       <ConfirmSheet
@@ -365,17 +430,22 @@ function AddColumn({
   className,
   full,
   needMore,
+  headerHeight,
   onFull,
 }: {
   className: string;
   full: boolean;
   /** 제품이 1개면 「비교하려면 하나 더 담아 주세요」를 함께(디자인 메모 1개 남았을 때) */
   needMore: boolean;
+  headerHeight: string;
   onFull: () => void;
 }) {
   const layout = (
     <>
-      <span aria-hidden className="block h-48 border-b border-line-default" />
+      <span
+        aria-hidden
+        className={cn("block border-b border-line-default", headerHeight)}
+      />
       <span
         aria-hidden
         className="block h-20 border-b border-line-default bg-bg-band"

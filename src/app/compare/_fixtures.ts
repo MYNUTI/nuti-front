@@ -22,6 +22,8 @@ export type CompareProduct = {
   unit: "g" | "mL";
   /** 100g(mL)당 값. 표시가 없으면 null */
   per100: Record<CompareRowKey, number | null>;
+  /** 1회 제공량(g·mL). 모르면 null(3-5 1회 제공량으로 볼 때) */
+  serving: number | null;
 };
 
 const DESIGN_EXTRA = { carbohydrate: 37.5, fat: 12.3 };
@@ -46,6 +48,7 @@ export function findCompareProduct(id: string): CompareProduct | null {
     score: product.score,
     band: product.band,
     unit: product.nutrition.unit,
+    serving: product.nutrition.serving?.amount ?? null,
     per100: {
       calories: value("calories"),
       protein: value("protein"),
