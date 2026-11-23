@@ -221,8 +221,10 @@ export function CompareTable() {
         )}
       </div>
 
+      {/* relative: 칸 안의 sr-only(absolute)가 이 상자를 기준으로 놓여 잘리게 한다. 없으면 문서 기준으로 놓여
+          오른쪽 밖 열의 sr-only가 문서 폭을 넓힌다(모바일에서 화면이 축소돼 보임) */}
       <div
-        className="flex [scrollbar-width:none] overflow-x-auto"
+        className="relative flex [scrollbar-width:none] overflow-x-auto"
         ref={scrollerRef}
         onScroll={(event) => {
           const el = event.currentTarget;
@@ -233,7 +235,14 @@ export function CompareTable() {
         }}
       >
         {/* 행 이름 열. 옆으로 밀어도 왼쪽에 남는다 */}
-        <div className="sticky left-0 z-10 w-[90px] shrink-0 bg-bg-page">
+        <div
+          className={cn(
+            "sticky left-0 z-10 w-[90px] shrink-0 bg-bg-page",
+            // 【최종】 4개 담았을 때 그림의 그림자. 3개는 그림이 없어 열 폭(132)과 같은 문턱으로 정했다.
+            // 2개일 때도 끝의 「+ 제품 추가」 열이 화면을 넘지만 【최종】 그림에는 그림자가 없다
+            products.length > 2 && "shadow-[4px_0_8px_rgba(0,0,0,0.08)]",
+          )}
+        >
           <div
             className={cn(
               "flex items-end border-b border-line-default pb-3 pl-7 text-body2 text-text-sub",
