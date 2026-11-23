@@ -24,7 +24,10 @@ describe("contributionMutations.requestAnalysis", () => {
         requestId: 3,
         type: "NEW_PRODUCT",
         requestCount: 1,
-        status: "WAITING",
+        status: "ANALYZING",
+        statusLabel: "분석 중",
+        alreadyRequested: false,
+        message: "요청을 받았어요. 분석이 끝나면 바로 볼 수 있어요.",
       }),
     ).adapter;
     const queryClient = new QueryClient();

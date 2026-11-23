@@ -4,18 +4,20 @@ import type { ApiSuccess } from "@/lib/api/types";
 import {
   toAnalysisRequest,
   toAnalysisRequestBody,
+  toReportCreateResult,
 } from "@/lib/contribution/mapper";
 import type {
   AnalysisRequestDto,
   AnalysisRequestInput,
-  InquiryCreateDto,
-  InquiryDto,
+  ReportCreateDto,
+  ReportCreateResultDto,
+  ReportInput,
 } from "@/lib/contribution/types";
 
 /**
- * 분석이 끝난 상품은 409 `ALREADY_ANALYZED`, 검색어 접수가 하루 5건을 넘으면 429 `DAILY_LIMIT_EXCEEDED`,
- * 없는 상품은 404 `PRODUCT_NOT_FOUND`. 식별값이 없거나 바코드 형식이 틀리거나 검색어가 30자를 넘으면
- * 400 `BAD_REQUEST`, 바코드 체크섬이 틀리면 400 `BARCODE_CHECKSUM_INVALID`
+ * 분석이 끝난 상품은 409 `ALREADY_ANALYZED`, 검색어·제품명 요청이 합쳐 하루 5건을 넘으면 429
+ * `DAILY_LIMIT_EXCEEDED`, 없는 상품은 404 `PRODUCT_NOT_FOUND`. 식별값이 없거나 길이·형식이 틀리면 400
+ * `BAD_REQUEST`, 바코드 체크섬이 틀리면 400 `BARCODE_CHECKSUM_INVALID`
  */
 export function postAnalysisRequest(
   http: AxiosInstance,
@@ -31,11 +33,18 @@ export function postAnalysisRequest(
 }
 
 /**
- * 화면 진입점이 정해지지 않아 API 함수만 둔다. 내용이 비었거나 1000자를 넘거나 이메일 형식이 틀리면 400,
- * 하루 3건을 넘으면 429 `DAILY_LIMIT_EXCEEDED`
+ * 3-2 「정보가 틀렸어요」. 비로그인도 된다. OTHER를 골랐는데 내용이 없거나 1000자를 넘으면 400
+ * `BAD_REQUEST`, 하루 10건을 넘으면 429 `DAILY_LIMIT_EXCEEDED`, 없거나 비활성 상품은 404 `PRODUCT_NOT_FOUND`
  */
-export function postInquiry(http: AxiosInstance, body: InquiryCreateDto) {
+export function postProductReport(
+  http: AxiosInstance,
+  { productId, ...body }: ReportInput,
+) {
   return http
-    .post<ApiSuccess<InquiryDto>>("/support/inquiries", body)
-    .then(unwrap);
+    .post<ApiSuccess<ReportCreateResultDto>>(
+      `/products/${encodeURIComponent(productId)}/reports`,
+      body satisfies ReportCreateDto,
+    )
+    .then(unwrap)
+    .then(toReportCreateResult);
 }
