@@ -17,7 +17,8 @@ export function IntroLayout({
   top: React.ReactNode;
   visual: React.ReactNode;
   title: React.ReactNode;
-  body: React.ReactNode;
+  /** 없으면(0-4b) 제목과 단계 점 사이를 디자인대로 46으로 둔다 */
+  body?: React.ReactNode;
   /** 0부터 센다 */
   step: number;
   ctaLabel: React.ReactNode;
@@ -29,8 +30,12 @@ export function IntroLayout({
       <main className="flex flex-1 flex-col items-center justify-center px-5 text-center">
         {visual}
         <h1 className="mt-10 text-title1 text-text-strong">{title}</h1>
-        <p className="mt-3 text-body1 text-text-sub">{body}</p>
-        <StepDots count={2} current={step} className="mt-7" />
+        {body && <p className="mt-3 text-body1 text-text-sub">{body}</p>}
+        <StepDots
+          count={2}
+          current={step}
+          className={body ? "mt-7" : "mt-11.5"}
+        />
       </main>
       <BottomCta>
         <Button className="flex-1" asChild>

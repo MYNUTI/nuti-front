@@ -3,6 +3,7 @@
 import { skipToken, useQuery } from "@tanstack/react-query";
 import { useEffect, useEffectEvent, useState } from "react";
 import Link from "next/link";
+import { useGoBack } from "@/components/common/back-button";
 import { CtaButton } from "@/components/common/cta-button";
 import { Skeleton } from "@/components/common/skeleton";
 import { CompareFullSheet } from "@/components/compare/compare-full-sheet";
@@ -68,6 +69,7 @@ export function ScanStage({
   const [source, setSource] = useState<ScanSource>("photo");
   const [photoMissOpen, setPhotoMissOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(initialManualOpen);
+  const goBack = useGoBack("/home");
   const [slow, setSlow] = useState(false);
   const [missOpen, setMissOpen] = useState(false);
   // 시트를 닫고 다시 비출 때마다 올려 시간을 처음부터 다시 센다
@@ -174,15 +176,13 @@ export function ScanStage({
               state.reason === "permission-denied" && (
                 <OnMount run={onPermissionDenied} />
               )}
-            {/* 디자인 메모: ✕ → 2-1 홈 */}
+            {/* 【최종】 메모: ✕ → 카메라를 열기 전 화면 */}
             <TopBar
               tone="dark"
               className="absolute inset-x-0 top-0"
               right={
-                <TopBarButton asChild aria-label="닫기">
-                  <Link href="/home">
-                    <IconClose />
-                  </Link>
+                <TopBarButton aria-label="닫기" onClick={goBack}>
+                  <IconClose />
                 </TopBarButton>
               }
             />
@@ -244,16 +244,17 @@ export function ScanStage({
             )}
           >
             {photo.input}
+            {/* 【최종】 메모: 어느 화면에서나 「바코드 번호 입력 → 바코드 사진 올리기 → 이름으로 찾기」 */}
+            <ScanAction icon={<IconHash />} onClick={() => setManualOpen(true)}>
+              바코드 번호 입력
+            </ScanAction>
             <ScanAction
               icon={<IconImage />}
               // WASM이 죽었으면 사진도 읽을 수 없다.
               disabled={state.stage === "manual" || photo.reading}
               onClick={photo.open}
             >
-              {photo.reading ? "읽는 중…" : "사진 올리기"}
-            </ScanAction>
-            <ScanAction icon={<IconHash />} onClick={() => setManualOpen(true)}>
-              바코드 번호 입력
+              {photo.reading ? "읽는 중…" : "바코드 사진 올리기"}
             </ScanAction>
             {/* 디자인 메모: 이름으로 찾기 → 2-3 검색 */}
             <ScanAction icon={<IconSearch />} href="/search">

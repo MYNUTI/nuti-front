@@ -85,9 +85,9 @@ export function ProductActions({
   const toggleSave = () => {
     if (saved) {
       setSaved(false);
-      // 디자인 메모: ♥를 풀면 「저장을 풀었어요」 + [되돌리기]
+      // 【최종】: ♥를 풀면 「즐겨찾기에서 뺐어요」 + [되돌리기]
       showToast({
-        message: "저장을 풀었어요",
+        message: "즐겨찾기에서 뺐어요",
         action: {
           label: "되돌리기",
           onClick: () => {
@@ -100,7 +100,9 @@ export function ProductActions({
       });
     } else {
       setSaved(true);
-      showToast({ message: "즐겨찾기에 넣었어요. 내 기록에서 볼 수 있어요." });
+      showToast({
+        message: "즐겨찾기에 넣었어요. 기록 탭에서 볼 수 있어요.",
+      });
     }
   };
 
@@ -116,10 +118,10 @@ export function ProductActions({
     showAdded();
   };
 
-  const showAdded = () =>
-    showToast({
-      message: previewing ? "내 목표 기준으로 담았어요" : "비교함에 담았어요",
-    });
+  // 【최종】: 비교함 바 글이 담은 걸 알려 주니 알림은 미리 보는 중(다른 목표로 보는데 내 목표 기준으로 담김)에만
+  const showAdded = () => {
+    if (previewing) showToast({ message: "내 목표 기준으로 담았어요" });
+  };
 
   return (
     <ActionsContext
@@ -183,7 +185,7 @@ export function ShareButton({ path, title }: { path: string; title: string }) {
     showToast({
       message: previewing
         ? "주소를 복사했어요. 받는 사람의 목표 기준으로 보여요"
-        : "주소를 복사했어요. 카카오톡 등에 붙여 넣어 보내 보세요.",
+        : "링크를 복사했어요",
     });
   };
 

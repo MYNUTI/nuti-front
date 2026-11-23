@@ -12,6 +12,7 @@ import {
 } from "@/components/scan/camera-place";
 import { useImageBarcode } from "@/components/scan/scan-image-input";
 import { PhotoMissSheet } from "@/components/scan/scan-miss-sheet";
+import { cn } from "@/lib/utils";
 
 /**
  * 3-1 스캔(카메라를 못 여는 곳). 카카오톡 같은 앱 안 브라우저나 PC에서 스캔을 누르면 2-1 홈 위에 뜬다.
@@ -74,23 +75,13 @@ export function NoCameraSheet({ closeHref }: { closeHref: string }) {
           )
         }
       >
-        <p className="text-body1 text-text-sub">
-          {pc ? (
-            "PC에서는 카메라로 찍을 수 없어요."
-          ) : (
-            <>
-              {/* 바깥 브라우저로 열 방법이 없는 곳은 그 줄만 뺀다 */}
-              {openExternal && (
-                <>
-                  다른 브라우저에서 열거나,
-                  <br />
-                </>
-              )}
-              바코드 사진이나 번호, 이름으로 찾을 수 있어요.
-            </>
-          )}
-        </p>
-        <div className="flex flex-col gap-2 pt-4">
+        {/* 【최종】: 앱 안 브라우저 시트는 본문 없이 제목 다음 바로 버튼 */}
+        {pc && (
+          <p className="text-body1 text-text-sub">
+            PC에서는 카메라로 찍을 수 없어요.
+          </p>
+        )}
+        <div className={cn("flex flex-col gap-2", pc && "pt-4")}>
           {openExternal && (
             <Button
               type="button"
@@ -103,6 +94,12 @@ export function NoCameraSheet({ closeHref }: { closeHref: string }) {
               다른 브라우저로 열기
             </Button>
           )}
+          {/* 【최종】 메모: 다른 브라우저 → 바코드 번호 입력 → 바코드 사진 올리기 → 이름으로 찾기 */}
+          {!pc && (
+            <Button kind="secondary" asChild>
+              <Link href="/scan?manual=1">바코드 번호 입력</Link>
+            </Button>
+          )}
           <Button
             type="button"
             // 디자인 메모: PC는 사진 올리기가 주 버튼. 앱 안에서도 바깥으로 열 수 없으면 주 버튼이 된다
@@ -112,11 +109,6 @@ export function NoCameraSheet({ closeHref }: { closeHref: string }) {
           >
             {photo.reading ? "읽는 중…" : "바코드 사진 올리기"}
           </Button>
-          {!pc && (
-            <Button kind="secondary" asChild>
-              <Link href="/scan?manual=1">바코드 번호 입력</Link>
-            </Button>
-          )}
           <Button kind="secondary" asChild>
             <Link href="/search">이름으로 찾기</Link>
           </Button>

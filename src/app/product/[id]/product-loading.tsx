@@ -11,7 +11,7 @@ export function ProductTopBar() {
       {/* 디자인 메모: 검색칸 → 2-3 검색 */}
       <SearchFieldLink
         href="/search"
-        placeholder="제품명, 브랜드로 검색"
+        placeholder="제품, 브랜드, 종류로 검색"
         className="min-w-0 flex-1"
       />
     </header>

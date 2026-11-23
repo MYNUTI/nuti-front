@@ -51,7 +51,7 @@ export default async function HomePage({ searchParams }: PageProps<"/home">) {
         <div className="px-5 pt-2 pb-4">
           <SearchFieldLink
             href="/search"
-            placeholder="제품명, 브랜드로 검색"
+            placeholder="제품, 브랜드, 종류로 검색"
             data-guide="search"
           />
         </div>

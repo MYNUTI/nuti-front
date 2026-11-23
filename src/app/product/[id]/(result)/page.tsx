@@ -38,10 +38,10 @@ const GOAL_LABEL: Record<Goal, string> = {
   muscle: "근육 증가",
 };
 
-// 디자인 메모: 목표가 근육 증가면 「근육 증가 · 내 목표」 + 「체중 감량으로 보기」
+// 【최종】 메모: 목표가 근육 증가면 「근육 증가 · 내 목표」 + 「다이어트로 보기」
 const OTHER_GOAL_LABEL: Record<Goal, string> = {
   diet: "근육 증가로 보기",
-  muscle: "체중 감량으로 보기",
+  muscle: "다이어트로 보기",
 };
 
 const OTHER_GOAL: Record<Goal, Goal> = { diet: "muscle", muscle: "diet" };
@@ -148,9 +148,9 @@ export default async function ProductPage({
             <FocusTarget className="flex-1 outline-none">
               <Notice>{GOAL_LABEL[otherGoal]} 목표로 미리 보는 중이에요</Notice>
             </FocusTarget>
-            {/* 디자인 메모: 내 목표로 → 3-2 제품 결과 */}
+            {/* 디자인 메모: 내 목표로 보기 → 3-2 제품 결과 */}
             <Button kind="text" size="S" asChild>
-              <PreviewLink href={productHref()}>내 목표로</PreviewLink>
+              <PreviewLink href={productHref()}>내 목표로 보기</PreviewLink>
             </Button>
           </div>
         )}
@@ -162,6 +162,8 @@ export default async function ProductPage({
               .filter(Boolean)
               .join(" · ")}
             name={product.name}
+            // 디자인 메모(11-09): 환자용 균형영양식이면 이름 아래 한 줄. 3-2는 기준량 줄을 쓰지 않아 그 자리를 빌린다
+            basis={product.patientFood ? "환자용 식품이에요" : undefined}
             image={
               <ProductPhoto key={product.image?.src} image={product.image} />
             }
@@ -203,17 +205,21 @@ export default async function ProductPage({
                   <span className="flex h-9 items-center rounded-full bg-accent-blue-weak px-3.5 text-body2-bold text-accent-blue-text">
                     {GOAL_LABEL[otherGoal]} · 미리 보기
                   </span>
-                  {/* 디자인 메모: 누르는 곳이 아닌 정보 글자 */}
-                  <span className="flex h-9 items-center rounded-full border border-line-strong bg-bg-page px-3.5 text-body2-medium text-text-strong">
+                  {/* 【최종】 메모: 누르면 3-2 제품 결과(내 목표) */}
+                  <PreviewLink
+                    href={productHref()}
+                    className="flex h-9 items-center rounded-full border border-line-strong bg-bg-page px-3.5 text-body2-medium text-text-strong"
+                  >
                     내 목표({GOAL_LABEL[goal]})로는 {mine.score}점
-                  </span>
+                  </PreviewLink>
                 </div>
               ) : (
                 <div className="flex gap-2">
                   <span className="flex h-9 items-center rounded-full bg-accent-blue-weak px-3.5 text-body2-bold text-accent-blue-text">
-                    {/* 디자인 메모(내 몸에 맞춤): 다이어트 목표면 칩 글자만 바뀐다. 근육 증가는 그대로 */}
-                    {GOAL_LABEL[goal]} ·{" "}
-                    {bodyFit ? "내 몸에 맞추기" : "내 목표"}
+                    {/* 디자인 메모(내 몸에 맞춤): 다이어트 목표면 칩 글자만 바뀐다. 근육 증가는 그대로.
+                        【최종】(공유 링크 · 목표 없음): 고른 목표가 없으면 「다이어트 기준」 */}
+                    {GOAL_LABEL[goal]}{" "}
+                    {noGoal ? "기준" : bodyFit ? "· 내 몸에 맞춤" : "· 내 목표"}
                   </span>
                   {views[otherGoal] && (
                     <PreviewLink
@@ -246,7 +252,7 @@ export default async function ProductPage({
               className="flex items-center gap-2 bg-brand-primary-weak px-5 py-3 text-body2"
             >
               <span className="min-w-0 flex-1 text-text-strong">
-                지금은 {GOAL_LABEL[goal]} 목표예요
+                {GOAL_LABEL[goal]} 목표로 본 점수예요
               </span>
               <span className="shrink-0 font-bold text-brand-link">
                 내 목표 고르기 <span aria-hidden>›</span>
@@ -279,7 +285,7 @@ export default async function ProductPage({
           {(noBetter || noCoupang) && (
             <div className="flex flex-col gap-1.5 px-5 pb-3 text-body2">
               {noBetter && (
-                // 디자인 메모(더 맞는 제품이 없을 때): 「정보가 틀렸어요」 아래 한 줄. A·B 등급이면 이미 높은 편, C~E면 아직 못 찾음
+                // 디자인 메모(더 맞는 제품이 없을 때): 「정보가 틀렸어요」 아래 한 줄. 높음 이상이면 같은 종류에서 가장 높음, 중간 이하면 아직 못 찾음
                 <p
                   className={cn(
                     "font-medium",
@@ -288,8 +294,8 @@ export default async function ProductPage({
                 >
                   {mine.band <= 2 ? (
                     <>
-                      <span aria-hidden>✓</span> 이미 이 종류에서 점수가 높은
-                      편이에요
+                      <span aria-hidden>✓</span> 마이뉴티에서 점수를 매긴 같은
+                      종류 제품 중 가장 높아요
                     </>
                   ) : (
                     "같은 종류에서 더 맞는 제품을 아직 찾지 못했어요"
@@ -300,7 +306,7 @@ export default async function ProductPage({
                 // 디자인 「쿠팡 상품이 없을 때」: 살 곳 대신 같은 종류 순위로 이어 준다
                 <>
                   <p className="text-text-sub">
-                    쿠팡에서 파는 상품을 찾지 못했어요
+                    쿠팡에서 이 제품을 찾지 못했어요
                   </p>
                   {/* 2-2 등급 순위. 종류를 고른 채로 여는 주소는 07단계에서 정한다 */}
                   <Link
@@ -356,9 +362,8 @@ function ReasonGroup({
   }
   return (
     <>
-      <h3 className="px-5 pt-3 pb-1 text-body2-bold text-text-sub">
-        {title} {items.length}
-      </h3>
+      {/* 디자인 메모(11-09): 머리에 개수를 붙이지 않는다 */}
+      <h3 className="px-5 pt-3 pb-1 text-body2-bold text-text-sub">{title}</h3>
       <ul className="flex flex-wrap gap-2 px-5 pt-1 pb-1.5">
         {items.map((text) => (
           <li key={text}>

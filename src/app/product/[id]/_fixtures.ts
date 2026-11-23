@@ -5,8 +5,9 @@
  * "3"은 「더 맞는 제품」 칼만스 카드가 404가 되지 않게 카드와 같은 이름·사진·점수로 둔다.
  * "5"는 디자인 「더 맞는 제품이 없을 때」 값 그대로(커클랜드 카드도 이 주소로 연다).
  * "6"은 디자인 「생산 중단」(재고 판매 중), "7"은 단종(쿠팡 버튼 없음), "8"·"9"는 「내 몸에 맞춤」(다이어트·근육 증가 목표), "10"은 「쿠팡 상품이 없을 때」, "11"은 더 맞는 제품 · 홈 카드의 마이프로틴.
- * 상태 확인용: "1"은 더 맞는 제품이 없는 C~E 등급·사진 없음, "2"는 아쉬운 점이 없는 제품·사진 주소가 깨진 제품.
- * 순위는 API에 없다(인수인계 백엔드 질문 8).
+ * 상태 확인용: "1"은 더 맞는 제품이 없는 C~E 등급·사진 없음, "2"는 아쉬운 점이 없는 제품·사진 주소가 깨진 제품,
+ * "12"는 환자용 균형영양식(이름 아래 「환자용 식품이에요」, 디자인 수정분 #6).
+ * 순위(「같은 종류 N개 중 M위」)는 지금 API 응답에 없어 백엔드에 줄 수 있는지 물어 둔 상태다.
  */
 import type { ProductCardItem } from "@/components/common/product-card";
 import type { ScoreBand } from "@/components/common/score-ring";
@@ -57,6 +58,8 @@ export type ProductResult = {
    * 목표처럼 사용자 값이지만 화면이 한 모양으로 받도록 여기 둔다
    */
   bodyFitKcal: number | null;
+  /** 환자용 균형영양식(이름 아래 「환자용 식품이에요」) */
+  patientFood?: boolean;
   reasons: { good: string[]; bad: string[] };
   /** 다른 목표로 미리 볼 때의 점수·순위·이유(3-2 다른 목표로 보기) */
   preview: Partial<Record<Goal, GoalView>>;
@@ -67,13 +70,13 @@ export type ProductResult = {
     serving: { label: string; amount: number } | null;
     /** 처음부터 보이는 줄 */
     main: NutrientValue[];
-    /** 「다른 영양성분 n개 더 보기」로 펼치는 줄 */
+    /** 「영양성분 자세히 보기」로 펼치는 줄 */
     more: NutrientValue[];
   };
   better: BetterItem[];
   /**
    * 생산 중단·단종. label은 받은 상태 글자 그대로(「단종」·「생산 중단 · 재고 판매 중」), 재고가 없으면(단종) 쿠팡 버튼을 뺀다.
-   * 판매 중이면 null. API에 아직 이 값이 없다(인수인계 백엔드 질문 10)
+   * 판매 중이면 null. API에 아직 이 값이 없다(지금 `ProductStatus`는 `ANALYZED`·`INSUFFICIENT`뿐, 백엔드에 물어 둔 상태)
    */
   production: { label: string; inStock: boolean } | null;
   /** 쿠팡 상품 주소. 없으면 쿠팡 버튼·고지를 뺀다 */
@@ -135,12 +138,12 @@ const DESIGN: ProductResult = {
   image: { src: "/fixtures/product-4.png", size: 600 },
   score: 62,
   band: 3,
-  rank: { position: 12, total: 48 },
+  rank: { position: 5, total: 48 },
   goal: "diet",
   bodyFitKcal: null,
   reasons: {
     good: ["단백질이 많아요"],
-    bad: ["칼로리가 높은 편이에요", "식이섬유 표시가 없어요"],
+    bad: ["칼로리가 높은 편이에요"],
   },
   // 디자인 「3-2 다른 목표로 보기」 값
   preview: {
@@ -149,8 +152,8 @@ const DESIGN: ProductResult = {
       band: 1,
       rank: { position: 6, total: 48 },
       reasons: {
-        good: ["단백질이 많아요", "칼로리가 충분해요"],
-        bad: ["식이섬유 표시가 없어요"],
+        good: ["단백질이 많아요", "칼로리가 높은 편이에요"],
+        bad: [],
       },
     },
   },
@@ -412,5 +415,19 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
       muscle: { ...DESIGN.preview.muscle!, rank: null },
     },
     better: BETTER.filter((p) => p.id !== "11" && p.score > 89),
+  },
+  // 디자인 수정분 #6(11-09): 환자용 균형영양식. 마시는 제품이라 100mL당
+  "12": {
+    ...DESIGN,
+    id: "12",
+    brand: null,
+    category: "단백질 음료",
+    name: "고단백 균형영양식 (환자용)",
+    image: null,
+    rank: null,
+    patientFood: true,
+    preview: {},
+    nutrition: { ...DESIGN.nutrition, unit: "mL", serving: null },
+    better: [],
   },
 };

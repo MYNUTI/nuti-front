@@ -37,7 +37,7 @@ export default function Page() {
         <>
           바코드를 찍으면
           <br />
-          나에게 맞는 등급이 나와요
+          나에게 맞는 점수가 나와요
         </>
       }
       body={
@@ -45,13 +45,11 @@ export default function Page() {
           편의점, 마트 가공식품의 영양성분을
           <br />
           100점 만점 점수로 보여 드려요.
-          <br />
-          점수에 광고비가 반영되지 않아요.
         </>
       }
       step={0}
       ctaLabel="다음"
-      ctaHref="/intro/2"
+      ctaHref="/intro/by-goal"
     />
   );
 }

@@ -14,7 +14,7 @@ export default function Page() {
     <IntroLayout
       top={<TopBar left={<BackButton fallbackHref="/intro" />} />}
       visual={
-        // 디자인 「추천 카드」(11-03, 옛 그림 대신)를 PNG 3배로 내보낸 고정 그림. 같은 뜻은 제목·설명이 전한다.
+        // 디자인 「추천 카드」(11-03, 옛 그림 대신)를 PNG 3배로 내보낸 고정 그림. 같은 뜻은 제목이 전한다.
         // 카드 내용이나 점수 색 모드가 바뀌면 디자인 노드 7947:16034를 다시 내보낸다
         <Image
           src="/intro/recommend-card.png"
@@ -32,10 +32,9 @@ export default function Page() {
         <>
           같은 제품도
           <br />
-          목표에 따라 등급이 달라요
+          목표에 따라 점수가 달라요
         </>
       }
-      body="내 목표를 고르면 그 목표로 계산해요."
       step={1}
       ctaLabel="목표 고르기"
       ctaHref="/intro/goal"
