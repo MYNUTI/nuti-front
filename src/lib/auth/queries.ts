@@ -70,7 +70,7 @@ export const authMutations = {
    */
   withdraw: (queryClient: QueryClient) =>
     mutationOptions({
-      mutationFn: (reason?: string) => deleteUser(api, reason),
+      mutationFn: () => deleteUser(api),
       onSuccess: () => {
         clearDeviceGoal();
         return endSession(queryClient);

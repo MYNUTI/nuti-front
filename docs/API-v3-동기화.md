@@ -96,16 +96,16 @@
 
 ### 마이·설정 (`lib/me`)
 
-| 지금                                                      | v3                                                                           | 조치                        |
-| --------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------- |
-| `GET /me/summary`                                         | 같음                                                                         | 유지                        |
-| `GET /users/me`, `DELETE /users/me?reason=`               | 같음. 탈퇴는 사유를 받지 않는다(`UserController.deleteMe`)                   | 수정. `reason` query를 뺀다 |
-| `GET`·`PATCH /me/settings`, `clipboardLinkDetection` 포함 | `clipboardLinkDetection` 없음                                                | 수정                        |
-| `GET /meta/policies` → `{ version, url, updatedAt }`      | 같다                                                                         | 유지                        |
-| —                                                         | `PATCH /users/me`(이메일·닉네임)                                             | 신규                        |
-| —                                                         | `GET`·`PUT`·`DELETE /me/body-profile`(몸 정보, 로그인 + `BODY_PROFILE` 동의) | 신규(5-7)                   |
-| —                                                         | `GET /me/history`(최근 본 제품, 등급 필터·페이지, page 0부터)                | 신규(4-1·4-2)               |
-| —                                                         | `GET /me/contributions`(내 요청·제보 목록과 상태)                            | 신규(5-3)                   |
+| 지금                                                      | v3                                                                                               | 조치                                                                            |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| `GET /me/summary`                                         | 같음                                                                                             | 유지                                                                            |
+| `GET /users/me`, `DELETE /users/me?reason=`               | 같음. 탈퇴는 사유를 받지 않는다(`UserController.deleteMe`)                                       | 수정(13-3). `reason` query를 뺐다                                               |
+| `GET`·`PATCH /me/settings`, `clipboardLinkDetection` 포함 | `clipboardLinkDetection` 없음. `PATCH`는 목표만 받고 로그인 + 「목표 계정 저장」 동의가 필요하다 | 수정(13-3). `PATCH`는 `PUT /me/goal`과 겹쳐 지웠다(목표 변경은 `useChangeGoal`) |
+| `GET /meta/policies` → `{ version, url, updatedAt }`      | 같다                                                                                             | 유지                                                                            |
+| —                                                         | `PATCH /users/me`(이메일·닉네임)                                                                 | 신규                                                                            |
+| —                                                         | `GET`·`PUT`·`DELETE /me/body-profile`(몸 정보, 로그인 + `BODY_PROFILE` 동의)                     | 신규(5-7)                                                                       |
+| —                                                         | `GET /me/history`(최근 본 제품, 등급 필터·페이지, page 0부터)                                    | 신규(4-1·4-2)                                                                   |
+| —                                                         | `GET /me/contributions`(내 요청·제보 목록과 상태)                                                | 신규(5-3)                                                                       |
 
 ### 기여 (`lib/contribution`)
 

@@ -236,7 +236,7 @@ describe("authMutations", () => {
     expect(channel.posted).toEqual([]);
   });
 
-  it("탈퇴는 사유를 query로 보내고 토큰을 지운 뒤 익명 ID를 새로 만든다", async () => {
+  it("탈퇴는 사유 없이 DELETE로 보내고 토큰을 지운 뒤 익명 ID를 새로 만든다", async () => {
     const cookies = stubDocumentCookie({
       [IDENTITY_COOKIES.accessToken]: jwtExpiringIn(600_000),
       [IDENTITY_COOKIES.refreshToken]: "refresh-1",
@@ -244,9 +244,10 @@ describe("authMutations", () => {
     });
     const { requests } = reply(() => success());
 
-    await run(authMutations.withdraw(queryClient), queryClient, "안 써요");
+    await run(authMutations.withdraw(queryClient), queryClient, undefined);
 
     expect(requests[0]).toMatchObject({ method: "delete", url: "/users/me" });
+    expect(requests[0].params).toBeUndefined();
     expect(cookies.get(IDENTITY_COOKIES.refreshToken)).toBeUndefined();
     const anonymousId = cookies.get(IDENTITY_COOKIES.anonymousId);
     expect(anonymousId).toMatch(

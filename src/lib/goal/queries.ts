@@ -24,7 +24,7 @@ export const goalQueries = {
 
 /**
  * 계정에 저장한 목표와 「목표 계정 저장」 동의 여부. 화면의 내 목표는 기기 목표(`useDeviceGoal`)다.
- * 비로그인·동의 안 함이면 늘 WEIGHT_LOSS로 답한다
+ * 비로그인·동의 안 함이면 저장한 값이 없어 대개 WEIGHT_LOSS로 답한다(v3 전 익명 기록에 목표가 있으면 그 값)
  */
 export function useMyGoal() {
   return useQuery(goalQueries.mine());

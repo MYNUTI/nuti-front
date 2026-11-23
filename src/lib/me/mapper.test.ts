@@ -36,13 +36,11 @@ describe("me mapper", () => {
   it("설정의 정책·고객센터 URL이 빠지면 null이다", () => {
     expect(
       toMeSettings({
-        clipboardLinkDetection: true,
         goal: { code: "WEIGHT_LOSS", label: "체중 감량" },
         policies: { privacyUrl: "https://nuti.example/privacy" },
         appVersion: "2.0.0-web",
       }),
     ).toEqual({
-      clipboardLinkDetection: true,
       goal: { goal: "WEIGHT_LOSS", label: "체중 감량" },
       privacyUrl: "https://nuti.example/privacy",
       termsUrl: null,
