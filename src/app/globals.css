@@ -19,6 +19,9 @@
   --brand-primary-weak: #f0ffe0;
   --brand-on-lime: #0d1a02;
   --brand-link: #2a7d06;
+  /* 【최종】 주 버튼 면. 검정이 기본, 라임은 온보딩 5장(0-3 · 0-3x · 0-4 · 0-4b · 1-5)만. 누른 색 변수는 디자인에 없다 */
+  --brand-button: #141516;
+  --brand-button-lime: #aff868;
   --accent-pink: #f0306b;
   --accent-pink-weak: #ffe8ef;
   --accent-pink-text: #c4104d;
@@ -230,6 +233,8 @@
   --color-brand-primary-weak: var(--brand-primary-weak);
   --color-brand-on-lime: var(--brand-on-lime);
   --color-brand-link: var(--brand-link);
+  --color-brand-button: var(--brand-button);
+  --color-brand-button-lime: var(--brand-button-lime);
   --color-accent-pink: var(--accent-pink);
   --color-accent-pink-weak: var(--accent-pink-weak);
   --color-accent-pink-text: var(--accent-pink-text);

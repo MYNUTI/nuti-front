@@ -38,7 +38,7 @@ export function IntroLayout({
         />
       </main>
       <BottomCta>
-        <Button className="flex-1" asChild>
+        <Button kind="lime" className="flex-1" asChild>
           <Link href={ctaHref}>{ctaLabel}</Link>
         </Button>
       </BottomCta>

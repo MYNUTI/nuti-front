@@ -280,8 +280,8 @@ export function ProductBottomBar({
           action={toast.action}
           className={
             count > 0
-              ? "bottom-[calc(65px+max(var(--safe-bottom),12px)+69px)]"
-              : "bottom-[calc(65px+max(var(--safe-bottom),12px)+8px)]"
+              ? "bottom-[calc(65px+max(var(--safe-bottom),12px)+73px)]"
+              : "bottom-[calc(65px+max(var(--safe-bottom),12px)+12px)]"
           }
         />
       )}

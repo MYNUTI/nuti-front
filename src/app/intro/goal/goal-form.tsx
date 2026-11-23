@@ -82,7 +82,7 @@ export function GoalForm({
         <p className="mt-3 px-5 text-body2 text-text-sub">{note}</p>
       </main>
       <BottomCta>
-        <Button className="flex-1" asChild>
+        <Button kind="lime" className="flex-1" asChild>
           <Link
             href={next ? `${next}?goal=${goal}` : `/home?goal=${goal}&guide=1`}
             // 제품 결과로 돌아갈 때는 1-5를 방문 기록에서 빼, 뒤로 가기 한 번에 들어온 화면으로 간다

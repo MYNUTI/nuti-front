@@ -160,11 +160,11 @@ export function PickList({
         <Toast
           key={toast.key}
           message={toast.message}
-          // 비교함 바(57 + 아래 여백) 위에 띄운다. 바가 없으면 화면 아래 기준(이 화면에는 탭 바가 없다)
+          // 비교함 바(57 + 아래 여백) 위 12에 띄운다(【최종】 3-2와 같은 간격). 바가 없으면 화면 아래 기준(이 화면에는 탭 바가 없다)
           className={
             compare.length > 0
-              ? "bottom-[calc(65px+max(var(--safe-bottom),12px))]"
-              : "bottom-[calc(max(var(--safe-bottom),12px)+8px)]"
+              ? "bottom-[calc(69px+max(var(--safe-bottom),12px))]"
+              : "bottom-[calc(max(var(--safe-bottom),12px)+12px)]"
           }
         />
       )}

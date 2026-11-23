@@ -43,7 +43,7 @@ export function TabBar() {
                 >
                   <span
                     data-guide="scan"
-                    className="absolute -top-6 left-1/2 flex size-14 -translate-x-1/2 items-center justify-center rounded-full bg-brand-primary text-brand-on-lime shadow-[0_4px_12px_0_rgba(31,122,99,0.28)]"
+                    className="absolute -top-6 left-1/2 flex size-14 -translate-x-1/2 items-center justify-center rounded-full bg-brand-button text-text-on-primary shadow-[0_4px_12px_0_rgba(31,122,99,0.28)]"
                   >
                     <Icon className="size-7" />
                   </span>

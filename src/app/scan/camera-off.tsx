@@ -105,7 +105,12 @@ export function CameraOff({
           <StepList steps={STEPS[browser]} />
         </div>
         <div className="px-5 pt-1 pb-5">
-          <Button type="button" className="w-full" onClick={onRetry}>
+          <Button
+            type="button"
+            kind="lime"
+            className="w-full"
+            onClick={onRetry}
+          >
             카메라 다시 켜기
           </Button>
         </div>

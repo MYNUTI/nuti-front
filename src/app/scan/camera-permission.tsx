@@ -64,7 +64,7 @@ export function CameraPermission({ onAllow }: { onAllow: () => void }) {
         >
           나중에 할게요
         </Button>
-        <Button type="button" className="flex-1" onClick={onAllow}>
+        <Button type="button" kind="lime" className="flex-1" onClick={onAllow}>
           카메라 허용하기
         </Button>
       </BottomCta>

@@ -4,9 +4,8 @@ import { Slot } from "radix-ui";
 import { cn } from "@/lib/utils";
 
 /*
- * v2/Button. 원본 컴포넌트는 기본 모드(초록)라 primary 글자가 흰색이지만,
- * v3 화면(CHIPS 모드)에서는 라임 위 글자를 on-lime, 옅은 면·글자 버튼의 글자를 link 색으로 덮어 쓴다.
- * 여기서는 v3 화면에 쓰인 색을 따른다.
+ * v2/Button. 【최종】 primary는 검정(brand/button) 면 + 흰 글자, 온보딩 5장(0-3 · 0-3x · 0-4 · 0-4b · 1-5)만
+ * lime(brand/button-lime) 면 + 짙은 글자. 옅은 면 · 글자 버튼의 글자는 link 색.
  */
 const buttonVariants = cva(
   "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-md whitespace-nowrap select-none disabled:pointer-events-none [&_svg]:shrink-0",
@@ -14,7 +13,8 @@ const buttonVariants = cva(
     variants: {
       kind: {
         primary:
-          "bg-brand-primary text-brand-on-lime active:bg-brand-primary-pressed disabled:bg-line-default disabled:text-text-disabled",
+          "bg-brand-button text-text-on-primary disabled:bg-line-default disabled:text-text-disabled",
+        lime: "bg-brand-button-lime text-brand-on-lime disabled:bg-line-default disabled:text-text-disabled",
         secondary:
           "bg-brand-primary-weak text-brand-link disabled:bg-line-default disabled:text-text-disabled",
         tertiary:
