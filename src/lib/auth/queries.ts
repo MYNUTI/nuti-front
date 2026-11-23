@@ -7,6 +7,8 @@ import {
 import { api } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/errors";
 import { rotateAnonymousId, saveTokens } from "@/lib/api/identity";
+import { clearDeviceGoal } from "@/lib/goal/device";
+import { applyAccountGoal } from "@/lib/goal/queries";
 import { clearTokensAfterRefresh } from "@/lib/api/refresh";
 import { postLogout, postOAuthLogin } from "@/lib/auth/api";
 import { toLoginResult } from "@/lib/auth/mapper";
@@ -46,9 +48,11 @@ export const authMutations = {
         // 익명 ID는 그대로 둔다. 서버가 기록 병합에 실패하면 다음 로그인 때 같은 ID로 다시 옮긴다
         return toLoginResult(dto);
       },
-      onSuccess: () => {
+      onSuccess: async () => {
         broadcastSession("login");
-        return invalidateUserQueries(queryClient);
+        await invalidateUserQueries(queryClient);
+        // 목표를 못 맞춰도 로그인은 끝난다. 기기 목표로 계속 본다
+        await applyAccountGoal(queryClient).catch(() => undefined);
       },
     }),
   /** 네트워크·5xx로 실패하면 쿠키를 그대로 둔다. 서버의 토큰이 남아 있어 로그인 상태로 다시 시도하게 한다 */
@@ -60,13 +64,23 @@ export const authMutations = {
         if (isSessionGone(error)) return endSession(queryClient);
       },
     }),
-  /** 화면 진입점이 정해지지 않아 훅은 두지 않는다. 기기는 처음 방문 상태로 돌아가야 해 익명 ID를 새로 만든다 */
+  /**
+   * 화면 진입점이 정해지지 않아 훅은 두지 않는다. 기기는 처음 방문 상태로 돌아가야 해(ACCT_008) 익명 ID를
+   * 새로 만들고 기기 목표도 지운다
+   */
   withdraw: (queryClient: QueryClient) =>
     mutationOptions({
       mutationFn: (reason?: string) => deleteUser(api, reason),
-      onSuccess: () => endSession(queryClient),
+      onSuccess: () => {
+        clearDeviceGoal();
+        return endSession(queryClient);
+      },
       onError: (error) => {
-        if (isSessionGone(error)) return endSession(queryClient);
+        if (!isSessionGone(error)) return;
+        // 계정이 이미 없거나 세션이 끝나 서버에서 지우지 못했어도 사용자는 탈퇴를 골랐다. 이 기기는 처음
+        // 방문 상태로 돌린다
+        clearDeviceGoal();
+        return endSession(queryClient);
       },
     }),
 };

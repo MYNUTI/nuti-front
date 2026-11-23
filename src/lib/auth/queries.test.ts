@@ -6,6 +6,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "@/lib/api/client";
 import { IDENTITY_COOKIES } from "@/lib/api/identity";
+import { DEVICE_GOAL_COOKIE } from "@/lib/goal/device";
 import { authMutations } from "@/lib/auth/queries";
 import { metaKeys } from "@/lib/me/keys";
 import { onboardingKeys } from "@/lib/onboarding/keys";
@@ -16,13 +17,7 @@ import {
   stubDocumentCookie,
   stubWebLocks,
 } from "@/test/browser";
-import {
-  failure,
-  jwtExpiringIn,
-  mockAdapter,
-  success,
-  type Reply,
-} from "@/test/http";
+import { failure, jwtExpiringIn, mockAdapter, success } from "@/test/http";
 
 const originalAdapter = api.defaults.adapter;
 
@@ -52,7 +47,7 @@ describe("authMutations", () => {
     vi.unstubAllGlobals();
   });
 
-  function reply(handler: () => Reply) {
+  function reply(handler: Parameters<typeof mockAdapter>[0]) {
     const mock = mockAdapter(handler);
     api.defaults.adapter = mock.adapter;
     return mock;
@@ -92,6 +87,46 @@ describe("authMutations", () => {
       false,
     );
     expect(channel.posted).toEqual([{ name: "nuti-session", data: "login" }]);
+  });
+
+  it("로그인 뒤 동의하고 계정에 저장한 목표가 있으면 기기 목표를 맞춘다", async () => {
+    const cookies = stubDocumentCookie({ [DEVICE_GOAL_COOKIE]: "WEIGHT_LOSS" });
+    reply(() =>
+      success({
+        accessToken: jwtExpiringIn(600_000),
+        refreshToken: "refresh-1",
+        newUser: false,
+        goal: "MUSCLE_GAIN",
+        label: "근육 증가",
+        goalAccountConsented: true,
+        appliedAt: "2026-11-20T10:00:00",
+      }),
+    );
+
+    await run(authMutations.login(queryClient), queryClient, {
+      provider: "KAKAO",
+      code: "code-1",
+    });
+    expect(cookies.get(DEVICE_GOAL_COOKIE)).toBe("MUSCLE_GAIN");
+  });
+
+  it("로그인 뒤 계정 목표를 못 받아도 로그인은 끝나고 기기 목표를 그대로 둔다", async () => {
+    const cookies = stubDocumentCookie({ [DEVICE_GOAL_COOKIE]: "WEIGHT_LOSS" });
+    const accessToken = jwtExpiringIn(600_000);
+    reply((config) =>
+      config.url === "/auth/oauth"
+        ? success({ accessToken, refreshToken: "refresh-1", newUser: false })
+        : failure(503, "INTERNAL_SERVER_ERROR"),
+    );
+
+    await expect(
+      run(authMutations.login(queryClient), queryClient, {
+        provider: "KAKAO",
+        code: "code-1",
+      }),
+    ).resolves.toMatchObject({ newUser: false });
+    expect(cookies.get(IDENTITY_COOKIES.accessToken)).toBe(accessToken);
+    expect(cookies.get(DEVICE_GOAL_COOKIE)).toBe("WEIGHT_LOSS");
   });
 
   it("로그인이 실패하면 토큰을 저장하지 않고 익명 ID를 남긴다", async () => {
@@ -202,5 +237,36 @@ describe("authMutations", () => {
     );
     expect(anonymousId).not.toBe("anon-1");
     expect(queryClient.getQueryData(savedKeys.list())).toBeUndefined();
+  });
+
+  it("탈퇴하면 기기 목표도 지워 처음 방문 상태로 돌린다. 로그아웃은 남긴다", async () => {
+    const cookies = stubDocumentCookie({
+      [IDENTITY_COOKIES.accessToken]: jwtExpiringIn(600_000),
+      [IDENTITY_COOKIES.refreshToken]: "refresh-1",
+      [DEVICE_GOAL_COOKIE]: "MUSCLE_GAIN",
+    });
+    reply(() => success(null));
+
+    await run(authMutations.logout(queryClient), queryClient, undefined);
+    expect(cookies.get(DEVICE_GOAL_COOKIE)).toBe("MUSCLE_GAIN");
+
+    await run(authMutations.withdraw(queryClient), queryClient, undefined);
+    expect(cookies.get(DEVICE_GOAL_COOKIE)).toBeUndefined();
+  });
+
+  it("탈퇴가 401이어도 이 기기는 처음 방문 상태로 돌린다", async () => {
+    const cookies = stubDocumentCookie({
+      [IDENTITY_COOKIES.accessToken]: jwtExpiringIn(600_000),
+      [IDENTITY_COOKIES.refreshToken]: "refresh-1",
+      [DEVICE_GOAL_COOKIE]: "MUSCLE_GAIN",
+    });
+    reply(() => failure(401, "UNAUTHORIZED"));
+
+    await run(
+      authMutations.withdraw(queryClient),
+      queryClient,
+      undefined,
+    ).catch(() => undefined);
+    expect(cookies.get(DEVICE_GOAL_COOKIE)).toBeUndefined();
   });
 });

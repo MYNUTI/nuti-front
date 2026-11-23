@@ -123,7 +123,7 @@ export function touchSessionId(): string {
 // 값은 Next `cookies()`와 같은 방식으로 인코딩한다(쓸 때 encodeURIComponent, 읽을 때 decodeURIComponent).
 // 같은 도메인의 다른 쿠키는 형식이 깨져 있을 수 있어 우리 쿠키만 디코딩한다.
 // 디코딩에 실패하면 Next `cookies()`처럼 없는 쿠키로 본다.
-function readCookie(name: string): string | null {
+export function readCookie(name: string): string | null {
   for (const pair of document.cookie.split(";")) {
     const separator = pair.indexOf("=");
     if (separator === -1 || pair.slice(0, separator).trim() !== name) continue;
@@ -138,11 +138,15 @@ function readCookie(name: string): string | null {
 
 // 속성은 `identity.server.ts`의 `nextWithIdentity`와 같아야 한다. Secure는 HTTPS에서만 붙여
 // http://localhost 개발에서도 쿠키가 저장되게 한다
-function writeCookie(name: string, value: string, maxAgeSeconds: number) {
+export function writeCookie(
+  name: string,
+  value: string,
+  maxAgeSeconds: number,
+) {
   const secure = location.protocol === "https:" ? "; Secure" : "";
   document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=${COOKIE_SAME_SITE}${secure}`;
 }
 
-function deleteCookie(name: string) {
+export function deleteCookie(name: string) {
   document.cookie = `${name}=; Path=/; Max-Age=0`;
 }

@@ -16,8 +16,9 @@ export function fetchMyGoal(http: AxiosInstance, signal?: AbortSignal) {
 }
 
 /**
- * 토큰·익명 ID가 모두 없으면 403 `CONSENT_REQUIRED`, 감량·근육증가인데 건강정보 동의가 없으면
- * 403 `HEALTH_CONSENT_REQUIRED`
+ * 계정 목표 저장. 로그인하지 않았으면 401, 「목표 계정 저장」에 동의하지 않았으면 403
+ * `GOAL_CONSENT_REQUIRED`(백엔드 `GoalService.requireGoalConsent`. Swagger 설명의 「동의는 필요 없습니다」는
+ * 소스와 다르다)
  */
 export function putMyGoal(http: AxiosInstance, body: GoalUpdateRequestDto) {
   return http

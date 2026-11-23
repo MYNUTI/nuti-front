@@ -25,13 +25,14 @@ function run<TData, TVariables>(
   return new MutationObserver(queryClient, options).mutate(variables);
 }
 
+// 계정 목표를 보여 주는 조회와 아직 계정 목표로 계산되는 목록(검색·저장). 상품 결과는 두 목표 점수를 함께 준다
 const goalDependent = [
   goalKeys.mine(),
   meKeys.summary(),
-  productKeys.detail("7"),
   searchKeys.result("두유"),
   savedKeys.list(),
 ];
+const goalIndependent = [productKeys.detail("7")];
 
 describe("meMutations.updateSettings", () => {
   let queryClient: QueryClient;
@@ -48,7 +49,11 @@ describe("meMutations.updateSettings", () => {
         appVersion: "2.0.0-web",
       }),
     ).adapter;
-    for (const key of [...goalDependent, onboardingKeys.bootstrap()])
+    for (const key of [
+      ...goalDependent,
+      ...goalIndependent,
+      onboardingKeys.bootstrap(),
+    ])
       queryClient.setQueryData(key, {});
   });
   afterEach(() => {
@@ -59,7 +64,7 @@ describe("meMutations.updateSettings", () => {
   const isInvalidated = (key: readonly unknown[]) =>
     queryClient.getQueryState(key)?.isInvalidated;
 
-  it("응답으로 설정 캐시를 바꾸고, 목표를 바꾸면 목표 기준 조회를 다시 부른다", async () => {
+  it("응답으로 설정 캐시를 바꾸고, 목표를 바꾸면 계정 목표를 보여 주는 조회를 다시 부른다", async () => {
     await run(meMutations.updateSettings(queryClient), queryClient, {
       goal: "MUSCLE_GAIN",
     });
@@ -69,6 +74,7 @@ describe("meMutations.updateSettings", () => {
     });
     expect(isInvalidated(onboardingKeys.bootstrap())).toBe(true);
     for (const key of goalDependent) expect(isInvalidated(key)).toBe(true);
+    for (const key of goalIndependent) expect(isInvalidated(key)).toBe(false);
   });
 
   it("링크 감지만 바꾸면 bootstrap만 다시 부른다", async () => {

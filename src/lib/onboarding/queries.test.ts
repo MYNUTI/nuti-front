@@ -146,7 +146,7 @@ describe("onboarding queries", () => {
     );
   });
 
-  it("건강정보 철회는 동의 상태를 바꾸고 목표에 딸린 조회(저장 목록 포함)를 다시 부른다", async () => {
+  it("건강정보 철회는 동의 상태를 바꾸고 계정 목표에 딸린 조회(저장 목록 포함)를 다시 부른다", async () => {
     reply(() => success({ healthConsented: false }));
     queryClient.setQueryData(productKeys.detail("7"), {});
     queryClient.setQueryData(goalKeys.mine(), {});
@@ -167,7 +167,7 @@ describe("onboarding queries", () => {
     });
     expect(
       queryClient.getQueryState(productKeys.detail("7"))?.isInvalidated,
-    ).toBe(true);
+    ).toBe(false);
     expect(
       queryClient.getQueryState(searchKeys.result("두유"))?.isInvalidated,
     ).toBe(true);

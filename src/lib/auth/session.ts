@@ -36,7 +36,7 @@ export function invalidateUserQueries(queryClient: QueryClient) {
 
 /**
  * 로그아웃·탈퇴·세션 만료 뒤. 이전 계정의 저장 목록 같은 개인 정보가 다시 불러오기 전까지 화면에 남지
- * 않게 캐시를 비운다. 열려 있는 상세는 다시 불러와 조회수가 1 오른다(목표 변경과 같이 감수)
+ * 않게 캐시를 비운다. 열려 있는 상세는 다시 불러와 조회수가 1 오른다(감수)
  */
 export function resetUserQueries(queryClient: QueryClient) {
   return Promise.all(

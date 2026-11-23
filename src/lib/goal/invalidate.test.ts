@@ -9,20 +9,22 @@ import { savedKeys } from "@/lib/saved/keys";
 import { searchKeys } from "@/lib/search/keys";
 
 describe("invalidateGoalDependents", () => {
-  it("목표 기준 등급과 목표를 보여 주는 조회만 다시 부른다", async () => {
+  it("계정 목표를 보여 주는 조회와 아직 계정 목표로 계산되는 목록만 다시 부른다", async () => {
     const queryClient = new QueryClient();
     const dependents = [
       goalKeys.mine(),
       meKeys.summary(),
       meKeys.settings(),
       onboardingKeys.bootstrap(),
-      productKeys.detail("7"),
-      productKeys.barcode("08801062633029"),
+      // 아직 계정 목표로 계산되는 목록(13-3 저장·검색에서 뺀다)
       searchKeys.result("두유"),
       savedKeys.list(),
     ];
-    // 목표와 상관없는 조회
+    // 계정 목표와 상관없는 조회. 상품 결과는 두 목표 점수를 함께 준다
     const unrelated = [
+      productKeys.detail("7"),
+      productKeys.barcode("08801062633029"),
+      productKeys.alternatives("7", "WEIGHT_LOSS"),
       meKeys.user(),
       metaKeys.policies(),
       onboardingKeys.healthConsent(),

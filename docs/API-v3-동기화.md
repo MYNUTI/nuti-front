@@ -28,7 +28,7 @@
 ## 큰 변화
 
 1. **익명 ID를 서버가 발급하지 않는다.** 기기가 첫 실행 때 UUID를 만들어 `X-Anonymous-Id`로 보낸다(bootstrap 설명). 지금은 개인정보 동의(`POST /onboarding/consent`) 응답으로 받는다(`identity.ts`의 「개인정보 동의 전에는 서버가 발급하지 않아 null」). 로그아웃 응답에도 새 익명 ID가 없다 — 새로 만들지는 클라이언트가 정한다(서버 추천: 새로 만든다). 탈퇴 뒤에는 새로 만든다
-2. **목표가 두 개다.** `GENERAL`이 없어지고 미설정·식별 없음은 `WEIGHT_LOSS`로 답한다. 화면(`diet`·`muscle`)과 개수가 맞는다. 목표 저장에 건강정보 동의가 필요 없다(403 `HEALTH_CONSENT_REQUIRED` 없음)
+2. **목표가 두 개다.** `GENERAL`이 없어지고 미설정·식별 없음은 `WEIGHT_LOSS`로 답한다. 화면(`diet`·`muscle`)과 개수가 맞는다. 화면의 목표는 기기에 둔다(v3 기능명세 ONB_004 · ACCT_002). 서버는 로그인하고 「목표 계정 저장」(`GOAL_ACCOUNT`)에 동의한 계정만 목표를 저장한다(로그인 아니면 401, 미동의 403 `GOAL_CONSENT_REQUIRED`. Swagger 설명 「동의는 필요 없습니다」는 소스와 다르다)
 3. **동의가 6항목으로 바뀌고 가입이 생겼다.** 필수 `AGE_14`·`TERMS`·`PRIVACY`, 선택 `GOAL_ACCOUNT`·`BODY_PROFILE`·`MARKETING`. 처음 로그인하면 계정을 만들지 않고 `signupRequired` + `signupToken`(30분)을 주고, `POST /auth/signup`으로 동의와 함께 가입한다. 개인정보·건강정보 동의 API와 온보딩 API는 없어졌다
 4. **상품 결과가 두 목표를 한 번에 준다.** 바코드·상세 모두 `ProductResultResponse` 하나로, 목표마다 점수·등급·한 줄 해석·좋은 점·아쉬운 점·더 맞는 제품 수(`goals[]`)와 성분별 100g당·1회 제공량 값(`nutrients[]`), 상태 5종, 쿠팡 구매 줄을 준다. 등급 근거 API(`grade-reason`)는 없어졌다
 5. **칼로리 구간(`kcalBand`)** 이 생겼다. 몸 정보(5-7)에 동의하고 저장한 계정만 저장한 구간(1,500·2,000·2,500·3,000), 그 밖은 2,000. 결과·검색·랭킹 응답에 함께 온다
@@ -73,11 +73,11 @@
 
 ### 목표 (`lib/goal`)
 
-| 지금                                           | v3                                                      | 조치                                          |
-| ---------------------------------------------- | ------------------------------------------------------- | --------------------------------------------- |
-| `Goal` = `GENERAL`·`WEIGHT_LOSS`·`MUSCLE_GAIN` | `WEIGHT_LOSS`·`MUSCLE_GAIN`                             | 수정. 다른 도메인 타입도 함께 바뀐다          |
-| `GET /me/goal` → `healthConsented`             | `goalAccountConsented`                                  | 수정                                          |
-| `PUT /me/goal`, 감량·근육은 동의 필요(403)     | 동의 필요 없음. 식별 없으면 400 `ANONYMOUS_ID_REQUIRED` | 수정. `useConsentGate`로 감쌀 이유가 없어진다 |
+| 지금                                           | v3                                                                                                  | 조치                                                                                                                                |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `Goal` = `GENERAL`·`WEIGHT_LOSS`·`MUSCLE_GAIN` | `WEIGHT_LOSS`·`MUSCLE_GAIN`                                                                         | 수정. 다른 도메인 타입도 함께 바뀐다                                                                                                |
+| `GET /me/goal` → `healthConsented`             | `goalAccountConsented`                                                                              | 수정                                                                                                                                |
+| `PUT /me/goal`, 감량·근육은 동의 필요(403)     | 계정 저장 전용. 로그인 아니면 401, 「목표 계정 저장」 미동의 403 `GOAL_CONSENT_REQUIRED`(소스 기준) | 수정(13-3). 화면 목표는 기기 쿠키(`useDeviceGoal`), 동의한 로그인 계정만 계정에도 저장(`useChangeGoal`). `useConsentGate` 대상 아님 |
 
 ### 저장 (`lib/saved`)
 
@@ -135,20 +135,20 @@
 
 `API-작업-플랜.md` 「12단계 상세」의 결정할 것과 API가 없는 값이 상당수 풀린다.
 
-| 항목                        | v3                                                                     |
-| --------------------------- | ---------------------------------------------------------------------- |
-| 결정 1 목표 값 대응         | 두 개로 맞는다. 1-5 목표 저장은 동의 없이 `PUT /me/goal`(식별만 필요)  |
-| 결정 2 점수 구간            | 그대로 남는다. 응답은 `score` + `grade`(A–E) + `label`                 |
-| 결정 3 영양성분 기준        | 풀림. `nutrients[].per100g`·`perServing`에 값·1일 기준치 %·단계가 온다 |
-| 결정 4 좋은 점·아쉬운 점    | 풀림. `goals[].goods`·`bads`(+ 없을 때 문구 `badsEmptyText`)           |
-| 분류·생산 중단·쿠팡 주소    | `category`, `state`·`stateLabel`, `purchase`                           |
-| 다른 목표로 미리 보기       | `goals[]`에 두 목표가 같이 온다                                        |
-| 더 맞는 제품                | `goals[].better`(수) + `GET /products/{id}/alternatives`(목록)         |
-| 내 몸에 맞춤                | `kcalBand` + `/me/body-profile`                                        |
-| 정보가 틀렸어요             | `POST /products/{id}/reports`                                          |
-| 3-1 바코드에 제품이 여러 개 | `outcome: MULTIPLE` + `candidates`                                     |
-| 같은 종류 중 순위           | 여전히 없다(결과 응답에 순위 없음. 랭킹 목록의 `rank`만 있다)          |
-| 홈 최근 본 제품 요약        | `GET /home`의 `viewedCount`·`requestCount`. 점수 구간별 개수는 없다    |
+| 항목                        | v3                                                                                                            |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| 결정 1 목표 값 대응         | 두 개로 맞는다. 1-5 목표는 기기에 저장한다(`useChangeGoal`). 계정에는 로그인 + 「목표 계정 저장」 동의일 때만 |
+| 결정 2 점수 구간            | 그대로 남는다. 응답은 `score` + `grade`(A–E) + `label`                                                        |
+| 결정 3 영양성분 기준        | 풀림. `nutrients[].per100g`·`perServing`에 값·1일 기준치 %·단계가 온다                                        |
+| 결정 4 좋은 점·아쉬운 점    | 풀림. `goals[].goods`·`bads`(+ 없을 때 문구 `badsEmptyText`)                                                  |
+| 분류·생산 중단·쿠팡 주소    | `category`, `state`·`stateLabel`, `purchase`                                                                  |
+| 다른 목표로 미리 보기       | `goals[]`에 두 목표가 같이 온다                                                                               |
+| 더 맞는 제품                | `goals[].better`(수) + `GET /products/{id}/alternatives`(목록)                                                |
+| 내 몸에 맞춤                | `kcalBand` + `/me/body-profile`                                                                               |
+| 정보가 틀렸어요             | `POST /products/{id}/reports`                                                                                 |
+| 3-1 바코드에 제품이 여러 개 | `outcome: MULTIPLE` + `candidates`                                                                            |
+| 같은 종류 중 순위           | 여전히 없다(결과 응답에 순위 없음. 랭킹 목록의 `rank`만 있다)                                                 |
+| 홈 최근 본 제품 요약        | `GET /home`의 `viewedCount`·`requestCount`. 점수 구간별 개수는 없다                                           |
 
 ## 고칠 순서 (제안)
 

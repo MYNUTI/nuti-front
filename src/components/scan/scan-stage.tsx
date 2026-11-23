@@ -18,7 +18,7 @@ import {
   ScanResultSheet,
 } from "@/components/scan/scan-result-sheet";
 import { toSheetProduct } from "@/components/scan/sheet-product";
-import { useMyGoal } from "@/lib/goal/queries";
+import { useDeviceGoal } from "@/lib/goal/device";
 import { useProductByBarcode } from "@/lib/product/queries";
 import type { ScanState } from "@/lib/scan/machine";
 import type { Gtin, ScanSource } from "@/lib/scan/types";
@@ -69,8 +69,8 @@ export function ScanStage({
   };
 
   const lookup = useProductByBarcode(gtin);
-  // 결과는 두 목표 점수를 함께 주고, 시트는 내 목표 점수를 보인다. 들어오자마자 불러 둔다
-  const myGoal = useMyGoal();
+  // 결과는 두 목표 점수를 함께 주고, 시트는 기기에 둔 내 목표 점수를 보인다. 고른 적이 없으면 다이어트 기준이다(ONB_008)
+  const goal = useDeviceGoal() ?? "WEIGHT_LOSS";
 
   const handleGtin = (value: Gtin, source: ScanSource) => {
     setGtin(value);
@@ -87,35 +87,23 @@ export function ScanStage({
   const scanned =
     lookup.data && "product" in lookup.data ? lookup.data.product : null;
   const goals = scanned?.goals;
-  // 내 목표는 점수 시트에만 필요하다. 목표 조회가 늦거나 실패해도 미등록·여러 개 같은 결과는 그대로 보인다
-  const needsGoal = Boolean(goals);
   // 3-1(읽힌 뒤 찾는 중). 디자인 메모: 결과가 오면 바로 3-2. 짧은 진동은 스캐너가 읽은 순간 낸다(use-scanner)
-  const finding =
-    gtin !== null && (lookup.isPending || (needsGoal && myGoal.isPending));
+  const finding = gtin !== null && lookup.isPending;
   const found =
-    scanned && goals && myGoal.data
-      ? toSheetProduct({ ...scanned, goals }, myGoal.data.goal)
-      : null;
+    scanned && goals ? toSheetProduct({ ...scanned, goals }, goal) : null;
   // 비교함 담기는 아직 화면 안 상태만 둔다(UI 플랜 「데이터」: 서버 변경이 필요한 동작)
   const [addedIds, setAddedIds] = useState<ReadonlySet<string>>(new Set());
 
   const renderSheet = () => {
     // 찾는 중 시트는 화면 아래에 따로 그린다(ScanFindingSheet)
-    if (gtin === null || lookup.isPending || (needsGoal && myGoal.isPending))
-      return null;
+    if (gtin === null || lookup.isPending) return null;
     // 앞자리가 0이 아닌 14자리(400 BAD_REQUEST)도 여기로 온다. 입력 단계에서 막지 않기로 했다(API 플랜 결정 기록 2026-11-19)
-    if (lookup.isError || (needsGoal && myGoal.isError)) {
+    if (lookup.isError) {
       return (
         <ScanMessageSheet
           title="상품 정보를 불러오지 못했어요"
           action={
-            <CtaButton
-              tone="secondary"
-              onClick={() => {
-                if (lookup.isError) lookup.refetch();
-                if (myGoal.isError) myGoal.refetch();
-              }}
-            >
+            <CtaButton tone="secondary" onClick={() => lookup.refetch()}>
               다시 시도
             </CtaButton>
           }
