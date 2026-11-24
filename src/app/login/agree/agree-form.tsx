@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useId, useRef, useState } from "react";
 
 import type { Goal } from "@/app/my/_fixtures";
+import { GOAL_LABEL } from "@/app/my/goals";
 import { BottomCta } from "@/components/common/bottom-cta";
 import { Button } from "@/components/common/button";
 import { CheckRow } from "@/components/common/check-row";
@@ -12,11 +13,6 @@ import {
   BodyConsentSheet,
   GoalSaveConsentSheet,
 } from "@/components/consent/consent-sheets";
-
-const GOAL_LABEL: Record<Goal, string> = {
-  diet: "다이어트",
-  muscle: "근육 증가",
-};
 
 const REQUIRED = ["age", "terms", "privacy"] as const;
 type RequiredKey = (typeof REQUIRED)[number];
@@ -86,7 +82,8 @@ export function AgreeForm({
 
   function start(body: boolean) {
     const params = new URLSearchParams();
-    if (goal) params.set("goal", goal);
+    // 목표가 없는 사람도 5-6c에서 「목표가 없을 때」로 보이게 none을 넘긴다
+    params.set("goal", goal ?? "none");
     if (checks.goalSave) params.set("save", "1");
     if (body) params.set("body", "1");
     // 다음 화면 위 알림 「(날짜) 마이뉴티 광고성 정보 수신에 동의했어요」(법 의무)

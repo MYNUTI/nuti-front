@@ -6,35 +6,13 @@ import { useRouter } from "next/navigation";
 import { SelectCard } from "@/components/common/select-card";
 
 import type { Goal } from "../_fixtures";
+import { GOAL_CARDS } from "../goals";
 import { withGoal } from "./next-path";
 
 /*
  * 5-2 목표 카드 2장. 1-5와 같은 카드 · 그림이지만 【최종】 5-2는 기본 모양(초록 동그라미 + 테두리)이고 설명 문장이 다르다.
  * 다른 카드를 누르면 「다음」 없이 바로 바꾼다(메모). 저장은 API 브랜치에서 붙인다. 지금은 돌아갈 화면에 목표를 주소로 넘긴다.
  */
-const GOALS = [
-  {
-    value: "diet",
-    title: "다이어트",
-    description: "100g당 칼로리가 낮을수록\n칼로리 항목 점수가 높아요",
-    image: "/intro/goal-diet.png",
-    size: 1020,
-  },
-  {
-    value: "muscle",
-    title: "근육 증가",
-    description: "단백질이 충분하면\n칼로리가 높을수록 좋아요",
-    image: "/intro/goal-muscle.png",
-    size: 840,
-  },
-] as const satisfies readonly {
-  value: Goal;
-  title: string;
-  description: string;
-  image: string;
-  size: number;
-}[];
-
 export function GoalPicker({ goal, next }: { goal: Goal; next?: string }) {
   const router = useRouter();
 
@@ -47,7 +25,7 @@ export function GoalPicker({ goal, next }: { goal: Goal; next?: string }) {
     // ph-no-capture: 화면 기록(PostHog)에서 고른 목표가 보이지 않게 통째로 가린다(1-5와 같음)
     <fieldset className="ph-no-capture flex flex-col gap-3 px-5">
       <legend className="sr-only">목표</legend>
-      {GOALS.map((g) => (
+      {GOAL_CARDS.map((g) => (
         <SelectCard
           key={g.value}
           name="goal"

@@ -11,14 +11,10 @@ import { TopBar, TopBarButton } from "@/components/common/top-bar";
 import { IconChevronRight, IconSearch, IconSettings } from "@/components/icons";
 
 import type { Goal, LoginProvider, MyAccount, MyInfo } from "./_fixtures";
+import { GOAL_LABEL } from "./goals";
 
 /** 들어올 때 띄울 알림 띠. body = 5-7b에서 맞춘 뒤, goal = 5-2에서 목표를 바꾼 뒤(previous로 되돌린다) */
 export type MyNotice = { kind: "body" } | { kind: "goal"; previous: Goal };
-
-const GOAL_LABEL: Record<Goal, string> = {
-  diet: "다이어트",
-  muscle: "근육 증가",
-};
 
 const PROVIDER_LABEL: Record<LoginProvider, string> = {
   kakao: "카카오",
