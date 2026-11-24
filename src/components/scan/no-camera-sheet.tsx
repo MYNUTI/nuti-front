@@ -2,16 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/common/button";
 import { BottomSheet } from "@/components/common/sheet";
-import {
-  detectCameraPlace,
-  type CameraPlace,
-} from "@/components/scan/camera-place";
 import { useImageBarcode } from "@/components/scan/scan-image-input";
 import { PhotoMissSheet } from "@/components/scan/scan-miss-sheet";
+import { useCameraPlace } from "@/components/scan/use-camera-place";
 import { cn } from "@/lib/utils";
 
 /**
@@ -19,15 +16,10 @@ import { cn } from "@/lib/utils";
  * 디자인 메모: 다른 브라우저로 열기 → 바깥 브라우저의 0-3 · 바코드 사진 올리기 → 3-2 · ✕ → 2-1 홈
  * 사진·번호로 찾으면 카메라 없이 쓰는 스캔 화면(/scan?gtin= · ?manual=1)에서 결과를 보인다.
  */
-// 기기 판별은 브라우저에서만 된다. 서버 렌더에서는 null이라 시트를 그리지 않는다
-let cachedPlace: CameraPlace | undefined;
-const subscribe = () => () => {};
-const getPlace = () => (cachedPlace ??= detectCameraPlace());
-const getServerPlace = () => null;
 
 export function NoCameraSheet({ closeHref }: { closeHref: string }) {
   const router = useRouter();
-  const place = useSyncExternalStore(subscribe, getPlace, getServerPlace);
+  const place = useCameraPlace();
   // 주소가 바뀌기 전에 먼저 닫아야 끌어 닫을 때 시트가 제자리로 튀지 않는다
   const [open, setOpen] = useState(true);
   // 사진을 못 읽으면 시트 위에 시트를 띄우지 않고 이 시트를 「사진에서 바코드를 못 읽었어요」로 바꾼다

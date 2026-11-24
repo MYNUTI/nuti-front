@@ -105,7 +105,7 @@ export function CategorySection() {
           href="/ranking?sheet=category"
           className="flex h-11 items-center px-4 text-[13px] font-medium text-brand-link"
         >
-          종류 전체 보기 <span aria-hidden>&nbsp;›</span>
+          종류 전체 보기<span aria-hidden>&nbsp;›</span>
         </Link>
       </div>
     </section>
