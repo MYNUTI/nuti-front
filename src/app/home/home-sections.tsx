@@ -125,7 +125,7 @@ export function PopularSection({
       <SectionHeader
         title="쿠팡에서 살 수 있는 제품"
         actionLabel="전체"
-        actionHref={`/ranking?seller=${encodeURIComponent("쿠팡")}`}
+        actionHref="/ranking?seller=COUPANG"
         description={
           // 【최종】 메모: 목표 → 5-2 목표 바꾸기
           <Link
@@ -145,14 +145,15 @@ export function PopularSection({
   );
 }
 
+// code는 순위 화면 주소 `?seller=`의 값(API `Seller`)
 const SELLERS = [
-  { slug: "coupang", name: "쿠팡" },
-  { slug: "cu", name: "CU" },
-  { slug: "gs25", name: "GS25" },
-  { slug: "seven-eleven", name: "세븐일레븐" },
-  { slug: "emart24", name: "이마트24" },
-  { slug: "oliveyoung", name: "올리브영" },
-  { slug: "kurly", name: "컬리" },
+  { slug: "coupang", code: "COUPANG", name: "쿠팡" },
+  { slug: "cu", code: "CU", name: "CU" },
+  { slug: "gs25", code: "GS25", name: "GS25" },
+  { slug: "seven-eleven", code: "SEVEN_ELEVEN", name: "세븐일레븐" },
+  { slug: "emart24", code: "EMART24", name: "이마트24" },
+  { slug: "oliveyoung", code: "OLIVE_YOUNG", name: "올리브영" },
+  { slug: "kurly", code: "KURLY", name: "컬리" },
 ];
 
 export function SellerSection() {
@@ -165,7 +166,7 @@ export function SellerSection() {
           {SELLERS.map((s) => (
             <Link
               key={s.slug}
-              href={`/ranking?seller=${encodeURIComponent(s.name)}`}
+              href={`/ranking?seller=${s.code}`}
               className="flex w-20 shrink-0 flex-col items-center gap-1.5"
             >
               <span className="flex size-20 items-center justify-center rounded-sm border border-line-default bg-bg-page">

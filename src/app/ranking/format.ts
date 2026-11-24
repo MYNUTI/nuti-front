@@ -2,7 +2,14 @@
  * 2-2 점수 순위의 글자 · 주소 값 다루기. `review/v3-rankings`의 `src/lib/ranking/format.ts`를 옮겼다
  * (API 연결 때 그 파일로 바꾼다).
  */
-import type { RankingCoverage, RankingGoal, RankingSort } from "./_fixtures";
+import {
+  NO_FILTERS,
+  type RankingCoverage,
+  type RankingFilters,
+  type RankingGoal,
+  type RankingSort,
+  type Seller,
+} from "./_fixtures";
 
 /** 화면에서 부르는 목표 이름. 서버 문구는 「체중 감량」이라 화면 이름을 따로 둔다 */
 export const RANKING_GOAL_LABEL: Record<RankingGoal, string> = {
@@ -44,16 +51,51 @@ export function parseRankingGoal(value: unknown): RankingGoal {
   return value === "muscle" ? "MUSCLE_GAIN" : "WEIGHT_LOSS";
 }
 
+/** 필터 시트 판매처 탭의 줄(【최종】 2-5b, 홈 「판매처별로 보기」와 같은 순서) */
+export const SELLER_OPTIONS: { value: Seller; label: string }[] = [
+  { value: "COUPANG", label: "쿠팡" },
+  { value: "CU", label: "CU" },
+  { value: "GS25", label: "GS25" },
+  { value: "SEVEN_ELEVEN", label: "세븐일레븐" },
+  { value: "EMART24", label: "이마트24" },
+  { value: "OLIVE_YOUNG", label: "올리브영" },
+  { value: "KURLY", label: "컬리" },
+];
+
+export const sellerLabel = (seller: Seller) =>
+  SELLER_OPTIONS.find((o) => o.value === seller)!.label;
+
+/** 주소의 `?seller=`(여러 번 올 수 있다)를 판매처로 읽는다. 모르는 값은 버리고 시트 순서로 둔다 */
+export function parseRankingSellers(value: unknown): Seller[] {
+  const values = Array.isArray(value) ? value : [value];
+  return SELLER_OPTIONS.map((o) => o.value).filter((s) => values.includes(s));
+}
+
 /**
- * 순위 화면 주소(`/ranking/[code]`, 칩이나 대분류 코드). 기본 정렬 · 다이어트 목표는 적지 않는다.
- * 【최종】 메모: 고른 정렬은 탭을 옮겨도 유지한다
+ * 고른 판매처 칩 글자: 하나면 그 이름, 여럿이면 「CU 외 1」. 고르지 않았으면 「판매처」.
+ * 여럿일 때 모양은 그림에 없어 임시로 정했다(남은 질문 32)
+ */
+export function sellerChipLabel(sellers: Seller[]): string {
+  if (sellers.length === 0) return "판매처";
+  const first = sellerLabel(sellers[0]);
+  return sellers.length === 1 ? first : `${first} 외 ${sellers.length - 1}`;
+}
+
+/**
+ * 순위 화면 주소(`/ranking/[code]`, 칩이나 대분류 코드). 기본 정렬 · 다이어트 목표 · 빈 필터는 적지 않는다.
+ * 【최종】 메모: 고른 정렬 · 필터는 탭을 옮겨도 유지한다
  */
 export function rankingHref(
   code: string,
-  { sort, goal }: { sort: RankingSort; goal: RankingGoal },
+  {
+    sort,
+    goal,
+    filters = NO_FILTERS,
+  }: { sort: RankingSort; goal: RankingGoal; filters?: RankingFilters },
 ): string {
   const params = new URLSearchParams();
   if (sort !== DEFAULT_RANKING_SORT) params.set("sort", sort);
+  for (const seller of filters.sellers) params.append("seller", seller);
   if (goal === "MUSCLE_GAIN") params.set("goal", "muscle");
   const query = params.toString();
   return `/ranking/${encodeURIComponent(code)}${query ? `?${query}` : ""}`;

@@ -17,6 +17,21 @@ export type RankingSort =
 
 export type RankingChip = { code: string; name: string };
 
+/** 판매처 7곳(API `Seller`). 지금 서버에 자료가 붙어 있는 곳은 쿠팡뿐이다 */
+export type Seller =
+  | "COUPANG"
+  | "CU"
+  | "GS25"
+  | "SEVEN_ELEVEN"
+  | "EMART24"
+  | "OLIVE_YOUNG"
+  | "KURLY";
+
+/** 필터(API `RankingFilters`). 탭 안 값끼리는 OR. 브랜드 · 영양성분은 07단계 뒤 순서에서 붙인다 */
+export type RankingFilters = { sellers: Seller[] };
+
+export const NO_FILTERS: RankingFilters = { sellers: [] };
+
 export type RankingMajor = {
   code: string;
   name: string;
@@ -347,6 +362,26 @@ const PRODUCTS: Record<string, FixtureProduct[]> = {
   ],
 };
 
+/*
+ * 제품마다 파는 곳. 적지 않은 제품은 쿠팡만. 【최종】 「필터 적용, 판매처」 그림처럼 프로틴바 · 간식에서 CU를 고르면 4개가 남게
+ * 몇 제품에 편의점을 더했다(서버는 지금 쿠팡 말고는 0개를 준다 — 그림 확인용 값)
+ */
+const SELLERS_BY_ID: Record<string, Seller[]> = {
+  "11": ["COUPANG", "CU", "GS25"],
+  "5": ["COUPANG", "CU"],
+  "3": ["COUPANG", "CU", "OLIVE_YOUNG"],
+  "4": ["COUPANG", "CU", "SEVEN_ELEVEN"],
+  r9003: ["COUPANG", "GS25", "EMART24"],
+  r9006: ["COUPANG", "KURLY"],
+  r9101: ["COUPANG", "KURLY"],
+};
+
+const sellersOf = (id: string): Seller[] => SELLERS_BY_ID[id] ?? ["COUPANG"];
+
+const matches = (product: FixtureProduct, filters: RankingFilters) =>
+  filters.sellers.length === 0 ||
+  sellersOf(product.id).some((s) => filters.sellers.includes(s));
+
 /** 대분류 15개(백엔드 분류 시드의 코드 · 이름 · 순서). 순위가 열린 칩은 앞의 두 대분류에만 둔다 */
 export const FIXTURE_MAJORS: RankingMajor[] = [
   {
@@ -415,12 +450,17 @@ const SORT_KEY: Record<RankingSort, (p: FixtureProduct) => number> = {
   SUGAR_LOW: (p) => p.per100.sugar,
 };
 
-/** 중분류 하나의 순위(`GET /rankings` 여러 쪽을 합친 모양). 순위는 그 정렬에서의 자리 */
+/**
+ * 중분류 하나의 순위(`GET /rankings` 여러 쪽을 합친 모양). 순위는 그 정렬 · 필터에서의 자리.
+ * 필터를 걸면 개수 줄은 남은 제품 수만 센다
+ */
 export function fixtureRanking(
   chipCode: string,
   sort: RankingSort,
+  filters: RankingFilters = NO_FILTERS,
 ): { items: RankedProduct[]; coverage: RankingCoverage } {
-  const products = PRODUCTS[chipCode] ?? [];
+  const all = PRODUCTS[chipCode] ?? [];
+  const products = all.filter((p) => matches(p, filters));
   const key = SORT_KEY[sort];
   const text = SORT_TEXT[sort];
   const items = products
@@ -430,10 +470,31 @@ export function fixtureRanking(
       const { per100, ...rest } = p;
       return { ...rest, rank: i + 1, sortText: text ? text(per100) : null };
     });
-  // 프로틴바 · 간식만 점수 없는 제품이 하나 더 있는 것으로 둬 「n개 중 m개 점수 있음」 꼴을 보인다
   const analyzed = products.length;
-  const total = chipCode === "01S4" ? analyzed + 1 : analyzed;
+  // 프로틴바 · 간식만 점수 없는 제품이 하나 더 있는 것으로 둬 「n개 중 m개 점수 있음」 꼴을 보인다
+  const total =
+    chipCode === "01S4" && products.length === all.length
+      ? analyzed + 1
+      : analyzed;
   return { items, coverage: { total, analyzed, updatedAt: UPDATED_AT } };
+}
+
+/**
+ * 필터 시트 값(`GET /rankings/filters`): 판매처마다 제품 수와 지금 고른 조건의 제품 수(「n개 제품 보기」).
+ * 판매처 수는 판매처 탭을 뺀 나머지 조건으로 센다(탭 안 값끼리 OR이라 서로 줄이지 않는다)
+ */
+export function fixtureFilterSheet(
+  chipCode: string,
+  filters: RankingFilters,
+): { count: number; sellers: Record<Seller, number> } {
+  const all = PRODUCTS[chipCode] ?? [];
+  const sellers = {} as Record<Seller, number>;
+  for (const p of all)
+    for (const s of sellersOf(p.id)) sellers[s] = (sellers[s] ?? 0) + 1;
+  return {
+    count: all.filter((p) => matches(p, filters)).length,
+    sellers,
+  };
 }
 
 /**

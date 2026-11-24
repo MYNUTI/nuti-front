@@ -21,6 +21,7 @@ import {
   rankingHref,
 } from "./format";
 import { readLastChip } from "./last-chip";
+import { FILTER_TAB_SCREEN } from "./ranking-filter-sheet";
 import {
   CriteriaRow,
   FilterChips,
@@ -110,7 +111,9 @@ export function RankingHome({
             onMajorClick={() => notBuilt.show("2-5f 식품 분류")}
           />
         </header>
-        <FilterChips onFilterClick={notBuilt.show} />
+        <FilterChips
+          onFilterClick={(tab) => notBuilt.show(FILTER_TAB_SCREEN[tab])}
+        />
         <CriteriaRow
           lines={[
             `${RANKING_GOAL_LABEL[goal]} 목표로 종류마다 1위`,

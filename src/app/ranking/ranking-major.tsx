@@ -7,11 +7,13 @@ import { TabBar } from "@/components/common/tab-bar";
 
 import {
   fixtureOverview,
+  type RankingFilters,
   type RankingGoal,
   type RankingMajor,
   type RankingSort,
 } from "./_fixtures";
 import { formatCoverage, RANKING_GOAL_LABEL, rankingHref } from "./format";
+import { FILTER_TAB_SCREEN } from "./ranking-filter-sheet";
 import {
   CriteriaRow,
   FilterChips,
@@ -35,12 +37,15 @@ export function RankingMajorAll({
   major,
   goal,
   sort,
+  filters,
   failed,
 }: {
   major: RankingMajor;
   goal: RankingGoal;
   /** 이 화면에는 정렬이 없지만 중분류 탭으로 옮길 때 고른 정렬을 잇는다 */
   sort: RankingSort;
+  /** 이 화면은 아직 필터를 걸지 않지만(07단계 뒤 순서) 중분류 탭으로 옮길 때 고른 필터를 잇는다 */
+  filters: RankingFilters;
   /** 미리 보기 `?state=error` */
   failed: boolean;
 }) {
@@ -54,7 +59,7 @@ export function RankingMajorAll({
     analyzed: groups.reduce((n, g) => n + g.coverage.analyzed, 0),
     updatedAt: groups[0]?.coverage.updatedAt ?? null,
   };
-  const hrefFor = (code: string) => rankingHref(code, { sort, goal });
+  const hrefFor = (code: string) => rankingHref(code, { sort, goal, filters });
 
   return (
     <>
@@ -71,7 +76,9 @@ export function RankingMajorAll({
             hrefFor={hrefFor}
           />
         </header>
-        <FilterChips onFilterClick={notBuilt.show} />
+        <FilterChips
+          onFilterClick={(tab) => notBuilt.show(FILTER_TAB_SCREEN[tab])}
+        />
         <CriteriaRow
           lines={[
             `${RANKING_GOAL_LABEL[goal]} 목표로 종류마다 상위 ${ROWS_PER_GROUP}개`,

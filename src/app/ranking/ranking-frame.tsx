@@ -9,7 +9,9 @@ import { TopBarButton } from "@/components/common/top-bar";
 import { IconSearch } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
-import type { RankingChip } from "./_fixtures";
+import { NO_FILTERS, type RankingChip, type RankingFilters } from "./_fixtures";
+import { sellerChipLabel } from "./format";
+import { FILTER_TAB_LABEL, type FilterTab } from "./ranking-filter-sheet";
 
 /*
  * 2-2 점수 순위의 틀 부품. `review/v3-rankings`의 `ranking-frame.tsx`를 옮겼다
@@ -171,36 +173,69 @@ export function GroupCard({
   );
 }
 
-/** 【최종】 2-2 필터 칩 3개(판매처 · 브랜드 · 영양성분). 누르면 필터 시트(2-5 · 2-5b)를 연다 */
-export const RANKING_FILTERS = [
-  { name: "판매처", screen: "2-5b 필터(판매처)" },
-  { name: "브랜드", screen: "2-5 필터(브랜드)" },
-  { name: "영양성분", screen: "2-5 필터(영양성분)" },
-];
-
+/*
+ * 【최종】 2-2 필터 칩 3개(판매처 · 브랜드 · 영양성분). 누르면 그 탭으로 필터 시트(2-5 · 2-5b)를 연다.
+ * 고른 필터가 있으면 그 칩은 초록(글자는 고른 값)이고 줄 끝에 「초기화」(【최종】 「필터 적용, 판매처」).
+ */
 export function FilterChips({
+  filters = NO_FILTERS,
   onFilterClick,
+  onReset,
+  sellerChipRef,
 }: {
-  onFilterClick: (screen: string) => void;
+  filters?: RankingFilters;
+  onFilterClick: (tab: FilterTab) => void;
+  onReset?: () => void;
+  /** 초기화하면 「초기화」가 사라지므로 포커스를 받을 판매처 칩 */
+  sellerChipRef?: React.Ref<HTMLButtonElement>;
 }) {
+  const chips: { tab: FilterTab; label: string; selected: boolean }[] = [
+    {
+      tab: "seller",
+      label: sellerChipLabel(filters.sellers),
+      selected: filters.sellers.length > 0,
+    },
+    { tab: "brand", label: "브랜드", selected: false },
+    { tab: "nutrient", label: "영양성분", selected: false },
+  ];
+  const any = chips.some((c) => c.selected);
+
   return (
-    <div className="flex gap-2 px-4 pt-2.5 pb-0.5">
-      {RANKING_FILTERS.map(({ name, screen }) => (
-        <Chip
-          key={name}
-          kind="dropdown"
-          aria-haspopup="dialog"
-          onClick={() => onFilterClick(screen)}
+    <div className="flex items-center gap-2 pt-2.5 pr-4 pb-0.5">
+      {/* 고른 값 글자가 길면 칩만 가로로 밀고 「초기화」는 오른쪽에 둔다(넘칠 때 그림 없음, 남은 질문 32) */}
+      <div className="flex min-w-0 flex-1 [scrollbar-width:none] gap-2 overflow-x-auto pl-4 [&::-webkit-scrollbar]:hidden">
+        {chips.map(({ tab, label, selected }) => (
+          <Chip
+            key={tab}
+            ref={tab === "seller" ? sellerChipRef : undefined}
+            kind="dropdown"
+            selected={selected}
+            aria-haspopup="dialog"
+            onClick={() => onFilterClick(tab)}
+          >
+            {selected && (
+              <span className="sr-only">{FILTER_TAB_LABEL[tab]}: </span>
+            )}
+            {label}
+          </Chip>
+        ))}
+      </div>
+      {any && onReset && (
+        <button
+          type="button"
+          onClick={onReset}
+          className="shrink-0 text-body2-medium text-text-sub"
         >
-          {name}
-        </Chip>
-      ))}
+          초기화
+          <span className="sr-only"> (필터)</span>
+        </button>
+      )}
     </div>
   );
 }
 
 /*
- * 07단계에서 차례로 붙일 화면(필터 시트 · 2-5f 식품 분류)으로 가는 버튼을 눌렀을 때의 알림.
+ * 07단계에서 차례로 붙일 화면(브랜드 · 영양성분 필터 · 대분류 화면의 필터 · 2-5f 식품 분류)으로 가는 버튼을 눌렀을 때의 알림.
  * 버튼 모양은 그림 그대로 두고, 그 화면을 붙이면 이 알림 대신 연결한다(그 브랜치의 검토용 알림과 같은 쓰임).
  */
 export function useNotBuiltNotice(

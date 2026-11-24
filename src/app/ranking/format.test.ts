@@ -1,13 +1,20 @@
 import { describe, expect, it } from "vitest";
 
-import { fixtureOverview, fixtureRanking, FIXTURE_MAJORS } from "./_fixtures";
+import {
+  fixtureFilterSheet,
+  fixtureOverview,
+  fixtureRanking,
+  FIXTURE_MAJORS,
+} from "./_fixtures";
 import {
   formatCoverage,
   formatUpdatedDate,
   parseRankingGoal,
+  parseRankingSellers,
   parseRankingShown,
   parseRankingSort,
   rankingHref,
+  sellerChipLabel,
 } from "./format";
 
 // `review/v3-rankings`의 `src/lib/ranking/format.test.ts`를 옮겼다(목표 값은 fixture 미리 보기 기준)
@@ -93,5 +100,39 @@ describe("랭킹 fixture", () => {
     expect(
       rankingHref("01", { sort: "PROTEIN_HIGH", goal: "MUSCLE_GAIN" }),
     ).toBe("/ranking/01?sort=PROTEIN_HIGH&goal=muscle");
+  });
+
+  it("판매처는 아는 값만 시트 순서로 읽고, 칩 글자는 하나면 이름 · 여럿이면 「외 n」", () => {
+    expect(parseRankingSellers(["GS25", "CU", "LOTTE"])).toEqual([
+      "CU",
+      "GS25",
+    ]);
+    expect(parseRankingSellers("COUPANG")).toEqual(["COUPANG"]);
+    expect(parseRankingSellers(undefined)).toEqual([]);
+    expect(sellerChipLabel([])).toBe("판매처");
+    expect(sellerChipLabel(["CU"])).toBe("CU");
+    expect(sellerChipLabel(["COUPANG", "CU", "GS25"])).toBe("쿠팡 외 2");
+  });
+
+  it("순위 주소에 판매처를 여러 번 적고, 필터를 걸면 그 안에서 순위를 다시 매긴다", () => {
+    expect(
+      rankingHref("01S4", {
+        sort: "SCORE",
+        goal: "WEIGHT_LOSS",
+        filters: { sellers: ["CU", "GS25"] },
+      }),
+    ).toBe("/ranking/01S4?seller=CU&seller=GS25");
+
+    const cu = fixtureRanking("01S4", "SCORE", { sellers: ["CU"] });
+    expect(cu.items).toHaveLength(4);
+    expect(cu.items.map((p) => p.rank)).toEqual([1, 2, 3, 4]);
+    expect(cu.coverage.total).toBe(4);
+
+    const sheet = fixtureFilterSheet("01S4", { sellers: ["CU"] });
+    expect(sheet.count).toBe(4);
+    expect(sheet.sellers.CU).toBe(4);
+    expect(sheet.sellers.COUPANG).toBe(
+      fixtureRanking("01S4", "SCORE").items.length,
+    );
   });
 });

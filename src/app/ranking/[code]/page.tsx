@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { findMajor, majorOf } from "../_fixtures";
 import {
   parseRankingGoal,
-  parseRankingShown,
+  parseRankingSellers,
   parseRankingSort,
 } from "../format";
 import { RankingList } from "../ranking-list";
@@ -25,6 +25,7 @@ export async function generateMetadata({
  * (API도 필터 시트의 `category`에 둘 다 받는다).
  * 주소 값: ?sort= — 고른 정렬(기본은 적지 않음. 대분류 전체는 탭을 옮길 때 잇기만 한다),
  * ?n= — 불러온 개수(12개 넘게 불러왔을 때만. 상세에서 뒤로 오면 되살린다),
+ * ?seller= — 고른 판매처(API 코드, 여럿이면 여러 번. 중분류 하나에서만 건다 — 대분류는 잇기만 하고 거는 것은 07단계 뒤 순서),
  * ?goal=muscle · ?state=error — 미리 보기
  */
 export default async function RankingCodePage({
@@ -32,7 +33,7 @@ export default async function RankingCodePage({
   searchParams,
 }: PageProps<"/ranking/[code]">) {
   const { code } = await params;
-  const { goal, sort, n, state } = await searchParams;
+  const { goal, sort, seller, state } = await searchParams;
 
   const major = findMajor(code);
   if (major)
@@ -41,6 +42,7 @@ export default async function RankingCodePage({
         major={major}
         goal={parseRankingGoal(goal)}
         sort={parseRankingSort(sort)}
+        filters={{ sellers: parseRankingSellers(seller) }}
         failed={state === "error"}
       />
     );
@@ -49,12 +51,10 @@ export default async function RankingCodePage({
   if (!majorOf(code)) notFound();
   return (
     <RankingList
-      // 다른 중분류로 옮기면 화면 상태(열린 시트 · 불러온 개수)를 새로 시작한다. 고른 정렬은 주소로 넘어온다
+      // 다른 중분류로 옮기면 화면 상태(열린 시트 · 불러온 개수)를 새로 시작한다. 정렬 · 필터 · 개수는 화면이 주소에서 읽는다
       key={code}
       code={code}
       goal={parseRankingGoal(goal)}
-      initialSort={parseRankingSort(sort)}
-      initialShown={parseRankingShown(n)}
       failed={state === "error"}
     />
   );
