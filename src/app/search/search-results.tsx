@@ -7,8 +7,8 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/common/button";
 import { ErrorState } from "@/components/common/empty-state";
 import { ProductCard } from "@/components/common/product-card";
-import { BottomSheet } from "@/components/common/sheet";
-import { IconCheck, IconChevronDown } from "@/components/icons";
+import { SortSheet } from "@/components/common/sort-sheet";
+import { IconChevronDown } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 import { particleWa } from "./hangul";
@@ -197,36 +197,16 @@ export function SearchResults({
         </Button>
       </div>
 
-      <BottomSheet open={sortOpen} onOpenChange={setSortOpen} title="정렬">
-        <ul className="-mx-5">
-          {SEARCH_SORTS.map((option) => {
-            const selected = option.value === sort;
-            return (
-              <li key={option.value}>
-                <button
-                  type="button"
-                  aria-pressed={selected}
-                  onClick={() => {
-                    // 【최종】 메모: 고르면 시트가 바로 닫히고 목록이 그 순서로(적용 버튼 없음)
-                    setSort(option.value);
-                    setShown(PAGE_SIZE);
-                    setSortOpen(false);
-                  }}
-                  className={cn(
-                    "flex h-14 w-full items-center gap-3 px-5 text-left",
-                    selected
-                      ? "text-body1-bold text-brand-link"
-                      : "text-body1 text-text-strong",
-                  )}
-                >
-                  <span className="min-w-0 flex-1">{option.label}</span>
-                  {selected && <IconCheck className="size-5" />}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </BottomSheet>
+      <SortSheet
+        open={sortOpen}
+        onOpenChange={setSortOpen}
+        options={SEARCH_SORTS}
+        value={sort}
+        onSelect={(next) => {
+          setSort(next);
+          setShown(PAGE_SIZE);
+        }}
+      />
     </>
   );
 }
