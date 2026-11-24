@@ -1,8 +1,10 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useSyncExternalStore } from "react";
 
+import { Button } from "@/components/common/button";
 import { EmptyState, ErrorState } from "@/components/common/empty-state";
 import { TabBar } from "@/components/common/tab-bar";
 
@@ -42,10 +44,13 @@ const noSubscribe = () => () => {};
 export function RankingHome({
   goal,
   failed,
+  noneOpen,
 }: {
   goal: RankingGoal;
   /** 미리 보기 `?state=error` */
   failed: boolean;
+  /** 미리 보기 `?state=empty` — 순위가 열린 종류가 하나도 없을 때 */
+  noneOpen: boolean;
 }) {
   const router = useRouter();
   const notBuilt = useNotBuiltNotice();
@@ -86,11 +91,15 @@ export function RankingHome({
     );
 
   // 중분류에 점수 있는 제품이 없으면 그 줄을 빼고, 줄이 하나도 없는 묶음은 뺀다
-  const groups = FIXTURE_MAJORS.map((major) => ({
-    major,
-    rows: fixtureOverview(major, 1).slice(0, ROWS_PER_GROUP),
-  })).filter((g) => g.rows.length > 0);
+  const groups = noneOpen
+    ? []
+    : FIXTURE_MAJORS.map((major) => ({
+        major,
+        rows: fixtureOverview(major, 1).slice(0, ROWS_PER_GROUP),
+      })).filter((g) => g.rows.length > 0);
   const updated = formatUpdatedDate(FIXTURE_UPDATED_AT);
+
+  if (!failed && groups.length === 0) return <NoneOpen />;
 
   return (
     <>
@@ -118,13 +127,6 @@ export function RankingHome({
               retryKind="secondary"
               className="rounded-md bg-white"
             />
-          ) : groups.length === 0 ? (
-            <EmptyState
-              // 【최종】 메모는 「순위가 열린 종류가 없을 때」 화면으로 보낸다(그림은 이 단계 뒤에 대조). 임시 문장
-              title="아직 순위가 열린 종류가 없어요"
-              description="종류마다 점수 있는 제품이 충분히 모이면 순위가 열려요."
-              className="rounded-md bg-white"
-            />
           ) : (
             groups.map(({ major, rows }) => (
               <GroupCard
@@ -150,6 +152,43 @@ export function RankingHome({
       </main>
       <TabBar />
       {notBuilt.element}
+    </>
+  );
+}
+
+/*
+ * 2-2 점수 순위(순위가 열린 종류가 없을 때, 【최종】 ⑥ 9846:19146) — 분석 완료 제품이 300개 이상인 종류가 없을 때
+ * (출시 직후 등). 제목 줄은 「랭킹」 + 검색만, 종류 버튼 · 필터 칩 · 기준 줄 없이 회색 면 가운데 빈 화면.
+ * 「바코드 찍기」는 3-1로 가고, 카메라 권한 안내(0-3)는 3-1이 맡는다.
+ */
+function NoneOpen() {
+  return (
+    <>
+      <main className="flex flex-1 flex-col bg-bg-page pb-[calc(57px+var(--safe-bottom))]">
+        <header className="sticky top-0 z-10 bg-bg-page pt-safe">
+          <RankingTitleBar major={null} />
+        </header>
+        <div className="flex-1 bg-bg-band px-5 pt-12 pb-5">
+          <EmptyState
+            title="아직 순위가 열린 종류가 없어요"
+            description={
+              "제품 이름으로 찾거나 바코드를 찍어\n점수를 볼 수 있어요."
+            }
+            actions={
+              <>
+                {/* 탭 화면이지만 【최종】 그림은 검정 주 버튼이다. 목록이 없어 이 버튼이 화면의 주 행동이라 secondary로 낮추지 않는다 */}
+                <Button kind="primary" size="M" asChild>
+                  <Link href="/search">이름으로 찾기</Link>
+                </Button>
+                <Button kind="tertiary" size="M" asChild>
+                  <Link href="/scan">바코드 찍기</Link>
+                </Button>
+              </>
+            }
+          />
+        </div>
+      </main>
+      <TabBar />
     </>
   );
 }

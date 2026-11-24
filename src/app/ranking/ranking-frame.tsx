@@ -26,24 +26,27 @@ export function RankingTitleBar({
 }: {
   /** 고른 대분류 이름. 없으면 고르지 않은 모양(「종류」) */
   major: string | null;
-  onMajorClick: () => void;
+  /** 없으면 대분류 버튼을 숨긴다(순위가 열린 종류가 없을 때) */
+  onMajorClick?: () => void;
 }) {
   return (
     <div className="flex h-13 items-center bg-bg-page pr-2 pl-5">
       <h1 className="text-title1 text-text-strong">랭킹</h1>
-      <Chip
-        kind="dropdown"
-        aria-haspopup="dialog"
-        onClick={onMajorClick}
-        className={cn(
-          "ml-3 min-w-0",
-          // 고른 대분류: 테두리 없이 #2b3036 면 + 흰 굵은 글자. 공통 Chip의 고른 모양(옅은 연두)과 달라 여기서 덮어 쓴다
-          major &&
-            "border-transparent bg-text-body text-body2-bold text-white [&_svg]:text-white",
-        )}
-      >
-        <span className="truncate">{major ?? "종류"}</span>
-      </Chip>
+      {onMajorClick && (
+        <Chip
+          kind="dropdown"
+          aria-haspopup="dialog"
+          onClick={onMajorClick}
+          className={cn(
+            "ml-3 min-w-0",
+            // 고른 대분류: 테두리 없이 #2b3036 면 + 흰 굵은 글자. 공통 Chip의 고른 모양(옅은 연두)과 달라 여기서 덮어 쓴다
+            major &&
+              "border-transparent bg-text-body text-body2-bold text-white [&_svg]:text-white",
+          )}
+        >
+          <span className="truncate">{major ?? "종류"}</span>
+        </Chip>
+      )}
       <TopBarButton asChild className="ml-auto">
         <Link href="/search" aria-label="검색">
           <IconSearch />
