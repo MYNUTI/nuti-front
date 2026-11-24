@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  fixtureBrandList,
   fixtureFilterSheet,
   fixtureOverview,
   fixtureRanking,
@@ -11,6 +12,8 @@ import {
   formatUpdatedDate,
   parseRankingGoal,
   brandChipLabel,
+  brandIndexLetter,
+  groupBrandsByLetter,
   parseRankingBrands,
   parseRankingSellers,
   parseRankingShown,
@@ -179,6 +182,44 @@ describe("랭킹 fixture", () => {
       }),
     ).toBe(
       "/ranking/01S4?seller=CU&brand=%EB%A7%88%EC%9D%B4%ED%94%84%EB%A1%9C%ED%8B%B4",
+    );
+  });
+
+  it("2-5e 가나다 머리: 초성(겹자음은 홑자음) · 영문은 A–Z · 그 밖은 #, 머리 안은 가나다순", () => {
+    expect(brandIndexLetter("마이프로틴")).toBe("ㅁ");
+    expect(brandIndexLetter("쌀과자")).toBe("ㅅ");
+    expect(brandIndexLetter("Dr.You")).toBe("A–Z");
+    expect(brandIndexLetter("365일")).toBe("#");
+    const groups = groupBrandsByLetter(
+      [
+        "칼만스",
+        "Dr.You",
+        "미트리",
+        "마이프로틴",
+        "커클랜드 시그니처",
+        "농심",
+        "365일",
+      ].map((name) => ({ name })),
+    );
+    expect(groups.map((g) => g.letter)).toEqual(["ㄴ", "ㅁ", "ㅋ", "A–Z", "#"]);
+    expect(groupBrandsByLetter([])).toEqual([]);
+    expect(groups[1].brands.map((b) => b.name)).toEqual([
+      "마이프로틴",
+      "미트리",
+    ]);
+    expect(groups[2].brands.map((b) => b.name)).toEqual([
+      "칼만스",
+      "커클랜드 시그니처",
+    ]);
+  });
+
+  it("2-5e 목록은 판매처와 상관없이 그 종류의 전체 브랜드(「제조 ○○」 포함)", () => {
+    const list = fixtureBrandList("01S4");
+    expect(list.map((b) => b.name)).toContain("제조 씨알푸드");
+    expect(list.find((b) => b.name === "마이프로틴")?.count).toBe(3);
+    expect(list).toHaveLength(
+      fixtureFilterSheet("01S4", { sellers: [], brands: [] }).brands
+        .totalBrands,
     );
   });
 });

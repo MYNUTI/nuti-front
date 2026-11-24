@@ -15,6 +15,7 @@ import { IconChevronDown } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 import {
+  fixtureBrandList,
   fixtureFilterSheet,
   fixtureRanking,
   majorOf,
@@ -294,8 +295,12 @@ export function RankingList({
           open
           onOpenChange={(open) => !open && setFilterTab(null)}
           tab={filterTab}
+          categoryName={
+            major?.chips.find((chip) => chip.code === code)?.name ?? ""
+          }
           applied={filters}
           sheetFor={(draft) => fixtureFilterSheet(code, draft)}
+          brandList={fixtureBrandList(code)}
           onApply={applyFilters}
         />
       )}

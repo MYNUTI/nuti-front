@@ -486,6 +486,19 @@ export function fixtureRanking(
   return { items, coverage: { total, analyzed, updatedAt: UPDATED_AT } };
 }
 
+/**
+ * 2-5e 브랜드 더 보기 목록(`GET /rankings/brands`): 그 종류의 전체 브랜드(「제조 ○○」 포함)와 제품 수.
+ * API는 분류 · 찾는 글자(`q`)만 받아 판매처 등 다른 필터를 반영하지 않는다(남은 질문 35)
+ */
+export function fixtureBrandList(
+  chipCode: string,
+): { name: string; count: number }[] {
+  const counts = new Map<string, number>();
+  for (const p of PRODUCTS[chipCode] ?? [])
+    if (p.brand) counts.set(p.brand, (counts.get(p.brand) ?? 0) + 1);
+  return [...counts].map(([name, count]) => ({ name, count }));
+}
+
 /** 2-5 메모: 브랜드 탭에는 많이 만드는 브랜드 8개까지. 나머지는 「브랜드 더 보기」(2-5e) */
 const TOP_BRANDS = 8;
 

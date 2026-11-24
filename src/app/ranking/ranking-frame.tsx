@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { CheckboxMark } from "@/components/common/check-mark";
 import { Chip } from "@/components/common/chip";
 import { Toast } from "@/components/common/toast";
 import { TopBarButton } from "@/components/common/top-bar";
@@ -278,4 +279,37 @@ export function useNotBuiltNotice(
       />
     ),
   };
+}
+
+/** 체크 + 이름 + 제품 수 한 줄(줄 전체를 누른다) */
+export function CheckLine({
+  label,
+  count,
+  checked,
+  onChange,
+}: {
+  label: string;
+  count: number;
+  checked: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <li>
+      <label className="flex cursor-pointer items-center gap-3 py-3 pr-5 pl-5">
+        <input
+          type="checkbox"
+          className="peer sr-only"
+          checked={checked}
+          onChange={onChange}
+        />
+        <CheckboxMark className="peer-focus-visible:rounded-[6px] peer-focus-visible:outline-2 peer-focus-visible:outline-text-strong" />
+        <span className="min-w-0 flex-1 text-body1 text-text-body">
+          {label}
+        </span>
+        <span className="shrink-0 text-body2 text-text-sub">
+          {count.toLocaleString("ko-KR")}개
+        </span>
+      </label>
+    </li>
+  );
 }

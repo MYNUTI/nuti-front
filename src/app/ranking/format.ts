@@ -2,6 +2,8 @@
  * 2-2 점수 순위의 글자 · 주소 값 다루기. `review/v3-rankings`의 `src/lib/ranking/format.ts`를 옮겼다
  * (API 연결 때 그 파일로 바꾼다).
  */
+import { toChosung } from "../search/hangul";
+
 import {
   NO_FILTERS,
   type RankingCoverage,
@@ -124,6 +126,45 @@ export function brandChipLabel(brands: string[]): string {
   return chars.length > BRAND_CHIP_MAX
     ? `${chars.slice(0, BRAND_CHIP_MAX).join("")}…`
     : brands[0];
+}
+
+// 겹자음은 사전처럼 홑자음 머리에 넣는다(ㄲ → ㄱ)
+const DOUBLE_CONSONANT: Record<string, string> = {
+  ㄲ: "ㄱ",
+  ㄸ: "ㄷ",
+  ㅃ: "ㅂ",
+  ㅆ: "ㅅ",
+  ㅉ: "ㅈ",
+};
+const HANGUL_LETTERS = [..."ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ"];
+// 그림에는 한글 머리만 있다. 영문 · 숫자로 시작하는 브랜드는 한글 뒤 「A–Z」 · 「#」 머리로 둔다(남은 질문 35)
+const LATIN_LETTER = "A–Z";
+const OTHER_LETTER = "#";
+const koCollator = new Intl.Collator("ko");
+
+/** 2-5e 가나다 머리 글자: 한글이면 첫 글자의 초성(겹자음은 홑자음), 영문이면 「A–Z」, 그 밖은 「#」 */
+export function brandIndexLetter(name: string): string {
+  const first = toChosung(name.trim().normalize("NFC"))[0] ?? "";
+  if (HANGUL_LETTERS.includes(first) || first in DOUBLE_CONSONANT)
+    return DOUBLE_CONSONANT[first] ?? first;
+  return /[a-z]/i.test(first) ? LATIN_LETTER : OTHER_LETTER;
+}
+
+/** 2-5e 브랜드 목록을 가나다 머리로 묶는다. 머리는 ㄱ~ㅎ · A–Z · # 순, 머리 안은 가나다순 */
+export function groupBrandsByLetter<T extends { name: string }>(
+  brands: T[],
+): { letter: string; brands: T[] }[] {
+  const order = [...HANGUL_LETTERS, LATIN_LETTER, OTHER_LETTER];
+  const groups = new Map<string, T[]>();
+  for (const brand of [...brands].sort((a, b) =>
+    koCollator.compare(a.name, b.name),
+  )) {
+    const letter = brandIndexLetter(brand.name);
+    groups.set(letter, [...(groups.get(letter) ?? []), brand]);
+  }
+  return order
+    .filter((letter) => groups.has(letter))
+    .map((letter) => ({ letter, brands: groups.get(letter)! }));
 }
 
 /**
