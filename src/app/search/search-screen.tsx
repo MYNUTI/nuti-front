@@ -14,9 +14,12 @@ import { cn } from "@/lib/utils";
 import {
   FIXTURE_POPULAR_KEYWORDS,
   fixtureSuggestions,
+  type SearchSort,
   type Suggestion,
 } from "./_fixtures";
 import { particleRo } from "./hangul";
+import { PAGE_SIZE } from "./result-params";
+import { SearchResults } from "./search-results";
 import {
   addRecent,
   clearRecent,
@@ -28,11 +31,25 @@ import {
  * 2-3 검색(【최종】 ⑥ 9306:17337 · 처음 19033 · 입력 중 17389).
  * 검색칸에 커서가 들어간 채로 열린다. 비어 있으면 최근 검색어(있을 때) + 인기 검색어, 글자를 넣으면 자동완성.
  * 찾은 말은 최근 검색어에 남기고 2-4 검색 결과(`/search?q=`)로 간다. ‹ → 이전 화면.
+ * 같은 주소에서 검색어가 있으면 2-4 검색 결과를 보이고, 검색칸을 누르면 2-3(입력 중)으로 바뀐다.
  * 【최종】 메모: 0-3에서 왔어도 검색칸 아래에 안내 문장은 띄우지 않는다.
  */
-export function SearchScreen({ initialQuery }: { initialQuery: string }) {
+export function SearchScreen({
+  initialQuery,
+  initialSort = "score",
+  initialShown = PAGE_SIZE,
+  failed = false,
+}: {
+  initialQuery: string;
+  initialSort?: SearchSort;
+  initialShown?: number;
+  /** 2-4 미리 보기 `?state=error` */
+  failed?: boolean;
+}) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
+  // 검색어 없이 열면(2-3) 바로 입력, 검색어로 열면(2-4) 결과를 보이다가 검색칸을 누르면 입력으로
+  const [editing, setEditing] = useState(initialQuery === "");
   const trimmed = query.trim();
   const typing = trimmed.length > 0;
   const suggestions = fixtureSuggestions(trimmed);
@@ -44,6 +61,13 @@ export function SearchScreen({ initialQuery }: { initialQuery: string }) {
     const w = word.trim();
     if (!w) return;
     addRecent(w);
+    // 지금 결과와 같은 말이면 주소를 다시 쌓지 않고 결과로 돌아간다
+    if (w === initialQuery) {
+      setQuery(w);
+      setEditing(false);
+      inputRef.current?.blur();
+      return;
+    }
     router.push(`/search?q=${encodeURIComponent(w)}`);
   };
 
@@ -64,12 +88,14 @@ export function SearchScreen({ initialQuery }: { initialQuery: string }) {
             placeholder="제품, 브랜드, 종류로 검색"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
+            onFocus={() => setEditing(true)}
             onClear={() => {
               setQuery("");
+              setEditing(true);
               focusInput();
             }}
-            // 【최종】 메모: 검색창에 커서가 들어간 채로 열린다
-            autoFocus
+            // 【최종】 메모: 2-3은 검색창에 커서가 들어간 채로 열린다(2-4 결과는 아님)
+            autoFocus={editing}
             className="h-11"
           />
         </form>
@@ -78,20 +104,37 @@ export function SearchScreen({ initialQuery }: { initialQuery: string }) {
         <h1 className="sr-only">검색</h1>
         {/* 자동완성이 바뀌면 화면 읽기 프로그램에 알린다. 영역이 먼저 있어야 읽으므로 늘 둔다 */}
         <p role="status" className="sr-only">
-          {trimmed.length > 1
+          {editing && trimmed.length > 1
             ? suggestions.length > 0
               ? `자동완성 ${suggestions.length}개`
               : "자동완성 없음"
             : ""}
         </p>
-        {typing ? (
-          <Suggestions query={trimmed} items={suggestions} onSearch={search} />
-        ) : (
-          <>
-            <RecentSection onSearch={search} onRemoved={focusInput} />
-            <PopularSection onSearch={search} />
-          </>
+        {initialQuery && (
+          // 검색칸을 눌러도 결과를 지우지 않고 숨겨 두어 같은 말로 돌아오면 정렬 · 불러온 개수가 남는다
+          <div hidden={editing} className="flex flex-1 flex-col">
+            <SearchResults
+              query={initialQuery}
+              initialSort={initialSort}
+              initialShown={initialShown}
+              active={!editing}
+              failed={failed}
+            />
+          </div>
         )}
+        {editing &&
+          (typing ? (
+            <Suggestions
+              query={trimmed}
+              items={suggestions}
+              onSearch={search}
+            />
+          ) : (
+            <>
+              <RecentSection onSearch={search} onRemoved={focusInput} />
+              <PopularSection onSearch={search} />
+            </>
+          ))}
       </main>
     </div>
   );
