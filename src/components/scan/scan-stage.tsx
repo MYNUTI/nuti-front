@@ -3,8 +3,15 @@
 import { skipToken, useQuery } from "@tanstack/react-query";
 import { useEffect, useEffectEvent, useState } from "react";
 import Link from "next/link";
+import { useGoBack } from "@/components/common/back-button";
 import { CtaButton } from "@/components/common/cta-button";
 import { Skeleton } from "@/components/common/skeleton";
+import { CompareFullSheet } from "@/components/compare/compare-full-sheet";
+import {
+  addToCompare,
+  useCompare,
+  type CompareItem,
+} from "@/components/compare/compare-store";
 import { TopBar, TopBarButton } from "@/components/common/top-bar";
 import { IconClose, IconHash, IconImage, IconSearch } from "@/components/icons";
 import { BarcodeScan } from "@/components/scan/barcode-scan";
@@ -62,6 +69,7 @@ export function ScanStage({
   const [source, setSource] = useState<ScanSource>("photo");
   const [photoMissOpen, setPhotoMissOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(initialManualOpen);
+  const goBack = useGoBack("/home");
   const [slow, setSlow] = useState(false);
   const [missOpen, setMissOpen] = useState(false);
   // 시트를 닫고 다시 비출 때마다 올려 시간을 처음부터 다시 센다
@@ -77,7 +85,14 @@ export function ScanStage({
     queryFn: gtin ? ({ signal }) => lookupProduct(gtin, signal) : skipToken,
   });
 
+  // 비교함은 3-2·3-4와 같은 저장소를 쓴다(화면 사이에 유지 — UI 플랜 결정 2026-11-21)
+  const compare = useCompare();
+  // 꽉 찼을 때 담으려던 제품(3-4 비교함이 다 찼을 때 시트)
+  const [pending, setPending] = useState<CompareItem | null>(null);
+
   const handleGtin = (value: Gtin, source: ScanSource) => {
+    // 다른 제품을 읽었으면 그 전 제품을 담으려던 「비교함이 다 찼어요」 시트는 맞지 않는다(시트 뒤에서도 카메라는 돈다)
+    if (value !== gtin) setPending(null);
     setGtin(value);
     setSource(source);
     setPhotoMissOpen(false);
@@ -93,8 +108,14 @@ export function ScanStage({
   const finding = gtin !== null && lookup.isPending;
   const found =
     lookup.data?.status === "found" ? toSheetProduct(lookup.data.result) : null;
-  // 비교함 담기는 아직 화면 안 상태만 둔다(UI 플랜 「데이터」: 서버 변경이 필요한 동작)
-  const [addedIds, setAddedIds] = useState<ReadonlySet<string>>(new Set());
+  const addFound = (product: ScanSheetProduct) => {
+    const item = {
+      id: product.id,
+      name: product.name,
+      image: product.imageUrl,
+    };
+    if (addToCompare(item) === "full") setPending(item);
+  };
 
   const renderSheet = () => {
     // 찾는 중 시트는 화면 아래에 따로 그린다(ScanFindingSheet)
@@ -139,6 +160,11 @@ export function ScanStage({
       <p role="status" className="sr-only">
         {found && `${found.name}, ${found.score}점`}
       </p>
+      <CompareFullSheet
+        key={pending?.id}
+        pending={pending}
+        onClose={() => setPending(null)}
+      />
       <BarcodeScan
         className="flex-1"
         cameraOff={cameraOff}
@@ -150,15 +176,13 @@ export function ScanStage({
               state.reason === "permission-denied" && (
                 <OnMount run={onPermissionDenied} />
               )}
-            {/* 디자인 메모: ✕ → 2-1 홈 */}
+            {/* 【최종】 메모: ✕ → 카메라를 열기 전 화면 */}
             <TopBar
               tone="dark"
               className="absolute inset-x-0 top-0"
               right={
-                <TopBarButton asChild aria-label="닫기">
-                  <Link href="/home">
-                    <IconClose />
-                  </Link>
+                <TopBarButton aria-label="닫기" onClick={goBack}>
+                  <IconClose />
                 </TopBarButton>
               }
             />
@@ -201,9 +225,9 @@ export function ScanStage({
                 // 카메라가 읽고 있을 때만 디자인대로 화면 아래에 붙인다. 카메라가 안 읽는 단계(사진·번호·점유 중)에서는
                 // 다른 제품을 더 찾을 아래 버튼 줄을 가리지 않게 카메라 자리 안에 띄운다(UI 플랜 「남은 질문」 6)
                 placement={cameraReading(state) ? "bottom" : "inline"}
-                added={addedIds.has(found.id)}
-                compareCount={addedIds.size}
-                onAdd={() => setAddedIds((ids) => new Set(ids).add(found.id))}
+                added={compare.some((item) => item.id === found.id)}
+                compareCount={compare.length}
+                onAdd={() => addFound(found)}
               />
             )}
           </>
@@ -220,16 +244,17 @@ export function ScanStage({
             )}
           >
             {photo.input}
+            {/* 【최종】 메모: 어느 화면에서나 「바코드 번호 입력 → 바코드 사진 올리기 → 이름으로 찾기」 */}
+            <ScanAction icon={<IconHash />} onClick={() => setManualOpen(true)}>
+              바코드 번호 입력
+            </ScanAction>
             <ScanAction
               icon={<IconImage />}
               // WASM이 죽었으면 사진도 읽을 수 없다.
               disabled={state.stage === "manual" || photo.reading}
               onClick={photo.open}
             >
-              {photo.reading ? "읽는 중…" : "사진 올리기"}
-            </ScanAction>
-            <ScanAction icon={<IconHash />} onClick={() => setManualOpen(true)}>
-              바코드 번호 입력
+              {photo.reading ? "읽는 중…" : "바코드 사진 올리기"}
             </ScanAction>
             {/* 디자인 메모: 이름으로 찾기 → 2-3 검색 */}
             <ScanAction icon={<IconSearch />} href="/search">
@@ -378,7 +403,7 @@ function cameraReading(state: ScanState) {
   return state.stage === "camera" && state.retryable === null;
 }
 
-// 목 등급 A–E를 점수 구간 1(잘 맞음)~5(안 맞음)로. 실제 API도 등급 글자를 주므로 같은 대응을 쓴다
+// 목 등급 A–E를 점수 구간 1(매우 높음)~5(매우 낮음)로. 실제 API도 등급 글자를 주므로 같은 대응을 쓴다
 const GRADE_BAND = { A: 1, B: 2, C: 3, D: 4, E: 5 } as const;
 
 /** 목 조회 결과 → 결과 시트 모양. 목에 없는 값은 fixture로 채운다(_fixtures.ts) */

@@ -14,28 +14,27 @@ export default function Page() {
     <IntroLayout
       top={<TopBar left={<BackButton fallbackHref="/intro" />} />}
       visual={
-        // 디자인 「추천 카드」(11-03, 옛 그림 대신)를 PNG 3배로 내보낸 고정 그림. 같은 뜻은 제목·설명이 전한다.
-        // 카드 내용이나 점수 색 모드가 바뀌면 디자인 노드 7947:16034를 다시 내보낸다
+        // 【최종】 그림(캐릭터 × 프로틴바, 목표별 점수 + 연한 라임 면)을 한 장으로 합쳐 3배로 만든 PNG(노드 9306:8252 · 8253).
+        // 같은 뜻은 제목이 전한다
         <Image
-          src="/intro/recommend-card.png"
-          width={828}
-          height={638}
-          sizes="276px"
+          src="/intro/by-goal.png"
+          width={918}
+          height={792}
+          sizes="306px"
           alt=""
           loading="eager"
           fetchPriority="high"
-          // 디자인 402px 화면에서 276px. 좁은 화면에서는 같은 비율로 줄인다
-          className="h-auto w-[68.66vw] max-w-69"
+          // 디자인 402px 화면에서 306px. 좁은 화면에서는 같은 비율로 줄인다
+          className="h-auto w-[76.1vw] max-w-[306px]"
         />
       }
       title={
         <>
           같은 제품도
           <br />
-          목표에 따라 등급이 달라요
+          목표에 따라 점수가 달라요
         </>
       }
-      body="내 목표를 고르면 그 목표로 계산해요."
       step={1}
       ctaLabel="목표 고르기"
       ctaHref="/intro/goal"

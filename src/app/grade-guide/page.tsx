@@ -4,7 +4,11 @@ import Link from "next/link";
 import { BackButton } from "@/components/common/back-button";
 import { ListRow } from "@/components/common/list-row";
 import { NumberedList } from "@/components/common/numbered-list";
-import { ScoreRing, type ScoreBand } from "@/components/common/score-ring";
+import {
+  SCORE_BAND_LABEL,
+  ScoreRing,
+  type ScoreBand,
+} from "@/components/common/score-ring";
 import { TopBar, TopBarButton } from "@/components/common/top-bar";
 import { IconSearch } from "@/components/icons";
 
@@ -19,21 +23,28 @@ const STEPS = [
     title: "같은 양으로 맞춰요",
     description: (
       <>
-        100g당 값으로 계산해요.
+        식품은 100g당, 음료는 100mL당으로 계산해요.
         <br />
-        화면의 숫자도 100g당이에요.
+        영양성분은 1회 제공량 기준으로도 볼 수 있어요.
       </>
     ),
   },
   {
-    title: "목표에 따라 칼로리만 다르게 봐요",
+    title: "목표에 따라 칼로리를 다르게 봐요",
     description: (
       <>
-        다이어트는 100g당 칼로리가 낮을수록,
+        다이어트는 칼로리가 낮을수록 점수가 높아요.
         <br />
-        근육 증가는 높을수록 점수가 높아요.
+        근육 증가는 단백질이 충분한 제품에서
+        <br />
+        칼로리가 높을수록 점수가 높아요.
+        <br />
+        식이섬유는 다이어트에서만 조금 더하고,
         <br />
         다른 성분은 두 목표 모두 같게 봐요.
+        <br />
+        몸 정보를 넣으면 다이어트의 칼로리 기준이
+        <br />내 몸에 맞게 바뀌어요.
       </>
     ),
   },
@@ -41,12 +52,12 @@ const STEPS = [
 ] as const;
 
 // 디자인 「점수 구간」 표. 링 안 숫자는 예시(디자인 문구)
-const BANDS: { band: ScoreBand; example: number; label: string }[] = [
-  { band: 1, example: 92, label: "매우 높음" },
-  { band: 2, example: 76, label: "높음" },
-  { band: 3, example: 62, label: "중간" },
-  { band: 4, example: 45, label: "낮음" },
-  { band: 5, example: 21, label: "매우 낮음" },
+const BANDS: { band: ScoreBand; example: number }[] = [
+  { band: 1, example: 92 },
+  { band: 2, example: 76 },
+  { band: 3, example: 62 },
+  { band: 4, example: 45 },
+  { band: 5, example: 21 },
 ];
 
 function Band() {
@@ -75,7 +86,9 @@ export default function GradeGuidePage() {
       />
       <main className="pb-[calc(24px+var(--safe-bottom))]">
         <h2 className="px-5 pt-2 pb-4 text-title1 text-text-strong">
-          모든 제품을 같은 방식으로 계산해
+          점수를 매기는 제품은
+          <br />
+          모두 같은 방식으로 계산해
           <br />
           {/* 디자인 강조 색(변수 없이 지정된 값) */}
           <span className="text-[#246508]">0점부터 100점까지</span> 매겨요
@@ -92,7 +105,7 @@ export default function GradeGuidePage() {
               <li key={b.band} className="flex items-center gap-3">
                 <ScoreRing score={b.example} band={b.band} size="S" />
                 <span className="text-body1-medium text-text-strong">
-                  {b.label}
+                  {SCORE_BAND_LABEL[b.band]}
                 </span>
               </li>
             ))}
@@ -118,6 +131,15 @@ export default function GradeGuidePage() {
                 점수는 칼로리, 단백질, 당류, 포화지방, 트랜스지방, 콜레스테롤,
                 나트륨 7가지가 모두 있는 제품만 매겨요. 식이섬유처럼 표시가 없는
                 다른 성분은 0으로 계산해 점수가 낮게 나올 수 있어요.
+              </span>
+            }
+          />
+          <ListRow
+            title="점수를 매기지 않는 종류"
+            description={
+              <span className="break-keep">
+                술, 영유아식, 환자용 식품은 점수를 매기지 않아요. 마시는 환자용
+                균형영양식은 단백질 음료와 함께 매겨요.
               </span>
             }
           />

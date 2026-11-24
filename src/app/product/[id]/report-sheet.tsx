@@ -94,7 +94,7 @@ export function ReportButton() {
     setSent((prev) => [...prev, signature]);
     showToast({
       message:
-        "보내 주셔서 고마워요. 확인 결과는 내 정보 › 내 요청·제보에서 볼 수 있어요.",
+        "보내 주셔서 고마워요. 확인 결과는 기록 › 분석 요청에서 볼 수 있어요.",
     });
   };
 
@@ -118,7 +118,7 @@ export function ReportButton() {
         description={
           // 이 시트만 설명이 body2(디자인). 공통 시트의 body1을 덮는다
           <span className="block pb-2 text-body2">
-            알려 주신 내용은 운영팀이 확인한 뒤 고쳐요.
+            알려 준 내용은 운영팀이 확인한 뒤 고쳐요.
           </span>
         }
         footer={
@@ -216,7 +216,7 @@ function PhotoField({
         ) : (
           <>
             <IconImage className="size-6" />
-            사진 더하기
+            사진 추가
           </>
         )}
       </label>
