@@ -6,6 +6,7 @@ import {
   subscribeTokens,
 } from "@/lib/api/identity";
 import { onSessionExpired } from "@/lib/api/refresh";
+import { consentKeys } from "@/lib/consent/keys";
 import { goalKeys } from "@/lib/goal/keys";
 import { meKeys } from "@/lib/me/keys";
 import { onboardingKeys } from "@/lib/onboarding/keys";
@@ -17,6 +18,7 @@ import { searchKeys } from "@/lib/search/keys";
 // 무관해 빼고, 사용자에 따라 달라지는 조회를 새로 만들면 여기에 넣는다
 const USER_QUERY_KEYS: QueryKey[] = [
   onboardingKeys.bootstrap(),
+  consentKeys.all,
   goalKeys.all,
   meKeys.all,
   savedKeys.all,

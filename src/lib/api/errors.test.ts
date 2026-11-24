@@ -1,11 +1,6 @@
 import axios, { AxiosError } from "axios";
 import { describe, expect, it } from "vitest";
-import {
-  ApiError,
-  isConsentRequired,
-  toApiError,
-  toErrorMessage,
-} from "@/lib/api/errors";
+import { ApiError, toApiError, toErrorMessage } from "@/lib/api/errors";
 import { failure, mockAdapter, type Reply } from "@/test/http";
 
 async function errorFrom(reply: Reply | (() => never)) {
@@ -105,17 +100,5 @@ describe("toErrorMessage", () => {
     expect(toErrorMessage(new TypeError("internal"))).toBe(
       "알 수 없는 오류가 발생했습니다.",
     );
-  });
-});
-
-describe("isConsentRequired", () => {
-  it("개인정보·건강정보 동의 필요만 참이다", () => {
-    const of = (
-      code: "CONSENT_REQUIRED" | "HEALTH_CONSENT_REQUIRED" | "FORBIDDEN",
-    ) => isConsentRequired(new ApiError({ status: 403, code, message: "" }));
-    expect(of("CONSENT_REQUIRED")).toBe(true);
-    expect(of("HEALTH_CONSENT_REQUIRED")).toBe(true);
-    expect(of("FORBIDDEN")).toBe(false);
-    expect(isConsentRequired(new Error("CONSENT_REQUIRED"))).toBe(false);
   });
 });

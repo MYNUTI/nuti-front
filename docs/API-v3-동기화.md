@@ -49,14 +49,14 @@
 
 ### 온보딩·동의 (`lib/onboarding`)
 
-| 지금                                     | v3                                                                                                                                                                               | 조치                                                               |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| `GET /app/bootstrap`                     | 같은 경로. `consentAgreed`·`healthConsented`·`onboardingCompleted`·`clipboardLinkDetection` 없음 → `goalAccountConsented`·`bodyProfileConsented`·`marketingConsented`·`kcalBand` | 수정(13-4a). 첫 실행 여부는 기기가 기억한다                        |
-| `POST /onboarding/consent`               | 없음                                                                                                                                                                             | 삭제(13-4a) → 가입(`/auth/signup`)으로                             |
-| `GET`·`POST`·`DELETE /me/health-consent` | 없음                                                                                                                                                                             | 삭제(13-4a) → `GET /me/consents`, `PUT /me/consents/{item}`(13-4b) |
-| `GET /onboarding/samples`                | 없음                                                                                                                                                                             | 삭제(13-4a)                                                        |
-| `POST /onboarding/complete`              | 없음                                                                                                                                                                             | 삭제(13-4a). 완료 기록은 기기에만(`storage.ts`)                    |
-| —                                        | `GET /meta/consent-items`(항목 6개 + 약관·처리방침 판)                                                                                                                           | 신규                                                               |
+| 지금                                     | v3                                                                                                                                                                               | 조치                                                                                  |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `GET /app/bootstrap`                     | 같은 경로. `consentAgreed`·`healthConsented`·`onboardingCompleted`·`clipboardLinkDetection` 없음 → `goalAccountConsented`·`bodyProfileConsented`·`marketingConsented`·`kcalBand` | 수정(13-4a). 첫 실행 여부는 기기가 기억한다                                           |
+| `POST /onboarding/consent`               | 없음                                                                                                                                                                             | 삭제(13-4a) → 가입(`/auth/signup`)으로                                                |
+| `GET`·`POST`·`DELETE /me/health-consent` | 없음                                                                                                                                                                             | 삭제(13-4a) → `GET /me/consents`, `PUT /me/consents/{item}`(13-4b, `src/lib/consent`) |
+| `GET /onboarding/samples`                | 없음                                                                                                                                                                             | 삭제(13-4a)                                                                           |
+| `POST /onboarding/complete`              | 없음                                                                                                                                                                             | 삭제(13-4a). 완료 기록은 기기에만(`storage.ts`)                                       |
+| —                                        | `GET /meta/consent-items`(항목 6개 + 약관·처리방침 판)                                                                                                                           | 신규(13-4b, `useConsentItems`)                                                        |
 
 ### 상품 (`lib/product`, `lib/scan`)
 
@@ -73,11 +73,11 @@
 
 ### 목표 (`lib/goal`)
 
-| 지금                                           | v3                                                                                                  | 조치                                                                                                                                |
-| ---------------------------------------------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `Goal` = `GENERAL`·`WEIGHT_LOSS`·`MUSCLE_GAIN` | `WEIGHT_LOSS`·`MUSCLE_GAIN`                                                                         | 수정. 다른 도메인 타입도 함께 바뀐다                                                                                                |
-| `GET /me/goal` → `healthConsented`             | `goalAccountConsented`                                                                              | 수정                                                                                                                                |
-| `PUT /me/goal`, 감량·근육은 동의 필요(403)     | 계정 저장 전용. 로그인 아니면 401, 「목표 계정 저장」 미동의 403 `GOAL_CONSENT_REQUIRED`(소스 기준) | 수정(13-3). 화면 목표는 기기 쿠키(`useDeviceGoal`), 동의한 로그인 계정만 계정에도 저장(`useChangeGoal`). `useConsentGate` 대상 아님 |
+| 지금                                           | v3                                                                                                  | 조치                                                                                                    |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `Goal` = `GENERAL`·`WEIGHT_LOSS`·`MUSCLE_GAIN` | `WEIGHT_LOSS`·`MUSCLE_GAIN`                                                                         | 수정. 다른 도메인 타입도 함께 바뀐다                                                                    |
+| `GET /me/goal` → `healthConsented`             | `goalAccountConsented`                                                                              | 수정                                                                                                    |
+| `PUT /me/goal`, 감량·근육은 동의 필요(403)     | 계정 저장 전용. 로그인 아니면 401, 「목표 계정 저장」 미동의 403 `GOAL_CONSENT_REQUIRED`(소스 기준) | 수정(13-3). 화면 목표는 기기 쿠키(`useDeviceGoal`), 동의한 로그인 계정만 계정에도 저장(`useChangeGoal`) |
 
 ### 저장 (`lib/saved`)
 

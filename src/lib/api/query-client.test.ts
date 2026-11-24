@@ -21,14 +21,11 @@ async function countQueryCalls(error: unknown) {
   return queryFn.mock.calls.length;
 }
 
-async function runMutation(error: unknown, consentGate?: boolean) {
+async function runMutation(error: unknown) {
   const mutationFn = vi.fn(async () => {
     throw error;
   });
-  await new MutationObserver(createQueryClient(), {
-    mutationFn,
-    meta: { consentGate },
-  })
+  await new MutationObserver(createQueryClient(), { mutationFn })
     .mutate()
     .catch(() => undefined);
   return mutationFn.mock.calls.length;
@@ -69,33 +66,6 @@ describe("setMutationErrorListener", () => {
 
     await runMutation(error);
     expect(listener).toHaveBeenCalledWith("SAVE_LIMIT_EXCEEDED 문구", error);
-  });
-
-  it.each(["CONSENT_REQUIRED", "HEALTH_CONSENT_REQUIRED"] as const)(
-    "게이트로 감싼 변경의 동의 필요(%s)는 알리지 않는다",
-    async (code) => {
-      const listener = vi.fn();
-      release = setMutationErrorListener(listener);
-
-      await runMutation(apiError(403, code), true);
-      expect(listener).not.toHaveBeenCalled();
-    },
-  );
-
-  it("게이트 표시가 없으면 동의 필요도 알린다", async () => {
-    const listener = vi.fn();
-    release = setMutationErrorListener(listener);
-
-    await runMutation(apiError(403, "CONSENT_REQUIRED"));
-    expect(listener).toHaveBeenCalledOnce();
-  });
-
-  it("게이트로 감싼 변경도 다른 실패는 알린다", async () => {
-    const listener = vi.fn();
-    release = setMutationErrorListener(listener);
-
-    await runMutation(apiError(409, "SAVE_LIMIT_EXCEEDED"), true);
-    expect(listener).toHaveBeenCalledOnce();
   });
 
   it("해제하면 더 알리지 않는다", async () => {

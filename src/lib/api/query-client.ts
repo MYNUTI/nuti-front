@@ -1,18 +1,5 @@
 import { MutationCache, QueryClient } from "@tanstack/react-query";
-import {
-  isConsentRequired,
-  isRetryable,
-  toErrorMessage,
-} from "@/lib/api/errors";
-
-declare module "@tanstack/react-query" {
-  interface Register {
-    mutationMeta: {
-      /** `useConsentGate`로 감싼 변경. 동의 필요(403)는 게이트가 동의 화면으로 이어 가 공통 알림에서 뺀다 */
-      consentGate?: boolean;
-    };
-  }
-}
+import { isRetryable, toErrorMessage } from "@/lib/api/errors";
 
 export type MutationErrorListener = (message: string, error: unknown) => void;
 
@@ -32,9 +19,7 @@ export function setMutationErrorListener(listener: MutationErrorListener) {
 export function createQueryClient() {
   return new QueryClient({
     mutationCache: new MutationCache({
-      onError: (error, _variables, _onMutateResult, mutation) => {
-        // 게이트 표시가 없는 변경은 동의 필요도 알린다. 게이트를 빠뜨렸을 때 실패가 묻히지 않고 보이게 한다
-        if (mutation.meta?.consentGate && isConsentRequired(error)) return;
+      onError: (error) => {
         mutationErrorListener?.(toErrorMessage(error), error);
       },
     }),

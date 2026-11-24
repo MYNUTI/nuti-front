@@ -76,7 +76,7 @@ describe("api (브라우저)", () => {
 
   it("실패는 ApiError로 reject한다", async () => {
     stubDocumentCookie();
-    useAdapter(() => failure(403, "CONSENT_REQUIRED"));
+    useAdapter(() => failure(403, "FORBIDDEN"));
 
     await expect(api.post("/saved-products")).rejects.toBeInstanceOf(ApiError);
   });
