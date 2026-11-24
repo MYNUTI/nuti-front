@@ -1,6 +1,6 @@
 # API v3 동기화
 
-> 상태: **차이 정리** (2026-11-21). 배포 서버가 v3로 바뀌어 데이터 레이어(04–11단계, 백엔드 `c164ec0` 기준)와 응답이 맞지 않는다. 이 문서는 차이와 고칠 순서만 적는다. 결정은 `API-작업-플랜.md` 「결정 기록」에 남긴다.
+> 상태: **동기화 완료** (2026-11-24). 배포 서버가 v3로 바뀌어 데이터 레이어(04–11단계, 백엔드 `c164ec0` 기준)를 v3에 맞췄다(API 작업 플랜 13단계). 표의 「조치」 칸에 고친 단계(13-1–13-4c)를 적었다. 단계 없이 「신규」로만 남은 행은 화면을 만들 때 넣는 API다(플랜 「범위」). 결정은 `API-작업-플랜.md` 「결정 기록」에 남긴다.
 
 ## 기준
 
@@ -39,13 +39,13 @@
 
 ### 식별·인증 (`lib/api`, `lib/auth`)
 
-| 지금                                             | v3                                                                                 | 조치                                                                                                        |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| 익명 ID: 개인정보 동의 응답으로 받아 쿠키에 저장 | 기기가 UUID를 만들어 보낸다                                                        | 수정. 쿠키가 없으면 만든다. 동의 전 null 전제를 쓰는 곳(로깅 「동의 전에는 세션 ID만」 등)을 함께 고친다    |
-| `POST /auth/oauth` → `LoginDto`                  | 같은 경로. `signupRequired`·`signupToken`·`signupProfile`·`merged`(종류별 수) 추가 | 수정(13-4c). `signupRequired`면 토큰을 저장하지 않고 `SIGNUP_REQUIRED`(가입 토큰·회사 계정 정보)를 돌려준다 |
-| —                                                | `POST /auth/signup`(`signupToken` + 동의 6항목 + 판 + `goal`)                      | 신규(13-4c, `useSignup`). 기기 목표를 함께 보낸다                                                           |
-| `POST /auth/logout` → `{ anonymousId }`          | 응답 `data` 없음                                                                   | 수정. 새 익명 ID는 클라이언트가 만든다(결정 필요)                                                           |
-| `POST /auth/refresh`                             | 같은 경로, 응답이 `TokenResponse`(토큰 둘은 같음)                                  | 유지                                                                                                        |
+| 지금                                             | v3                                                                                 | 조치                                                                                                           |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| 익명 ID: 개인정보 동의 응답으로 받아 쿠키에 저장 | 기기가 UUID를 만들어 보낸다                                                        | 수정(13-1). 쿠키가 없으면 만든다. 동의 전 null 전제를 쓰는 곳(로깅 「동의 전에는 세션 ID만」 등)을 함께 고친다 |
+| `POST /auth/oauth` → `LoginDto`                  | 같은 경로. `signupRequired`·`signupToken`·`signupProfile`·`merged`(종류별 수) 추가 | 수정(13-4c). `signupRequired`면 토큰을 저장하지 않고 `SIGNUP_REQUIRED`(가입 토큰·회사 계정 정보)를 돌려준다    |
+| —                                                | `POST /auth/signup`(`signupToken` + 동의 6항목 + 판 + `goal`)                      | 신규(13-4c, `useSignup`). 기기 목표를 함께 보낸다                                                              |
+| `POST /auth/logout` → `{ anonymousId }`          | 응답 `data` 없음                                                                   | 수정(13-1). 새 익명 ID는 클라이언트가 만든다(로그아웃·탈퇴·세션 만료 때 새로)                                  |
+| `POST /auth/refresh`                             | 같은 경로, 응답이 `TokenResponse`(토큰 둘은 같음)                                  | 유지                                                                                                           |
 
 ### 온보딩·동의 (`lib/onboarding`)
 
@@ -60,39 +60,39 @@
 
 ### 상품 (`lib/product`, `lib/scan`)
 
-| 지금                                                                                                              | v3                                                                                                                                                                 | 조치                                                                                                 |
-| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| `GET /products/barcode/{barcode}` → `status`·`product`·`grade`·`topReason`·`appliedGoal`, 404 `PRODUCT_NOT_FOUND` | 같은 경로. `outcome`(`RESULT`·`MULTIPLE`·`NO_SCORE`·`NOT_FOUND`)·`barcode`·`result`(결과 화면 전체)·`candidates`. **미등록도 200**(`NOT_FOUND`). 체크섬 400은 같다 | 수정. `lookupBarcode`의 404 처리를 `outcome`으로 바꾸고 `MULTIPLE`을 더한다. 12-1 스캔 연결도 고친다 |
-| `GET /products/{productId}` → `ProductDetailDto`                                                                  | 같은 경로, `ProductResultResponse`. `source` query(최근 본 제품 기록용) 추가                                                                                       | 수정                                                                                                 |
-| `GET /products/{productId}/grade-reason`                                                                          | 없음. 좋은 점·아쉬운 점은 상세 `goals[].goods`·`bads`                                                                                                              | 삭제                                                                                                 |
-| —                                                                                                                 | `GET /products/{id}/alternatives`(더 맞는 제품, 목표·페이지)                                                                                                       | 신규                                                                                                 |
-| —                                                                                                                 | `GET /products/{id}/purchase-link`                                                                                                                                 | 신규. 상세 `purchase`에 같은 값이 있어 따로 부를 일은 적다                                           |
-| —                                                                                                                 | `POST /products/{id}/reports`(오류 제보, 항목 여러 개)                                                                                                             | 신규                                                                                                 |
-| —                                                                                                                 | `GET /products/compare?ids=`(2–4개)                                                                                                                                | 신규                                                                                                 |
-| —                                                                                                                 | `GET /grades/guide`                                                                                                                                                | 신규(1차에도 있었지만 데이터 레이어 없음). 5-4 화면은 지금 문구를 코드에 둔다                        |
+| 지금                                                                                                              | v3                                                                                                                                                                 | 조치                                                                                                       |
+| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `GET /products/barcode/{barcode}` → `status`·`product`·`grade`·`topReason`·`appliedGoal`, 404 `PRODUCT_NOT_FOUND` | 같은 경로. `outcome`(`RESULT`·`MULTIPLE`·`NO_SCORE`·`NOT_FOUND`)·`barcode`·`result`(결과 화면 전체)·`candidates`. **미등록도 200**(`NOT_FOUND`). 체크섬 400은 같다 | 수정(13-2). `lookupBarcode`의 404 처리를 `outcome`으로 바꾸고 `MULTIPLE`을 더한다. 12-1 스캔 연결도 고친다 |
+| `GET /products/{productId}` → `ProductDetailDto`                                                                  | 같은 경로, `ProductResultResponse`. `source` query(최근 본 제품 기록용) 추가                                                                                       | 수정(13-2). `source` query도 받는다                                                                        |
+| `GET /products/{productId}/grade-reason`                                                                          | 없음. 좋은 점·아쉬운 점은 상세 `goals[].goods`·`bads`                                                                                                              | 삭제(13-2). 좋은 점·아쉬운 점은 상세 `goals[].goods`·`bads`                                                |
+| —                                                                                                                 | `GET /products/{id}/alternatives`(더 맞는 제품, 목표·페이지)                                                                                                       | 신규(3-4 더 맞는 제품 데이터 레이어, `useAlternatives`)                                                    |
+| —                                                                                                                 | `GET /products/{id}/purchase-link`                                                                                                                                 | 신규. 상세 `purchase`에 같은 값이 있어 따로 부를 일은 적다                                                 |
+| —                                                                                                                 | `POST /products/{id}/reports`(오류 제보, 항목 여러 개)                                                                                                             | 신규(13-3 기여, `useReportProduct`)                                                                        |
+| —                                                                                                                 | `GET /products/compare?ids=`(2–4개)                                                                                                                                | 신규. 3-5 제품 비교를 연결할 때 넣는다                                                                     |
+| —                                                                                                                 | `GET /grades/guide`                                                                                                                                                | 신규(1차에도 있었지만 데이터 레이어 없음). 5-4 화면은 지금 문구를 코드에 둔다                              |
 
 ### 목표 (`lib/goal`)
 
 | 지금                                           | v3                                                                                                  | 조치                                                                                                    |
 | ---------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `Goal` = `GENERAL`·`WEIGHT_LOSS`·`MUSCLE_GAIN` | `WEIGHT_LOSS`·`MUSCLE_GAIN`                                                                         | 수정. 다른 도메인 타입도 함께 바뀐다                                                                    |
-| `GET /me/goal` → `healthConsented`             | `goalAccountConsented`                                                                              | 수정                                                                                                    |
+| `Goal` = `GENERAL`·`WEIGHT_LOSS`·`MUSCLE_GAIN` | `WEIGHT_LOSS`·`MUSCLE_GAIN`                                                                         | 수정(13-1). 다른 도메인 타입도 함께 바뀐다                                                              |
+| `GET /me/goal` → `healthConsented`             | `goalAccountConsented`                                                                              | 수정(13-2)                                                                                              |
 | `PUT /me/goal`, 감량·근육은 동의 필요(403)     | 계정 저장 전용. 로그인 아니면 401, 「목표 계정 저장」 미동의 403 `GOAL_CONSENT_REQUIRED`(소스 기준) | 수정(13-3). 화면 목표는 기기 쿠키(`useDeviceGoal`), 동의한 로그인 계정만 계정에도 저장(`useChangeGoal`) |
 
 ### 저장 (`lib/saved`)
 
-| 지금                                                                        | v3                                                                                                                 | 조치                                               |
-| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------- |
-| `GET /me/saved-products` → 항목 `status`·`grade`·`label`·`savedAt`          | 같은 경로. `goal` query, 응답 `goal`·`kcalBand`, **page·size가 1부터**. 항목은 `{ product: ProductCard, savedAt }` | 수정                                               |
-| `POST`·`DELETE /me/saved-products/{id}`, 식별 없으면 403 `CONSENT_REQUIRED` | 같은 경로. 식별 없으면 400 `ANONYMOUS_ID_REQUIRED`, 동의 필요 없음                                                 | 수정. 「403 → 동의 → 이어서 저장」 경로가 없어진다 |
+| 지금                                                                        | v3                                                                                                                 | 조치                                                     |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------- |
+| `GET /me/saved-products` → 항목 `status`·`grade`·`label`·`savedAt`          | 같은 경로. `goal` query, 응답 `goal`·`kcalBand`, **page·size가 1부터**. 항목은 `{ product: ProductCard, savedAt }` | 수정(13-3)                                               |
+| `POST`·`DELETE /me/saved-products/{id}`, 식별 없으면 403 `CONSENT_REQUIRED` | 같은 경로. 식별 없으면 400 `ANONYMOUS_ID_REQUIRED`, 동의 필요 없음                                                 | 수정(13-3). 「403 → 동의 → 이어서 저장」 경로가 없어진다 |
 
 ### 검색 (`lib/search`)
 
-| 지금                                                                              | v3                                                                                                                                                                                | 조치            |
-| --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
-| `GET /search` → `exactMatches`·`similarProducts` 두 섹션                          | 한 목록 `items` + `pinned`·`category`·`sort`·페이지, 카드는 `ProductCard`(두 목표 점수·태그·`better`·`saved`), 0건이면 `didYouMean`·`sameCategoryTop`, `analysisRequestAvailable` | 수정(거의 새로) |
-| `GET /search/suggestions` → `type`·`productId`·`name`·`brandName`·`matchedRanges` | 같은 경로, `size` query 추가. 항목은 같다                                                                                                                                         | 유지            |
-| `GET /search/keywords/popular` → `{ rank, keyword }[]`                            | `{ basedAt, keywords: { rank, keyword }[] }`. 목록이 한 단계 안으로 들어갔다                                                                                                      | 수정            |
+| 지금                                                                              | v3                                                                                                                                                                                | 조치                  |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `GET /search` → `exactMatches`·`similarProducts` 두 섹션                          | 한 목록 `items` + `pinned`·`category`·`sort`·페이지, 카드는 `ProductCard`(두 목표 점수·태그·`better`·`saved`), 0건이면 `didYouMean`·`sameCategoryTop`, `analysisRequestAvailable` | 수정(13-3, 거의 새로) |
+| `GET /search/suggestions` → `type`·`productId`·`name`·`brandName`·`matchedRanges` | 같은 경로, `size` query 추가. 항목은 같다                                                                                                                                         | 유지                  |
+| `GET /search/keywords/popular` → `{ rank, keyword }[]`                            | `{ basedAt, keywords: { rank, keyword }[] }`. 목록이 한 단계 안으로 들어갔다                                                                                                      | 수정(13-3)            |
 
 ### 마이·설정 (`lib/me`)
 
@@ -102,7 +102,7 @@
 | `GET /users/me`, `DELETE /users/me?reason=`               | 같음. 탈퇴는 사유를 받지 않는다(`UserController.deleteMe`)                                       | 수정(13-3). `reason` query를 뺐다                                               |
 | `GET`·`PATCH /me/settings`, `clipboardLinkDetection` 포함 | `clipboardLinkDetection` 없음. `PATCH`는 목표만 받고 로그인 + 「목표 계정 저장」 동의가 필요하다 | 수정(13-3). `PATCH`는 `PUT /me/goal`과 겹쳐 지웠다(목표 변경은 `useChangeGoal`) |
 | `GET /meta/policies` → `{ version, url, updatedAt }`      | 같다                                                                                             | 유지                                                                            |
-| —                                                         | `PATCH /users/me`(이메일·닉네임)                                                                 | 신규                                                                            |
+| —                                                         | `PATCH /users/me`(이메일·닉네임)                                                                 | 신규. 내 정보 수정 화면을 만들 때 넣는다                                        |
 | —                                                         | `GET`·`PUT`·`DELETE /me/body-profile`(몸 정보, 로그인 + `BODY_PROFILE` 동의)                     | 신규(5-7)                                                                       |
 | —                                                         | `GET /me/history`(최근 본 제품, 등급 필터·페이지, page 0부터)                                    | 신규(4-1·4-2)                                                                   |
 | —                                                         | `GET /me/contributions`(내 요청·제보 목록과 상태)                                                | 신규(5-3)                                                                       |
@@ -113,7 +113,7 @@
 | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | `POST /analysis-requests` → `requestId`·`type`·`requestCount`·`status` | 요청에 `productName`·`brandName`·`originBarcode`·`originKeyword` 추가(제품명 요청). 응답에 `statusLabel`·`alreadyRequested`·`message` 추가. 상태 값이 `ANALYZING`·`REVIEWING`·`DONE`·`FAILED`로 바뀌었다(`AnalysisRequestStatus`) | 수정(13-3)                                                                                             |
 | `POST /support/inquiries`                                              | 없음                                                                                                                                                                                                                              | 삭제(13-3). 3-2 「정보가 틀렸어요」는 `POST /products/{id}/reports`(`useReportProduct`, 13-3에서 추가) |
-| —                                                                      | `GET /analysis-requests/popular`                                                                                                                                                                                                  | 신규                                                                                                   |
+| —                                                                      | `GET /analysis-requests/popular`                                                                                                                                                                                                  | 신규. 쓰는 화면을 만들 때 넣는다                                                                       |
 
 ### 로깅 (`lib/logging`)
 
