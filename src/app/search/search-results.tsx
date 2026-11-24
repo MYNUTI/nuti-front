@@ -11,10 +11,13 @@ import { BottomSheet } from "@/components/common/sheet";
 import { IconCheck, IconChevronDown } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
+import { particleWa } from "./hangul";
 import { PAGE_SIZE, readResultParams } from "./result-params";
 import {
   FIXTURE_SEARCH_GOAL_LABEL,
+  fixtureAlternatives,
   fixtureSearch,
+  fixtureSimilarTop,
   SEARCH_SORTS,
   type SearchResultItem,
   type SearchSort,
@@ -37,6 +40,7 @@ export function SearchResults({
   initialShown,
   active,
   failed,
+  onSearch,
 }: {
   query: string;
   /** 주소의 `&sort=` · `&n=`. 상세에서 뒤로 오면 정렬 · 불러온 개수를 되살린다 */
@@ -46,6 +50,8 @@ export function SearchResults({
   active: boolean;
   /** 미리 보기 `?state=error` — 공통 「불러오지 못했어요」 */
   failed: boolean;
+  /** 2-4b 「이렇게 찾아볼까요?」 칩으로 다시 찾는다(최근 검색어에도 남긴다) */
+  onSearch: (word: string) => void;
 }) {
   const router = useRouter();
   // 【최종】 메모: 새 검색어를 치면 기본 정렬로(이 부품은 검색어마다 새로 붙는다). 같은 검색어면 지킨다.
@@ -110,6 +116,12 @@ export function SearchResults({
         onRetry={() => router.refresh()}
         className="flex-1"
       />
+    );
+  }
+
+  if (result.total === 0) {
+    return (
+      <NoResults query={query} headingRef={headingRef} onSearch={onSearch} />
     );
   }
 
@@ -257,4 +269,105 @@ function useBarVisible() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
   return visible;
+}
+
+/*
+ * 2-4b 검색 0건(【최종】 ⑥ 9306:17509). 「○○와 일치하는 제품이 없어요」, 「이렇게 찾아볼까요?」 칩(→ 2-4),
+ * 「가지고 있는 제품이라면」 바코드 찍기(→ 3-1) · 영양성분표 찍고 점수 보기(→ 3-7),
+ * 「점수가 높은 비슷한 제품」 카드 3개(2-4 카드와 같음) + 「목표: 다이어트 ›」, 아래 「제품 이름만 알려 줘도 돼요」.
+ */
+function NoResults({
+  query,
+  headingRef,
+  onSearch,
+}: {
+  query: string;
+  headingRef: React.RefObject<HTMLHeadingElement | null>;
+  onSearch: (word: string) => void;
+}) {
+  const alternatives = fixtureAlternatives(query);
+  const similar = fixtureSimilarTop();
+  return (
+    <>
+      <h2
+        ref={headingRef}
+        tabIndex={-1}
+        className="px-5 pt-5 pb-2 text-center text-body2-medium break-keep text-text-sub outline-none"
+      >
+        {query}
+        {particleWa(query)} 일치하는 제품이 없어요
+      </h2>
+      {alternatives.length > 0 && (
+        <section
+          aria-labelledby="alternatives-title"
+          className="flex flex-col gap-2.5 px-5 pt-3 pb-2"
+        >
+          <h3
+            id="alternatives-title"
+            className="text-body1-medium text-text-strong"
+          >
+            이렇게 찾아볼까요?
+          </h3>
+          <ul className="flex flex-wrap gap-2">
+            {alternatives.map((word) => (
+              <li key={word}>
+                <button
+                  type="button"
+                  onClick={() => onSearch(word)}
+                  className="flex h-9 items-center rounded-full border border-line-strong bg-bg-page px-3.5 text-body2-medium text-text-strong"
+                >
+                  {word}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      <section
+        aria-labelledby="own-title"
+        className="flex flex-col gap-2.5 px-5 pt-4 pb-3.5"
+      >
+        <h3 id="own-title" className="text-body1-medium text-text-strong">
+          가지고 있는 제품이라면
+        </h3>
+        <Button kind="secondary" asChild>
+          <Link href="/scan">바코드 찍기</Link>
+        </Button>
+        {/* 3-7 영양성분표 찍기(08단계). 경로는 UI 플랜 라우트 표의 /contribute/* */}
+        <Button kind="secondary" asChild>
+          <Link href="/contribute/label">영양성분표 찍고 점수 보기</Link>
+        </Button>
+      </section>
+      <div aria-hidden className="h-2 bg-bg-band" />
+      <section aria-labelledby="similar-title">
+        <div className="flex flex-col gap-0.5 px-5 pt-4 pb-2">
+          <h3 id="similar-title" className="text-section text-text-strong">
+            점수가 높은 비슷한 제품
+          </h3>
+          <Link
+            href="/my/goal"
+            className="self-start text-[12px] leading-5 font-medium text-brand-link"
+          >
+            목표: {FIXTURE_SEARCH_GOAL_LABEL} <span aria-hidden>›</span>
+          </Link>
+        </div>
+        <ResultGrid items={similar} className="pb-3" />
+      </section>
+      <div aria-hidden className="h-2 bg-bg-band" />
+      {/* 홈 「찾는 제품이 없나요?」와 같은 연한 민트 바탕(디자인 변수 없이 직접 넣은 색) */}
+      <section className="flex items-center gap-2 bg-[#f3fcfb] py-4 pr-3 pl-5">
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <h3 className="text-body1-bold text-text-strong">
+            제품 이름만 알려 줘도 돼요
+          </h3>
+          <p className="text-body2 text-text-sub">
+            이름을 알려 주면 점수를 매길 순서에 넣어요.
+          </p>
+        </div>
+        <Button kind="text" size="M" asChild>
+          <Link href="/contribute/name">제품 요청하기</Link>
+        </Button>
+      </section>
+    </>
+  );
 }

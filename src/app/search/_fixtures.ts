@@ -322,3 +322,36 @@ export function fixtureSearch(query: string, sort: SearchSort): SearchResult {
     category,
   };
 }
+
+// ── 2-4b 검색 0건 ───────────────────────────────────────────────────────────
+// POOL(프로틴바 계열)에 안 맞는 말이면 0건이다. 그림과 같은 칩은 `/search?q=단백질 웨하스`
+
+// 같은 뜻으로 바꿔 볼 말(자리 표시). API 연결 때 `didYouMean` · 서버 추천으로 바꾼다
+const SYNONYMS: Record<string, string> = {
+  단백질: "프로틴",
+  프로틴: "단백질",
+};
+
+/**
+ * 「이렇게 찾아볼까요?」 칩. 띄어쓰기를 붙인 말, 같은 뜻의 말로 바꾼 말, 마지막 낱말 순(【최종】 그림:
+ * 「단백질 웨하스」 → 「단백질웨하스」 · 「프로틴 웨하스」 · 「웨하스」). 찾은 말과 같은 것은 뺀다
+ */
+export function fixtureAlternatives(query: string): string[] {
+  const q = query.trim();
+  const words = q.split(/\s+/);
+  const candidates = [
+    words.join(""),
+    words.map((w) => SYNONYMS[w] ?? w).join(" "),
+    words.at(-1) ?? "",
+  ];
+  return candidates.filter(
+    (c, i) => c !== "" && c !== q && candidates.indexOf(c) === i,
+  );
+}
+
+/** 「점수가 높은 비슷한 제품」 3개(API의 `sameCategoryTop`, 자리 표시는 【최종】 그림 제품) */
+export function fixtureSimilarTop(): SearchResultItem[] {
+  return POOL.filter((p) => p.score !== null && p.image !== null)
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+    .slice(0, 3);
+}

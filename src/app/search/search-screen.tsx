@@ -119,6 +119,7 @@ export function SearchScreen({
               initialShown={initialShown}
               active={!editing}
               failed={failed}
+              onSearch={search}
             />
           </div>
         )}
