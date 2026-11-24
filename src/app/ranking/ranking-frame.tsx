@@ -54,20 +54,20 @@ export function RankingTitleBar({
 }
 
 /*
- * 중분류 글자 탭 줄(높이 44). 맨 앞 「전체」, 그다음 순위가 열린 칩. 고른 탭은 굵게 + 밑줄이고,
+ * 중분류 글자 탭 줄(높이 44). 맨 앞 「전체」(대분류 전체), 그다음 순위가 열린 칩. 고른 탭은 굵게 + 밑줄이고,
  * 화면 밖이면 보이는 자리까지 민다.
  */
 export function MidTabs({
+  majorCode,
   chips,
   activeCode,
   hrefFor,
-  onAllClick,
 }: {
+  majorCode: string;
   chips: RankingChip[];
+  /** 대분류 코드면 「전체」, 칩 코드면 그 칩 */
   activeCode: string;
   hrefFor: (code: string) => string;
-  /** 「전체」 탭(대분류 전체 화면) */
-  onAllClick: () => void;
 }) {
   const active = useRef<HTMLAnchorElement>(null);
 
@@ -75,40 +75,96 @@ export function MidTabs({
     active.current?.scrollIntoView({ inline: "center", block: "nearest" });
   }, [activeCode, chips.length]);
 
-  const tab =
-    "flex h-11 shrink-0 items-center px-[11px] text-[15px] leading-[18px]";
-  const idle = "font-medium text-text-sub";
+  const tabs = [{ code: majorCode, name: "전체" }, ...chips];
 
   return (
     <nav
       aria-label="중분류"
       className="flex h-11 [scrollbar-width:none] overflow-x-auto border-b border-[#eef0f3] bg-white [&::-webkit-scrollbar]:hidden"
     >
-      <button type="button" className={cn(tab, idle)} onClick={onAllClick}>
-        전체
-      </button>
-      {chips.map((chip) => {
-        const selected = chip.code === activeCode;
+      {tabs.map((tab) => {
+        const selected = tab.code === activeCode;
         return (
           <Link
-            key={chip.code}
+            key={tab.code}
             ref={selected ? active : undefined}
-            href={hrefFor(chip.code)}
+            href={hrefFor(tab.code)}
             aria-current={selected ? "page" : undefined}
             // 탭을 옮겨도 위 고정 줄이 그대로라 화면 맨 위로 올리지 않는다
             scroll={false}
             className={cn(
-              tab,
+              "flex h-11 shrink-0 items-center px-[11px] text-[15px] leading-[18px]",
               selected
                 ? "border-b-2 border-text-strong font-bold text-text-strong"
-                : idle,
+                : "font-medium text-text-sub",
             )}
           >
-            {chip.name}
+            {tab.name}
           </Link>
         );
       })}
     </nav>
+  );
+}
+
+/** 필터 칩 아래 기준 줄: 회색 두 줄(목표 · 개수나 날짜) + 「점수 기준 보기 ›」(→ 5-4) */
+export function CriteriaRow({ lines }: { lines: [string, string | null] }) {
+  const [first, second] = lines;
+  return (
+    <div className="flex items-center gap-2 px-4 pt-1.5 pb-2.5 text-[12px] leading-4">
+      <p className="min-w-0 flex-1 text-text-sub">
+        {first}
+        {second && (
+          <>
+            <br />
+            {second}
+          </>
+        )}
+      </p>
+      <Link
+        href="/grade-guide"
+        className="shrink-0 font-medium whitespace-nowrap text-brand-link"
+      >
+        점수 기준 보기 <span aria-hidden>›</span>
+      </Link>
+    </div>
+  );
+}
+
+/** 흰 묶음 카드: 머리(제목 + 「전체 보기 ›」) 아래 제품 줄 */
+export function GroupCard({
+  id,
+  title,
+  moreHref,
+  children,
+}: {
+  id: string;
+  title: string;
+  moreHref: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      aria-labelledby={id}
+      className="flex flex-col gap-1.5 rounded-md bg-white px-3.5 pt-3 pb-2"
+    >
+      <div className="flex items-center">
+        <h2
+          id={id}
+          className="min-w-0 flex-1 truncate text-[16px] leading-[19px] font-bold text-text-strong"
+        >
+          {title}
+        </h2>
+        <Link
+          href={moreHref}
+          className="shrink-0 text-[13px] leading-4 font-medium text-brand-link"
+        >
+          전체 보기
+          <span className="sr-only">: {title}</span> <span aria-hidden>›</span>
+        </Link>
+      </div>
+      {children}
+    </section>
   );
 }
 
@@ -141,7 +197,7 @@ export function FilterChips({
 }
 
 /*
- * 07단계에서 차례로 붙일 화면(필터 시트 · 2-5f 식품 분류 · 대분류 전체)으로 가는 버튼을 눌렀을 때의 알림.
+ * 07단계에서 차례로 붙일 화면(필터 시트 · 2-5f 식품 분류)으로 가는 버튼을 눌렀을 때의 알림.
  * 버튼 모양은 그림 그대로 두고, 그 화면을 붙이면 이 알림 대신 연결한다(그 브랜치의 검토용 알림과 같은 쓰임).
  */
 export function useNotBuiltNotice(

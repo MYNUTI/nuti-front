@@ -26,6 +26,7 @@ import {
   RANKING_GOAL_LABEL,
   RANKING_PAGE_SIZE as PAGE_SIZE,
   RANKING_SORT_OPTIONS,
+  rankingHref,
 } from "./format";
 import { writeLastChip } from "./last-chip";
 import {
@@ -109,13 +110,8 @@ export function RankingList({
 
   // 정렬을 주소에 남겨 새로 고치거나 뒤로 와도 같은 순서로 열린다. 기록은 쌓지 않는다
   // (【최종】 메모: 중분류 탭을 옮겨도 유지하고 랭킹을 새로 열면 기본으로)
-  const hrefFor = (chipCode: string, nextSort = sort) => {
-    const params = new URLSearchParams();
-    if (nextSort !== "SCORE") params.set("sort", nextSort);
-    if (goal === "MUSCLE_GAIN") params.set("goal", "muscle");
-    const query = params.toString();
-    return `/ranking/${encodeURIComponent(chipCode)}${query ? `?${query}` : ""}`;
-  };
+  const hrefFor = (chipCode: string, nextSort = sort) =>
+    rankingHref(chipCode, { sort: nextSort, goal });
 
   useEffect(() => {
     const el = sentinel.current;
@@ -157,12 +153,14 @@ export function RankingList({
             major={major?.name ?? null}
             onMajorClick={() => notBuilt.show("2-5f 식품 분류")}
           />
-          <MidTabs
-            chips={major?.chips ?? []}
-            activeCode={code}
-            hrefFor={(chipCode) => hrefFor(chipCode)}
-            onAllClick={() => notBuilt.show("2-2 점수 순위(대분류 전체)")}
-          />
+          {major && (
+            <MidTabs
+              majorCode={major.code}
+              chips={major.chips}
+              activeCode={code}
+              hrefFor={(tabCode) => hrefFor(tabCode)}
+            />
+          )}
         </header>
         <FilterChips onFilterClick={notBuilt.show} />
         <div className="flex h-11 items-center justify-between pr-2 pl-4">

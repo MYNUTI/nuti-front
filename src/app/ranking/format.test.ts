@@ -7,6 +7,7 @@ import {
   parseRankingGoal,
   parseRankingShown,
   parseRankingSort,
+  rankingHref,
 } from "./format";
 
 // `review/v3-rankings`의 `src/lib/ranking/format.test.ts`를 옮겼다(목표 값은 fixture 미리 보기 기준)
@@ -62,10 +63,18 @@ describe("랭킹 fixture", () => {
     expect(protein[0].sortText).toBe("100g당 단백질 37.7g");
   });
 
-  it("대분류 묶음은 제품이 있는 칩마다 1위 하나, 없는 칩은 뺀다", () => {
-    const rows = fixtureOverview(FIXTURE_MAJORS[0]);
-    expect(rows.map((r) => r.chip.name)).not.toContain("단백질 파우더");
-    expect(rows.every((r) => r.product.rank === 1)).toBe(true);
+  it("대분류 묶음은 제품이 있는 칩마다 위에서 count개, 없는 칩은 뺀다", () => {
+    const groups = fixtureOverview(FIXTURE_MAJORS[0], 3);
+    expect(groups.map((g) => g.chip.name)).not.toContain("단백질 파우더");
+    expect(groups.map((g) => g.chip.code)).toEqual(
+      FIXTURE_MAJORS[0].chips
+        .map((c) => c.code)
+        .filter((code) => groups.some((g) => g.chip.code === code)),
+    );
+    for (const g of groups) {
+      expect(g.items.length).toBeLessThanOrEqual(3);
+      expect(g.items.map((p) => p.rank)).toEqual(g.items.map((_, i) => i + 1));
+    }
   });
 
   it("불러온 개수는 12의 배수로 읽고 틀린 값은 12", () => {
@@ -75,5 +84,14 @@ describe("랭킹 fixture", () => {
     expect(parseRankingShown("-24")).toBe(12);
     expect(parseRankingShown("abc")).toBe(12);
     expect(parseRankingShown(undefined)).toBe(12);
+  });
+
+  it("순위 주소는 기본 정렬 · 다이어트 목표를 적지 않는다", () => {
+    expect(rankingHref("01S4", { sort: "SCORE", goal: "WEIGHT_LOSS" })).toBe(
+      "/ranking/01S4",
+    );
+    expect(
+      rankingHref("01", { sort: "PROTEIN_HIGH", goal: "MUSCLE_GAIN" }),
+    ).toBe("/ranking/01?sort=PROTEIN_HIGH&goal=muscle");
   });
 });

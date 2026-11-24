@@ -232,6 +232,24 @@ const PRODUCTS: Record<string, FixtureProduct[]> = {
       [HIGH_PROTEIN],
       { calories: 120, protein: 14, sugar: 2 },
     ),
+    sample(
+      "r9104",
+      "스윗밸런스",
+      "닭가슴살과 오징어 포케 샐러드",
+      80,
+      1,
+      [HIGH_PROTEIN, LOW_SUGAR],
+      { calories: 110, protein: 13, sugar: 2.5 },
+    ),
+    sample(
+      "r9105",
+      "샐러드박스",
+      "수비드 닭가슴살 샐러드",
+      77,
+      1,
+      [HIGH_PROTEIN],
+      { calories: 105, protein: 12, sugar: 3 },
+    ),
   ],
   "01S2": [
     sample(
@@ -242,6 +260,24 @@ const PRODUCTS: Record<string, FixtureProduct[]> = {
       2,
       [HIGH_PROTEIN, tag("고나트륨", true)],
       { calories: 150, protein: 22, sugar: 1.5 },
+    ),
+    sample(
+      "r9106",
+      "사조",
+      "닭가슴살마일드100G",
+      72,
+      2,
+      [HIGH_PROTEIN, tag("고나트륨", true)],
+      { calories: 110, protein: 23, sugar: 0.5 },
+    ),
+    sample(
+      "r9107",
+      "사조",
+      "닭가슴살블랙페퍼100G",
+      72,
+      2,
+      [HIGH_PROTEIN, tag("고나트륨", true)],
+      { calories: 115, protein: 22, sugar: 1 },
     ),
   ],
   "01S3": [
@@ -265,12 +301,40 @@ const PRODUCTS: Record<string, FixtureProduct[]> = {
       [tag("저칼로리"), tag("고나트륨", true)],
       { calories: 45, protein: 5, sugar: 0.3 },
     ),
+    sample(
+      "r9204",
+      "CJ",
+      "비비고영양삼계탕",
+      72,
+      2,
+      [HIGH_PROTEIN, tag("고나트륨", true)],
+      { calories: 95, protein: 9, sugar: 0.4 },
+    ),
+    sample(
+      "r9205",
+      "오뚜기",
+      "마포식차돌된장찌개500G",
+      64,
+      3,
+      [tag("고나트륨", true)],
+      { calories: 60, protein: 4, sugar: 1.2 },
+    ),
   ],
   "0202": [
     sample("r9202", "CJ", "햇반100%현미밥130G(3입)", 72, 2, [LOW_SUGAR], {
       calories: 150,
       protein: 3,
       sugar: 0.2,
+    }),
+    sample("r9206", "CJ", "컵반참치마요덮밥", 64, 3, [SAT_FAT], {
+      calories: 190,
+      protein: 6,
+      sugar: 3,
+    }),
+    sample("r9207", "오뚜기", "컵밥제육덮밥", 59, 3, [tag("고나트륨", true)], {
+      calories: 170,
+      protein: 5,
+      sugar: 4,
     }),
   ],
   // 브랜드 줄이 없는 제품(【최종】 「샌드위치·버거 1위」 줄)
@@ -325,6 +389,11 @@ export const FIXTURE_MAJORS: RankingMajor[] = [
 
 export const FIXTURE_UPDATED_AT = UPDATED_AT;
 
+/** 대분류 코드(2자리)로 찾는다. 칩 코드면 null */
+export function findMajor(code: string): RankingMajor | null {
+  return FIXTURE_MAJORS.find((m) => m.code === code) ?? null;
+}
+
 export function majorOf(chipCode: string): RankingMajor | null {
   return (
     FIXTURE_MAJORS.find((m) => m.chips.some((c) => c.code === chipCode)) ?? null
@@ -367,12 +436,18 @@ export function fixtureRanking(
   return { items, coverage: { total, analyzed, updatedAt: UPDATED_AT } };
 }
 
-/** 대분류 하나의 묶음: 순위가 열린 칩마다 1위(`GET /rankings/overview`). 제품이 없는 칩은 뺀다 */
+/**
+ * 대분류 하나의 묶음: 순위가 열린 칩마다 점수 높은 순 위 `count`개와 그 칩의 개수 줄(`GET /rankings/overview`).
+ * 묶음 순서는 탭 순서이고 제품이 없는 칩은 뺀다
+ */
 export function fixtureOverview(
   major: RankingMajor,
-): { chip: RankingChip; product: RankedProduct }[] {
+  count: number,
+): { chip: RankingChip; items: RankedProduct[]; coverage: RankingCoverage }[] {
   return major.chips.flatMap((chip) => {
-    const top = fixtureRanking(chip.code, "SCORE").items[0];
-    return top ? [{ chip, product: top }] : [];
+    const { items, coverage } = fixtureRanking(chip.code, "SCORE");
+    return items.length > 0
+      ? [{ chip, items: items.slice(0, count), coverage }]
+      : [];
   });
 }

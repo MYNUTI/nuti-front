@@ -147,6 +147,43 @@ function Tag({
   );
 }
 
+function RowPhoto({ src }: { src: string | null }) {
+  return (
+    <span className="relative block size-[52px] shrink-0 overflow-hidden rounded-sm border border-[#eef0f3] bg-bg-band">
+      <Photo key={src} src={src} className="absolute inset-0 size-full" />
+    </span>
+  );
+}
+
+/*
+ * 「대분류 전체」 묶음 안의 순위 줄: 순위 동그라미 20 · 사진 52 · 브랜드 + 이름 한 줄 · 점수 링 S.
+ */
+export function RankRow({ product }: { product: RankedProduct }) {
+  return (
+    <Link
+      href={product.href ?? `/product/${product.id}`}
+      className="flex items-center gap-2.5 py-1.5"
+    >
+      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-bg-dark text-[11px] leading-[14px] font-bold text-white">
+        <span className="sr-only">순위 </span>
+        {product.rank}
+      </span>
+      <RowPhoto src={product.imageUrl} />
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        {product.brand && (
+          <span className="truncate text-[12px] leading-[14px] text-text-sub">
+            {product.brand}
+          </span>
+        )}
+        <span className="truncate text-[14px] leading-[17px] font-medium text-text-strong">
+          {product.name}
+        </span>
+      </span>
+      <Score product={product} />
+    </Link>
+  );
+}
+
 /*
  * 「종류를 고르지 않았을 때」 묶음 안의 1위 줄: 사진 52 · 「샐러드 1위 · 브랜드」 · 이름 한 줄 · 점수 링 S.
  * 순위 숫자 동그라미는 없다(다른 종류끼리 순위를 매기지 않는다).
@@ -163,13 +200,7 @@ export function TopRow({
       href={product.href ?? `/product/${product.id}`}
       className="flex items-center gap-2.5 py-1.5"
     >
-      <span className="relative block size-[52px] shrink-0 overflow-hidden rounded-sm border border-[#eef0f3] bg-bg-band">
-        <Photo
-          key={product.imageUrl}
-          src={product.imageUrl}
-          className="absolute inset-0 size-full"
-        />
-      </span>
+      <RowPhoto src={product.imageUrl} />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="truncate text-[12px] leading-[14px] text-text-sub">
           <span className="font-bold text-text-strong">{chipName} 1위</span>

@@ -45,6 +45,21 @@ export function parseRankingGoal(value: unknown): RankingGoal {
 }
 
 /**
+ * 순위 화면 주소(`/ranking/[code]`, 칩이나 대분류 코드). 기본 정렬 · 다이어트 목표는 적지 않는다.
+ * 【최종】 메모: 고른 정렬은 탭을 옮겨도 유지한다
+ */
+export function rankingHref(
+  code: string,
+  { sort, goal }: { sort: RankingSort; goal: RankingGoal },
+): string {
+  const params = new URLSearchParams();
+  if (sort !== DEFAULT_RANKING_SORT) params.set("sort", sort);
+  if (goal === "MUSCLE_GAIN") params.set("goal", "muscle");
+  const query = params.toString();
+  return `/ranking/${encodeURIComponent(code)}${query ? `?${query}` : ""}`;
+}
+
+/**
  * 「10월 18일」. 서버 날짜는 타임존 없는 ISO 문자열이라 글자에서 월 · 일만 읽는다
  * (`new Date()`로 읽으면 보는 기기의 시간대에 따라 하루 밀릴 수 있다). 읽지 못하면 null
  */
