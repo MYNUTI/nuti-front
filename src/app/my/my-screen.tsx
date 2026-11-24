@@ -117,7 +117,10 @@ export function MyScreen({
                 </Link>
               </TopBarButton>
               <TopBarButton asChild aria-label="설정">
-                <Link href="/settings">
+                {/* 로그인 후 미리보기면 설정도 로그인 후로 연다(API를 붙이면 설정이 로그인 상태를 직접 읽는다) */}
+                <Link
+                  href={info.account ? "/settings?state=login" : "/settings"}
+                >
                   <IconSettings />
                 </Link>
               </TopBarButton>
