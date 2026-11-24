@@ -73,7 +73,10 @@ export function MyScreen({
           onClick: () => {
             setGoal(notice.previous);
             setToast(null);
-            router.replace("/my", { scroll: false });
+            const params = new URLSearchParams(window.location.search);
+            params.set("goal", notice.previous);
+            params.delete("from");
+            router.replace(`/my?${params}`, { scroll: false });
           },
         }
       : toast?.action === "login"
@@ -135,7 +138,7 @@ export function MyScreen({
 
         <Band />
         <ValueLinkRow
-          href="/my/goal"
+          href={`/my/goal?goal=${goal}`}
           title="내 목표"
           value={GOAL_LABEL[goal]}
           action="바꾸기"

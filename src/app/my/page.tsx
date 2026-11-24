@@ -10,6 +10,7 @@ import {
   type MyInfo,
 } from "./_fixtures";
 import { MyScreen, type MyNotice } from "./my-screen";
+import { toGoal } from "./to-goal";
 
 export const metadata: Metadata = { title: "내 정보" };
 
@@ -19,23 +20,27 @@ export const metadata: Metadata = { title: "내 정보" };
  */
 export default async function MyPage({ searchParams }: PageProps<"/my">) {
   /*
-   * API 연결 전 미리보기용 주소 값. 연결하면 로그인 상태 · 목표 · 몸 정보를 서버에서 받는다.
+   * 주소 값. 기기 저장소 · API가 생기기 전까지 목표는 화면끼리 주소로 넘긴다(홈 ?goal=과 같음).
+   *   ?goal=diet|muscle — 지금 목표(없으면 fixture)
+   *   ?from=diet|muscle — 5-2에서 바꾸기 전 목표: 알림 「(목표)로 바꿨어요 · 되돌리기」
+   * API 연결 전 미리보기용 값. 연결하면 로그인 상태 · 몸 정보를 서버에서 받는다.
    *   ?state=login — 로그인 후
    *   ?state=body — 로그인 후 + 내 몸에 맞춘 뒤(5-7b에서 돌아옴): 알림 「내 몸에 맞춰 점수를 다시 계산했어요」
-   *   ?state=goal-changed — 로그인 전 + 5-2에서 목표를 근육 증가로 바꾼 뒤: 알림 「근육 증가로 바꿨어요 · 되돌리기」
    */
-  const { state } = await searchParams;
+  const { state, goal: goalParam, from } = await searchParams;
+  const goal = toGoal(goalParam) ?? FIXTURE_GOAL;
+  const previous = toGoal(from);
 
   const info: MyInfo = {
     account: state === "login" || state === "body" ? FIXTURE_ACCOUNT : null,
-    goal: state === "goal-changed" ? "muscle" : FIXTURE_GOAL,
+    goal,
     bodyKcal: state === "body" ? FIXTURE_BODY_KCAL : null,
   };
   const notice: MyNotice | null =
     state === "body"
       ? { kind: "body" }
-      : state === "goal-changed"
-        ? { kind: "goal", previous: FIXTURE_GOAL }
+      : previous && previous !== goal
+        ? { kind: "goal", previous }
         : null;
 
   return (
