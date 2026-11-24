@@ -10,17 +10,12 @@ import { Toast } from "@/components/common/toast";
 import { TopBar, TopBarButton } from "@/components/common/top-bar";
 import { IconChevronRight, IconSearch, IconSettings } from "@/components/icons";
 
-import type { Goal, LoginProvider, MyAccount, MyInfo } from "./_fixtures";
+import type { Goal, MyAccount, MyInfo } from "./_fixtures";
 import { GOAL_LABEL } from "./goals";
+import { PROVIDER_LABEL } from "./providers";
 
 /** 들어올 때 띄울 알림 띠. body = 5-7b에서 맞춘 뒤, goal = 5-2에서 목표를 바꾼 뒤(previous로 되돌린다) */
 export type MyNotice = { kind: "body" } | { kind: "goal"; previous: Goal };
-
-const PROVIDER_LABEL: Record<LoginProvider, string> = {
-  kakao: "카카오",
-  naver: "네이버",
-  google: "구글",
-};
 
 type ToastState = {
   // 같은 알림을 다시 띄울 때 새로 마운트하려고 센다(Toast는 떠 있는 채로 문장만 바꾸면 다시 뜨지 않는다)
