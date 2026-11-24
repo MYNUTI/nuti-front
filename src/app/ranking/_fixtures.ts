@@ -27,10 +27,14 @@ export type Seller =
   | "OLIVE_YOUNG"
   | "KURLY";
 
-/** 필터(API `RankingFilters`). 탭 안 값끼리는 OR. 브랜드 · 영양성분은 07단계 뒤 순서에서 붙인다 */
-export type RankingFilters = { sellers: Seller[] };
+/** 필터(API `RankingFilters`). 탭끼리는 AND, 탭 안 값끼리는 OR. 영양성분은 07단계 뒤 순서에서 붙인다 */
+export type RankingFilters = {
+  sellers: Seller[];
+  /** 브랜드 줄 이름 그대로(「제조 ○○」 포함) */
+  brands: string[];
+};
 
-export const NO_FILTERS: RankingFilters = { sellers: [] };
+export const NO_FILTERS: RankingFilters = { sellers: [], brands: [] };
 
 export type RankingMajor = {
   code: string;
@@ -202,7 +206,8 @@ const PRODUCTS: Record<string, FixtureProduct[]> = {
     }),
     sample(
       "r9011",
-      "씨알푸드",
+      // 브랜드 줄이 「제조 ○○」인 제품(2-5 메모: 그런 회사는 「브랜드 더 보기」에만 나온다)
+      "제조 씨알푸드",
       "초콜릿 프로틴바",
       37,
       5,
@@ -379,8 +384,10 @@ const SELLERS_BY_ID: Record<string, Seller[]> = {
 const sellersOf = (id: string): Seller[] => SELLERS_BY_ID[id] ?? ["COUPANG"];
 
 const matches = (product: FixtureProduct, filters: RankingFilters) =>
-  filters.sellers.length === 0 ||
-  sellersOf(product.id).some((s) => filters.sellers.includes(s));
+  (filters.sellers.length === 0 ||
+    sellersOf(product.id).some((s) => filters.sellers.includes(s))) &&
+  (filters.brands.length === 0 ||
+    (product.brand !== null && filters.brands.includes(product.brand)));
 
 /** 대분류 15개(백엔드 분류 시드의 코드 · 이름 · 순서). 순위가 열린 칩은 앞의 두 대분류에만 둔다 */
 export const FIXTURE_MAJORS: RankingMajor[] = [
@@ -479,21 +486,52 @@ export function fixtureRanking(
   return { items, coverage: { total, analyzed, updatedAt: UPDATED_AT } };
 }
 
+/** 2-5 메모: 브랜드 탭에는 많이 만드는 브랜드 8개까지. 나머지는 「브랜드 더 보기」(2-5e) */
+const TOP_BRANDS = 8;
+
 /**
- * 필터 시트 값(`GET /rankings/filters`): 판매처마다 제품 수와 지금 고른 조건의 제품 수(「n개 제품 보기」).
- * 판매처 수는 판매처 탭을 뺀 나머지 조건으로 센다(탭 안 값끼리 OR이라 서로 줄이지 않는다)
+ * 필터 시트 값(`GET /rankings/filters`): 판매처 · 브랜드마다 제품 수와 지금 고른 조건의 제품 수(「n개 제품 보기」).
+ * 탭마다의 수는 그 탭을 뺀 나머지 조건으로 센다(탭 안 값끼리 OR이라 서로 줄이지 않는다).
+ * 브랜드 순서는 2025 생산량 순인데 fixture엔 생산량이 없어 메모의 「기록이 없으면」처럼 제품 수 순.
+ * 「제조 ○○」 회사는 위 8개에 넣지 않고 전체 수(`totalBrands`)에만 센다.
+ * `brands.counts`(위 8개 밖 브랜드의 수)는 API `FilterSheetDto`에 없는 값이다. 「제조 ○○」 빼기 · 순서와 함께 남은 질문 34
  */
 export function fixtureFilterSheet(
   chipCode: string,
   filters: RankingFilters,
-): { count: number; sellers: Record<Seller, number> } {
+): {
+  count: number;
+  sellers: Record<Seller, number>;
+  brands: {
+    top: { name: string; count: number }[];
+    totalBrands: number;
+    /** 위 8개에 없는 브랜드(2-5e에서 고른 것)의 수를 보일 때 쓴다 */
+    counts: Record<string, number>;
+  };
+} {
   const all = PRODUCTS[chipCode] ?? [];
   const sellers = {} as Record<Seller, number>;
-  for (const p of all)
+  for (const p of all.filter((p) => matches(p, { ...filters, sellers: [] })))
     for (const s of sellersOf(p.id)) sellers[s] = (sellers[s] ?? 0) + 1;
+
+  const brandCounts = new Map<string, number>();
+  for (const p of all.filter((p) => matches(p, { ...filters, brands: [] })))
+    if (p.brand) brandCounts.set(p.brand, (brandCounts.get(p.brand) ?? 0) + 1);
+  const top = [...brandCounts]
+    .filter(([name]) => !name.startsWith("제조 "))
+    .map(([name, count]) => ({ name, count }))
+    // Map은 처음 나온 순서를 지키고 sort는 안정 정렬이라 같은 수면 목록에 먼저 나온 브랜드가 앞
+    .sort((a, b) => b.count - a.count)
+    .slice(0, TOP_BRANDS);
+
   return {
     count: all.filter((p) => matches(p, filters)).length,
     sellers,
+    brands: {
+      top,
+      totalBrands: brandCounts.size,
+      counts: Object.fromEntries(brandCounts),
+    },
   };
 }
 

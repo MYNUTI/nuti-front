@@ -25,16 +25,18 @@ import {
 } from "./_fixtures";
 import {
   formatCoverage,
-  parseRankingSellers,
+  hasFilters,
+  parseRankingFilters,
   parseRankingShown,
   parseRankingSort,
   RANKING_GOAL_LABEL,
   RANKING_PAGE_SIZE as PAGE_SIZE,
   RANKING_SORT_OPTIONS,
   rankingHref,
+  type FilterTab,
 } from "./format";
 import { writeLastChip } from "./last-chip";
-import { type FilterTab, RankingFilterSheet } from "./ranking-filter-sheet";
+import { RankingFilterSheet } from "./ranking-filter-sheet";
 import {
   FilterChips,
   MidTabs,
@@ -70,7 +72,10 @@ export function RankingList({
   const [restored] = useState(() => ({
     sort: parseRankingSort(searchParams.get("sort") ?? undefined),
     shown: parseRankingShown(searchParams.get("n") ?? undefined),
-    filters: { sellers: parseRankingSellers(searchParams.getAll("seller")) },
+    filters: parseRankingFilters(
+      searchParams.getAll("seller"),
+      searchParams.getAll("brand"),
+    ),
   }));
   const [sort, setSort] = useState<RankingSort>(restored.sort);
   const [sortOpen, setSortOpen] = useState(false);
@@ -93,7 +98,7 @@ export function RankingList({
 
   const major = majorOf(code);
   const { items, coverage } = fixtureRanking(code, sort, filters);
-  const filtered = filters.sellers.length > 0;
+  const filtered = hasFilters(filters);
   const hasMore = shown < items.length;
 
   useEffect(() => writeLastChip(code), [code]);
@@ -106,6 +111,8 @@ export function RankingList({
     else params.delete("sort");
     params.delete("seller");
     for (const seller of filters.sellers) params.append("seller", seller);
+    params.delete("brand");
+    for (const brand of filters.brands) params.append("brand", brand);
     if (shown > PAGE_SIZE) params.set("n", String(shown));
     else params.delete("n");
     const query = params.toString();
@@ -125,7 +132,7 @@ export function RankingList({
     setShown(PAGE_SIZE);
   };
   const sellerChip = useRef<HTMLButtonElement>(null);
-  // 누른 「초기화」가 사라지므로 포커스를 판매처 칩으로 옮긴다
+  // 누른 「초기화」가 사라지므로 포커스를 첫 칩(판매처)으로 옮긴다
   const resetFilters = () => {
     applyFilters(NO_FILTERS);
     sellerChip.current?.focus();
@@ -288,8 +295,7 @@ export function RankingList({
           onOpenChange={(open) => !open && setFilterTab(null)}
           tab={filterTab}
           applied={filters}
-          countFor={(draft) => fixtureFilterSheet(code, draft).count}
-          sellerCounts={fixtureFilterSheet(code, filters).sellers}
+          sheetFor={(draft) => fixtureFilterSheet(code, draft)}
           onApply={applyFilters}
         />
       )}

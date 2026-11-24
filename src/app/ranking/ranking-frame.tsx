@@ -10,8 +10,13 @@ import { IconSearch } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 import { NO_FILTERS, type RankingChip, type RankingFilters } from "./_fixtures";
-import { sellerChipLabel } from "./format";
-import { FILTER_TAB_LABEL, type FilterTab } from "./ranking-filter-sheet";
+import {
+  brandChipLabel,
+  FILTER_TAB_LABEL,
+  type FilterTab,
+  sellerChipLabel,
+  sellerLabel,
+} from "./format";
 
 /*
  * 2-2 점수 순위의 틀 부품. `review/v3-rankings`의 `ranking-frame.tsx`를 옮겼다
@@ -186,37 +191,52 @@ export function FilterChips({
   filters?: RankingFilters;
   onFilterClick: (tab: FilterTab) => void;
   onReset?: () => void;
-  /** 초기화하면 「초기화」가 사라지므로 포커스를 받을 판매처 칩 */
+  /** 초기화하면 「초기화」가 사라지므로 포커스를 받을 첫 칩(판매처) */
   sellerChipRef?: React.Ref<HTMLButtonElement>;
 }) {
-  const chips: { tab: FilterTab; label: string; selected: boolean }[] = [
+  // 화면 읽기에는 줄이지 않은 값 전체를 읽힌다(「CU 외 1」 · 「브랜드 2」 · 말줄임 대신)
+  const chips: {
+    tab: FilterTab;
+    label: string;
+    values: string[];
+  }[] = [
     {
       tab: "seller",
       label: sellerChipLabel(filters.sellers),
-      selected: filters.sellers.length > 0,
+      values: filters.sellers.map(sellerLabel),
     },
-    { tab: "brand", label: "브랜드", selected: false },
-    { tab: "nutrient", label: "영양성분", selected: false },
+    {
+      tab: "brand",
+      label: brandChipLabel(filters.brands),
+      values: filters.brands,
+    },
+    { tab: "nutrient", label: "영양성분", values: [] },
   ];
-  const any = chips.some((c) => c.selected);
+  const any = chips.some((c) => c.values.length > 0);
 
   return (
     <div className="flex items-center gap-2 pt-2.5 pr-4 pb-0.5">
       {/* 고른 값 글자가 길면 칩만 가로로 밀고 「초기화」는 오른쪽에 둔다(넘칠 때 그림 없음, 남은 질문 32) */}
-      <div className="flex min-w-0 flex-1 [scrollbar-width:none] gap-2 overflow-x-auto pl-4 [&::-webkit-scrollbar]:hidden">
-        {chips.map(({ tab, label, selected }) => (
+      <div className="flex min-w-0 [scrollbar-width:none] gap-2 overflow-x-auto pl-4 [&::-webkit-scrollbar]:hidden">
+        {chips.map(({ tab, label, values }) => (
           <Chip
             key={tab}
             ref={tab === "seller" ? sellerChipRef : undefined}
             kind="dropdown"
-            selected={selected}
+            selected={values.length > 0}
             aria-haspopup="dialog"
             onClick={() => onFilterClick(tab)}
           >
-            {selected && (
-              <span className="sr-only">{FILTER_TAB_LABEL[tab]}: </span>
+            {values.length > 0 ? (
+              <>
+                <span aria-hidden>{label}</span>
+                <span className="sr-only">
+                  {FILTER_TAB_LABEL[tab]}: {values.join(", ")}
+                </span>
+              </>
+            ) : (
+              label
             )}
-            {label}
           </Chip>
         ))}
       </div>

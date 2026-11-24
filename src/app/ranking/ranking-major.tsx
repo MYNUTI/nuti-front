@@ -12,8 +12,12 @@ import {
   type RankingMajor,
   type RankingSort,
 } from "./_fixtures";
-import { formatCoverage, RANKING_GOAL_LABEL, rankingHref } from "./format";
-import { FILTER_TAB_SCREEN } from "./ranking-filter-sheet";
+import {
+  FILTER_TAB_SCREEN,
+  formatCoverage,
+  RANKING_GOAL_LABEL,
+  rankingHref,
+} from "./format";
 import {
   CriteriaRow,
   FilterChips,

@@ -16,12 +16,12 @@ import {
 } from "./_fixtures";
 import {
   DEFAULT_RANKING_SORT,
+  FILTER_TAB_SCREEN,
   formatUpdatedDate,
   RANKING_GOAL_LABEL,
   rankingHref,
 } from "./format";
 import { readLastChip } from "./last-chip";
-import { FILTER_TAB_SCREEN } from "./ranking-filter-sheet";
 import {
   CriteriaRow,
   FilterChips,

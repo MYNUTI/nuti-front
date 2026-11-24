@@ -25,6 +25,21 @@ export const RANKING_SORT_OPTIONS: { value: RankingSort; label: string }[] = [
   { value: "SUGAR_LOW", label: "당류 적은 순" },
 ];
 
+export type FilterTab = "seller" | "brand" | "nutrient";
+
+export const FILTER_TAB_LABEL: Record<FilterTab, string> = {
+  seller: "판매처",
+  brand: "브랜드",
+  nutrient: "영양성분",
+};
+
+/** 탭마다 【최종】 화면 이름. 아직 안 붙인 곳의 알림에 쓴다 */
+export const FILTER_TAB_SCREEN: Record<FilterTab, string> = {
+  seller: "2-5b 필터(판매처)",
+  brand: "2-5 필터(브랜드)",
+  nutrient: "2-5 필터(영양성분)",
+};
+
 export const DEFAULT_RANKING_SORT: RankingSort = "SCORE";
 
 /** 【최종】 메모: 목록 끝에 닿을 때마다 다음 12개 */
@@ -71,6 +86,46 @@ export function parseRankingSellers(value: unknown): Seller[] {
   return SELLER_OPTIONS.map((o) => o.value).filter((s) => values.includes(s));
 }
 
+/** 주소의 `?seller=` · `?brand=`를 필터로 읽는다 */
+export function parseRankingFilters(
+  seller: unknown,
+  brand: unknown,
+): RankingFilters {
+  return {
+    sellers: parseRankingSellers(seller),
+    brands: parseRankingBrands(brand),
+  };
+}
+
+export const hasFilters = (filters: RankingFilters) =>
+  filters.sellers.length > 0 || filters.brands.length > 0;
+
+/** 주소의 `?brand=`(여러 번 올 수 있다)를 브랜드 이름으로 읽는다. 빈 값 · 겹친 값은 버린다 */
+export function parseRankingBrands(value: unknown): string[] {
+  const values = Array.isArray(value) ? value : [value];
+  return [
+    ...new Set(
+      values
+        .filter((v): v is string => typeof v === "string")
+        .map((v) => v.trim())
+        .filter(Boolean),
+    ),
+  ];
+}
+
+// 2-5 메모: 칩의 브랜드 이름은 8자를 넘으면 말줄임
+const BRAND_CHIP_MAX = 8;
+
+/** 고른 브랜드 칩 글자(2-5 메모): 1곳이면 그 이름(8자 넘으면 말줄임), 2곳 이상이면 「브랜드 2」 */
+export function brandChipLabel(brands: string[]): string {
+  if (brands.length === 0) return "브랜드";
+  if (brands.length > 1) return `브랜드 ${brands.length}`;
+  const chars = Array.from(brands[0]);
+  return chars.length > BRAND_CHIP_MAX
+    ? `${chars.slice(0, BRAND_CHIP_MAX).join("")}…`
+    : brands[0];
+}
+
 /**
  * 고른 판매처 칩 글자: 하나면 그 이름, 여럿이면 「CU 외 1」. 고르지 않았으면 「판매처」.
  * 여럿일 때 모양은 그림에 없어 임시로 정했다(남은 질문 32)
@@ -96,6 +151,7 @@ export function rankingHref(
   const params = new URLSearchParams();
   if (sort !== DEFAULT_RANKING_SORT) params.set("sort", sort);
   for (const seller of filters.sellers) params.append("seller", seller);
+  for (const brand of filters.brands) params.append("brand", brand);
   if (goal === "MUSCLE_GAIN") params.set("goal", "muscle");
   const query = params.toString();
   return `/ranking/${encodeURIComponent(code)}${query ? `?${query}` : ""}`;

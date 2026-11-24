@@ -10,6 +10,8 @@ import {
   formatCoverage,
   formatUpdatedDate,
   parseRankingGoal,
+  brandChipLabel,
+  parseRankingBrands,
   parseRankingSellers,
   parseRankingShown,
   parseRankingSort,
@@ -119,20 +121,64 @@ describe("랭킹 fixture", () => {
       rankingHref("01S4", {
         sort: "SCORE",
         goal: "WEIGHT_LOSS",
-        filters: { sellers: ["CU", "GS25"] },
+        filters: { sellers: ["CU", "GS25"], brands: [] },
       }),
     ).toBe("/ranking/01S4?seller=CU&seller=GS25");
 
-    const cu = fixtureRanking("01S4", "SCORE", { sellers: ["CU"] });
+    const cu = fixtureRanking("01S4", "SCORE", {
+      sellers: ["CU"],
+      brands: [],
+    });
     expect(cu.items).toHaveLength(4);
     expect(cu.items.map((p) => p.rank)).toEqual([1, 2, 3, 4]);
     expect(cu.coverage.total).toBe(4);
 
-    const sheet = fixtureFilterSheet("01S4", { sellers: ["CU"] });
+    const sheet = fixtureFilterSheet("01S4", {
+      sellers: ["CU"],
+      brands: [],
+    });
     expect(sheet.count).toBe(4);
     expect(sheet.sellers.CU).toBe(4);
     expect(sheet.sellers.COUPANG).toBe(
       fixtureRanking("01S4", "SCORE").items.length,
+    );
+  });
+
+  it("브랜드는 빈 값 · 겹친 값을 버리고, 칩 글자는 1곳이면 이름(8자 넘으면 말줄임) · 2곳 이상이면 「브랜드 n」", () => {
+    expect(
+      parseRankingBrands(["마이프로틴", " 칼만스 ", "", "마이프로틴"]),
+    ).toEqual(["마이프로틴", "칼만스"]);
+    expect(parseRankingBrands(undefined)).toEqual([]);
+    expect(brandChipLabel([])).toBe("브랜드");
+    expect(brandChipLabel(["마이프로틴"])).toBe("마이프로틴");
+    expect(brandChipLabel(["커클랜드 시그니처"])).toBe("커클랜드 시그니…");
+    expect(brandChipLabel(["마이프로틴", "칼만스"])).toBe("브랜드 2");
+  });
+
+  it("브랜드 탭은 제품 수 순 8개까지, 「제조 ○○」는 빼고 전체 수에만 센다. 탭끼리는 AND", () => {
+    const sheet = fixtureFilterSheet("01S4", { sellers: [], brands: [] });
+    expect(sheet.brands.top).toHaveLength(8);
+    expect(sheet.brands.top[0]).toEqual({ name: "마이프로틴", count: 3 });
+    expect(sheet.brands.top.some((b) => b.name.startsWith("제조 "))).toBe(
+      false,
+    );
+    expect(sheet.brands.counts["제조 씨알푸드"]).toBe(1);
+    expect(sheet.brands.totalBrands).toBeGreaterThan(8);
+
+    const both = { sellers: ["CU" as const], brands: ["마이프로틴"] };
+    expect(fixtureRanking("01S4", "SCORE", both).items).toHaveLength(1);
+    // 판매처 수는 브랜드 조건만, 브랜드 수는 판매처 조건만 걸고 센다
+    const counted = fixtureFilterSheet("01S4", both);
+    expect(counted.sellers.COUPANG).toBe(3);
+    expect(counted.brands.counts["마이프로틴"]).toBe(1);
+    expect(
+      rankingHref("01S4", {
+        sort: "SCORE",
+        goal: "WEIGHT_LOSS",
+        filters: both,
+      }),
+    ).toBe(
+      "/ranking/01S4?seller=CU&brand=%EB%A7%88%EC%9D%B4%ED%94%84%EB%A1%9C%ED%8B%B4",
     );
   });
 });
