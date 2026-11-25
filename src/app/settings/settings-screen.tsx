@@ -73,7 +73,9 @@ export function SettingsScreen({
                 : // 로그인 전에는 받은 동의가 없고 몸 정보는 이 기기에만 저장한다(【최종】 메모)
                   "로그인하면 동의를 바꿀 수 있어요"
             }
-            href="/settings/consent"
+            href={
+              loggedIn ? "/settings/consent?state=login" : "/settings/consent"
+            }
           />
           {!loggedIn && (
             <>

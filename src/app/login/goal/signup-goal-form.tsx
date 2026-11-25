@@ -10,12 +10,7 @@ import { BottomCta } from "@/components/common/bottom-cta";
 import { Button } from "@/components/common/button";
 import { SelectCard } from "@/components/common/select-card";
 import { Toast } from "@/components/common/toast";
-
-/** 「11월 25일」. 알림 띠는 마운트 뒤에 그려 서버 · 브라우저 날짜가 달라도 hydration이 어긋나지 않는다 */
-function todayLabel() {
-  const now = new Date();
-  return `${now.getMonth() + 1}월 ${now.getDate()}일`;
-}
+import { adsConsentMessage } from "@/components/consent/ads-consent";
 
 /*
  * 5-6c 목표 카드. 1-5 목표 선택과 같은 모양(soft 카드)이고 카드를 눌러도 바로 넘어가지 않는다. 설명 문장은 【최종】 5-6c대로.
@@ -117,7 +112,7 @@ export function SignupGoalForm({
       {/* 5-6에서 광고성 정보 수신에 동의했으면 다음 화면 위에 날짜를 알린다(법 의무, 【최종】 5-6 메모) */}
       {adsConsent && (
         <Toast
-          message={`${todayLabel()} 마이뉴티 광고성 정보 수신에 동의했어요`}
+          message={adsConsentMessage(true)}
           className="bottom-[calc(76px+var(--safe-bottom))]"
         />
       )}
