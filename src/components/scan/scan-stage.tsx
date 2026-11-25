@@ -4,6 +4,7 @@ import { skipToken, useQuery } from "@tanstack/react-query";
 import {
   useEffect,
   useEffectEvent,
+  useRef,
   useState,
   useSyncExternalStore,
 } from "react";
@@ -23,6 +24,12 @@ import {
   ScanMissSheet,
 } from "@/components/scan/scan-miss-sheet";
 import { ScanMessageSheet } from "@/components/scan/scan-result-sheet";
+import { ScanNoScoreSheet } from "@/components/scan/scan-no-score-sheet";
+import {
+  FIXTURE_NAMED_BARCODES,
+  FIXTURE_REQUESTED,
+} from "@/components/scan/_fixtures";
+import { ReportSheet } from "@/components/product/report-sheet";
 import {
   clearPendingGtin,
   readPendingGtin,
@@ -82,7 +89,14 @@ export function ScanStage({
   // 연결이 끊겨 조회하지 못한 바코드가 기기에 있으면 그것부터 조회한다(【최종】 3-1 메모).
   // 저장소는 브라우저에만 있어 서버 그림과 같은 첫 그림 뒤에 읽는다
   const pending = usePendingGtin();
-  const gtin = picked ?? pending;
+  // 「나중에 할게요」로 결과를 치웠으면 저장해 둔 바코드도 다시 쓰지 않는다
+  const [pendingDismissed, setPendingDismissed] = useState(false);
+  const gtin = picked ?? (pendingDismissed ? null : pending);
+  // 3-6 이름을 아는 바코드의 「정보 수정 요청」 시트. 떠 있는 동안 3-6 시트를 내리고(시트 위에 시트를 띄우지 않는다),
+  // 닫히면 다시 붙는 3-6 시트가 「정보 수정 요청」 버튼으로 포커스를 돌려받는다
+  const [reportOpen, setReportOpen] = useState(false);
+  const [backFromReport, setBackFromReport] = useState(false);
+  const manualButton = useRef<HTMLButtonElement>(null);
   // 연결이 끊겨 있는 동안 뜬 알림이면 그 바코드를 적어 둔다(아래 알림 자리를 하나로 쓴다)
   const [notice, setNotice] = useState<{
     id: number;
@@ -114,6 +128,8 @@ export function ScanStage({
   });
 
   const handleGtin = (value: Gtin, source: ScanSource) => {
+    // 정보가 틀렸어요 시트를 쓰는 동안 카메라가 다른 바코드를 잡아 대상이 바뀌거나 3-2로 떠나지 않게 한다
+    if (reportOpen && source === "camera") return;
     // 【최종】 3-1 메모: 체크 디지트가 틀리면 조회하지 않는다. 직접 입력은 입력 칸에서 이미 거른다
     if (source !== "manual" && !isValidGtinChecksum(value)) {
       showNotice(CHECKSUM_NOTICE);
@@ -121,6 +137,7 @@ export function ScanStage({
     }
     setGtin(value);
     setSource(source);
+    setBackFromReport(false);
     setPhotoMissOpen(false);
     setSlow(false);
     // 못 읽음 시트 뒤에서도 카메라는 돈다. 읽었으면 실패 안내는 거짓이 된다
@@ -178,17 +195,24 @@ export function ScanStage({
         />
       );
     }
-    if (lookup.data.status === "not-found") {
-      // TODO: IA 3-6 미등록 화면이 생기면 그쪽으로 보낸다.
-      return (
-        <ScanMessageSheet
-          title="등록되지 않은 상품이에요"
-          description={`바코드 ${lookup.data.gtin} · 다른 상품을 찍어 보세요`}
-        />
-      );
-    }
-    // 찾았으면 3-2로 옮기는 중이다
+    // 미등록(3-6)은 화면 아래에 따로 그린다(ScanNoScoreSheet). 찾았으면 3-2로 옮기는 중이다
     return null;
+  };
+
+  // 3-6 아직 점수가 없는 제품
+  const noScore = lookup.data?.status === "not-found" ? lookup.data.gtin : null;
+  const named = noScore ? (FIXTURE_NAMED_BARCODES[noScore] ?? null) : null;
+  // 알림 자리: 아래 버튼 줄(186) 위 12. 3-6 시트가 버튼 줄을 덮고 있으면 시트를 가리지 않게 화면 위(닫기 줄 아래)
+  const toastPlace = noScore
+    ? "top-[calc(var(--safe-top)+64px)] bottom-auto"
+    : "bottom-[calc(186px+12px+var(--safe-bottom))]";
+  // 「나중에 할게요」 → 3-1 스캔(결과를 치우고 다시 비춘다)
+  const later = () => {
+    setGtin(null);
+    setPendingDismissed(true);
+    restartReading();
+    // 누른 버튼이 사라지므로 다시 보이는 아래 버튼 줄의 첫 버튼으로 포커스를 옮긴다(그려진 뒤)
+    requestAnimationFrame(() => manualButton.current?.focus());
   };
 
   const photo = useImageBarcode({
@@ -232,9 +256,14 @@ export function ScanStage({
                 {/* 다른 앱이 카메라를 쓰는 중이면 원인이 비추는 방법이 아니라서 바꾸지 않는다 */}
                 {(finding || foundId) && source !== "manual"
                   ? "바코드를 읽었어요"
-                  : slow && state.retryable === null
-                    ? "빛 반사가 심한 것 같아요. 조금 기울여서 다시 비춰 볼까요?"
-                    : "바코드를 틀 안에 맞춰 주세요"}
+                  : noScore
+                    ? // 【최종】 3-6 그림: 이름을 아는 바코드 시트만 이 문장이 있고 기본 시트는 비어 있다
+                      named
+                      ? "다른 바코드를 찍으면 결과가 바로 바뀌어요"
+                      : ""
+                    : slow && state.retryable === null
+                      ? "빛 반사가 심한 것 같아요. 조금 기울여서 다시 비춰 볼까요?"
+                      : "바코드를 틀 안에 맞춰 주세요"}
               </p>
             )}
             {state.stage === "camera" &&
@@ -261,12 +290,16 @@ export function ScanStage({
             // 3-2로 옮기는 사이에도 시트를 둔다
             className={cn(
               "flex h-[calc(186px+var(--safe-bottom))] shrink-0 items-start justify-between px-10 pt-[46px] pb-safe",
-              (finding || foundId) && "invisible",
+              (finding || foundId || noScore) && "invisible",
             )}
           >
             {photo.input}
             {/* 【최종】 메모: 어느 화면에서나 「바코드 번호 입력 → 바코드 사진 올리기 → 이름으로 찾기」 */}
-            <ScanAction icon={<IconHash />} onClick={() => setManualOpen(true)}>
+            <ScanAction
+              ref={manualButton}
+              icon={<IconHash />}
+              onClick={() => setManualOpen(true)}
+            >
               바코드 번호 입력
             </ScanAction>
             <ScanAction
@@ -286,6 +319,37 @@ export function ScanStage({
       </BarcodeScan>
 
       {(finding || foundId) && <ScanFindingSheet />}
+      {/* 결과 자리는 모달이 아니라 결과만 읽어 준다(영역은 늘 두고 안쪽만 바꾼다) */}
+      <p aria-live="polite" className="sr-only">
+        {noScore && !finding ? "아직 점수가 없는 제품이에요" : ""}
+      </p>
+      {noScore && !finding && !reportOpen && (
+        <ScanNoScoreSheet
+          // 다른 바코드로 바뀌면 새 시트로 읽히게 한다
+          key={noScore}
+          gtin={noScore}
+          named={named}
+          requested={FIXTURE_REQUESTED[noScore] ?? null}
+          // 정보가 틀렸어요에서 돌아오면 그 버튼으로. 번호 · 사진으로 찾았으면 누른 버튼이 가려져 제목으로.
+          // 카메라로 찾았으면 폰을 든 채라 포커스를 옮기지 않고 위 영역으로 알리기만 한다
+          focusOnMount={
+            backFromReport ? "report" : source !== "camera" ? "title" : null
+          }
+          onLater={later}
+          onReport={() => setReportOpen(true)}
+        />
+      )}
+      <ReportSheet
+        // 보낸 내용 기억(같은 내용 다시 보내기)은 바코드마다 따로
+        // 형제인 3-6 시트의 key(바코드)와 겹치지 않게 앞말을 붙인다
+        key={`report-${noScore ?? "none"}`}
+        open={reportOpen}
+        onOpenChange={(open) => {
+          setReportOpen(open);
+          if (!open) setBackFromReport(true);
+        }}
+        onSent={showNotice}
+      />
 
       {/* 알림 자리는 하나다. 연결이 끊긴 뒤에 다른 알림(체크 디지트)이 뜨지 않았으면 연결 끊김 알림 */}
       {offline && notice?.whileOffline !== gtin ? (
@@ -293,16 +357,11 @@ export function ScanStage({
           // 바코드마다 한 번
           key={`offline-${gtin}`}
           message="연결이 불안정해요. 바코드는 저장해 뒀어요."
-          className="bottom-[calc(186px+12px+var(--safe-bottom))]"
+          className={toastPlace}
         />
       ) : (
         notice && (
-          <Toast
-            key={notice.id}
-            message={notice.text}
-            // 아래 버튼 줄(186) 위 12
-            className="bottom-[calc(186px+12px+var(--safe-bottom))]"
-          />
+          <Toast key={notice.id} message={notice.text} className={toastPlace} />
         )
       )}
 
@@ -350,12 +409,14 @@ export function ScanStage({
 
 /** 아래 둥근 버튼. href가 있으면 링크, 없으면 버튼 */
 function ScanAction({
+  ref,
   icon,
   href,
   onClick,
   disabled,
   children,
 }: {
+  ref?: React.Ref<HTMLButtonElement>;
   icon: React.ReactNode;
   href?: string;
   onClick?: () => void;
@@ -380,6 +441,7 @@ function ScanAction({
     </Link>
   ) : (
     <button
+      ref={ref}
       type="button"
       className={className}
       onClick={onClick}
