@@ -4,13 +4,20 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { useGoBack } from "@/components/common/back-button";
+import { Button } from "@/components/common/button";
 import { CameraFrame } from "@/components/common/camera-frame";
+import { CameraOffGuide } from "@/components/common/camera-off-guide";
 import { LoadingState } from "@/components/common/loading-state";
 import { BottomSheet } from "@/components/common/sheet";
 import { Skeleton } from "@/components/common/skeleton";
 import { Toast } from "@/components/common/toast";
 import { TopBar, TopBarButton } from "@/components/common/top-bar";
 import { IconClose, IconHelp, IconImage } from "@/components/icons";
+import {
+  type CameraPlace,
+  detectCameraPlace,
+} from "@/components/scan/camera-place";
+import { useCameraPlace } from "@/components/scan/use-camera-place";
 
 import { setLabelPhoto } from "../label-photo";
 import { fitLongEdge, PHOTO_BYTES_MAX, PHOTO_TYPES } from "./photo-size";
@@ -20,14 +27,19 @@ const FIXTURE_READ_MS = 1_500;
 const PHOTO_ERROR =
   "사진을 올리지 못했어요. JPG · PNG 사진으로 다시 골라 주세요.";
 
-type Camera = "starting" | "live" | "unavailable";
+/** denied: 권한 거절(→ 카메라가 꺼져 있을 때) · unavailable: 앱 안 브라우저 · PC · 카메라 없음(→ 카메라를 못 여는 곳) */
+type Camera = "starting" | "live" | "denied" | "unavailable";
 
 /*
  * 3-7 영양성분표 찍기(【최종】 ⑦ 9306:21630 · 잘 찍는 법 21833) — 화면 전체가 카메라. 성분표 조준 틀(320×420),
  * 「영양성분표가 틀 안에 다 들어오게 찍어 주세요」, 「잘 찍는 법」(→ 아래 시트), 「앨범에서」 · 셔터.
  * 셔터 · 앨범 → 읽는 중(공통 불러오는 중 + 「영양성분표 숫자를 읽고 있어요」) → 3-8 읽은 값 확인. ✕ → 들어온 화면.
  * 사진은 긴 변 2,400px로 줄여 JPG로 만들고, JPG · PNG가 아니거나 줄여도 10MB를 넘으면 막는다(메모).
- * 카메라가 꺼져 있을 때 · 못 여는 곳(3-7 상태 3장)은 08단계 다음 순서에서 만든다. 지금은 틀 안 문장 + 앨범만.
+ * 카메라 상태(【최종】 카메라가 꺼져 있을 때 21807 · 아직 꺼져 있음 9311:30623 · 카메라를 못 여는 곳 21780):
+ * - 권한을 거절했으면 「카메라가 꺼져 있어요」(0-3x와 같은 `CameraOffGuide`, 검정 주 버튼). 다시 켰는데 아직 거절이면 빨간 문장
+ * - 앱 안 브라우저는 카메라를 먼저 열어 보고(메모), 열리지 않으면 「이 앱 안에서는…」 + 다른 브라우저로 열기
+ * - PC는 카메라를 열지 않고 「PC에서는 카메라를 쓰기 어려워요」 + 앨범만(메모)
+ * 세 화면 모두 아래 「카메라 없이 올리기 · 앨범에서 고르기」.
  */
 export function LabelCamera({ nextQuery }: { nextQuery: string }) {
   const router = useRouter();
@@ -40,6 +52,10 @@ export function LabelCamera({ nextQuery }: { nextQuery: string }) {
   };
   const fileInput = useRef<HTMLInputElement>(null);
   const [camera, setCamera] = useState<Camera>("starting");
+  // 「카메라 다시 켜기」를 누를 때마다 올려 카메라를 다시 연다
+  const [round, setRound] = useState(0);
+  const [stillOff, setStillOff] = useState(false);
+  const place = useCameraPlace();
   const [helpOpen, setHelpOpen] = useState(false);
   const [reading, setReading] = useState(false);
   const [error, setError] = useState(0);
@@ -47,17 +63,19 @@ export function LabelCamera({ nextQuery }: { nextQuery: string }) {
   // 뒤 카메라를 연다. 화면을 떠나면 끈다
   useEffect(() => {
     let cancelled = false;
-    // 카메라를 쓸 수 없는 브라우저(http · 오래된 브라우저)는 거절과 같게 다룬다
-    const open = navigator.mediaDevices?.getUserMedia
-      ? navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "environment",
-            width: { ideal: 2560 },
-            height: { ideal: 1920 },
-          },
-          audio: false,
-        })
-      : Promise.reject(new Error("카메라 없음"));
+    // PC는 열지 않는다(메모). 카메라를 쓸 수 없는 브라우저(http · 오래된 브라우저)도 못 여는 곳으로
+    const pc = detectCameraPlace().kind === "pc";
+    const open =
+      !pc && navigator.mediaDevices?.getUserMedia
+        ? navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: "environment",
+              width: { ideal: 2560 },
+              height: { ideal: 1920 },
+            },
+            audio: false,
+          })
+        : Promise.reject(new Error("카메라 없음"));
     open
       .then((s) => {
         if (cancelled) {
@@ -65,16 +83,46 @@ export function LabelCamera({ nextQuery }: { nextQuery: string }) {
           return;
         }
         stream.current = s;
+        // 카메라 화면에서 다시 열 때(돌아왔을 때)는 <video>가 이미 있다. 안내 화면에서 열면 아래 effect가 붙인다
         if (video.current) video.current.srcObject = s;
+        setStillOff(false);
         setCamera("live");
       })
-      .catch(() => {
-        if (!cancelled) setCamera("unavailable");
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        // 앱 안 브라우저는 거절이어도 「다른 브라우저로 열기」가 맞다(설정을 바꿀 곳이 없는 경우가 많다)
+        const denied =
+          error instanceof DOMException &&
+          error.name === "NotAllowedError" &&
+          detectCameraPlace().kind === "ok";
+        setCamera(denied ? "denied" : "unavailable");
+        // 다시 켜기를 눌렀는데 또 거절이면 「아직 꺼져 있어요」
+        setStillOff(denied && round > 0);
       });
     return () => {
       cancelled = true;
       stopCamera();
     };
+  }, [round]);
+
+  // 안내 화면을 그대로 둔 채 다시 연다(고른 칩 · 포커스 · 알림 영역을 지킨다)
+  const retry = () => setRound((n) => n + 1);
+
+  // 안내 화면에서 다시 켜면 <video>는 live로 바뀐 뒤에 생기므로 그때 붙인다
+  useEffect(() => {
+    if (camera === "live" && video.current && stream.current)
+      video.current.srcObject = stream.current;
+  }, [camera]);
+
+  // 다른 앱으로 갔다 오면 브라우저가 카메라를 끊기도 한다(트랙 ended → 검은 화면이 찍힘). 돌아오면 다시 연다
+  useEffect(() => {
+    const resume = () => {
+      if (document.visibilityState !== "visible") return;
+      const track = stream.current?.getVideoTracks()[0];
+      if (track?.readyState === "ended") setRound((n) => n + 1);
+    };
+    document.addEventListener("visibilitychange", resume);
+    return () => document.removeEventListener("visibilitychange", resume);
   }, []);
 
   // 읽는 중 → 3-8. API 연결 때 사진을 보내고 읽은 값을 받아 넘긴다
@@ -148,6 +196,77 @@ export function LabelCamera({ nextQuery }: { nextQuery: string }) {
       </main>
     );
 
+  // 앨범 입력 · 오류 알림은 어느 화면에서든 쓴다
+  const shared = (
+    <>
+      <input
+        ref={fileInput}
+        type="file"
+        // HEIC 등 다른 형식도 고를 수는 있게 두고, 고른 뒤 형식 오류로 알린다(메모)
+        accept="image/*"
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (file) void pick(file);
+        }}
+      />
+      {error > 0 && (
+        <Toast
+          key={error}
+          message={PHOTO_ERROR}
+          // 카메라 화면은 아래 줄(잘 찍는 법 · 셔터 · 문장) 위, 안내 화면은 기본 자리
+          className={
+            camera === "live" || camera === "starting"
+              ? "bottom-[calc(200px+max(var(--safe-bottom),12px))]"
+              : undefined
+          }
+        />
+      )}
+    </>
+  );
+
+  if (camera === "denied" || camera === "unavailable")
+    return (
+      <main className="flex min-h-dvh flex-col bg-bg-page pt-safe pb-[max(var(--safe-bottom),12px)]">
+        <TopBar
+          right={
+            <TopBarButton aria-label="닫기" onClick={goBack}>
+              <IconClose />
+            </TopBarButton>
+          }
+        />
+        {camera === "denied" ? (
+          <CameraOffGuide
+            retryKind="primary"
+            stillOff={stillOff}
+            onRetry={retry}
+          />
+        ) : (
+          <CannotOpen place={place} />
+        )}
+        <div aria-hidden className="h-2 bg-bg-band" />
+        <section className="flex flex-col gap-3 px-5 py-6">
+          <h2 className="text-body1-bold text-text-strong">
+            카메라 없이 올리기
+          </h2>
+          <Button
+            type="button"
+            kind="secondary"
+            onClick={() => fileInput.current?.click()}
+          >
+            앨범에서 고르기
+          </Button>
+          <p className="text-body2 text-text-sub">
+            사진은 성분 숫자를 읽는 데만 써요.
+          </p>
+        </section>
+        {shared}
+      </main>
+    );
+
   return (
     <main className="flex h-dvh flex-col bg-bg-dark pt-safe">
       <div className="relative flex-1 overflow-hidden bg-[#2b3034]">
@@ -174,18 +293,9 @@ export function LabelCamera({ nextQuery }: { nextQuery: string }) {
             </TopBarButton>
           }
         />
-        <p
-          aria-live="polite"
-          className="absolute inset-x-0 bottom-[30px] px-6 text-center text-body1 text-white"
-        >
-          {camera === "unavailable" ? (
-            "카메라를 열 수 없어요. 앨범에서 골라 주세요"
-          ) : (
-            <>
-              영양성분표가 틀 안에
-              <br />다 들어오게 찍어 주세요
-            </>
-          )}
+        <p className="absolute inset-x-0 bottom-[30px] px-6 text-center text-body1 text-white">
+          영양성분표가 틀 안에
+          <br />다 들어오게 찍어 주세요
         </p>
       </div>
 
@@ -199,20 +309,6 @@ export function LabelCamera({ nextQuery }: { nextQuery: string }) {
           <IconHelp />잘 찍는 법
         </button>
         <div className="relative mt-[11px] flex h-24 w-full justify-center">
-          <input
-            ref={fileInput}
-            type="file"
-            // HEIC 등 다른 형식도 고를 수는 있게 두고, 고른 뒤 형식 오류로 알린다(메모)
-            accept="image/*"
-            className="sr-only"
-            tabIndex={-1}
-            aria-hidden
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              event.target.value = "";
-              if (file) void pick(file);
-            }}
-          />
           <button
             type="button"
             onClick={() => fileInput.current?.click()}
@@ -272,14 +368,7 @@ export function LabelCamera({ nextQuery }: { nextQuery: string }) {
         </ol>
       </BottomSheet>
 
-      {error > 0 && (
-        <Toast
-          key={error}
-          message={PHOTO_ERROR}
-          // 아래 줄(잘 찍는 법 · 셔터 · 문장) 위
-          className="bottom-[calc(200px+max(var(--safe-bottom),12px))]"
-        />
-      )}
+      {shared}
     </main>
   );
 }
@@ -302,3 +391,44 @@ const TIPS = [
     description: "1회 제공량, 100g당 같은 글자도 함께 보이게 찍어 주세요.",
   },
 ];
+
+/*
+ * 3-7 영양성분표 찍기(카메라를 못 여는 곳, 【최종】 21780). 앱 안 브라우저: 앱 이름 없이 같은 문장 + 다른 브라우저로 열기
+ * (바깥으로 열 방법이 없는 앱은 버튼을 뺀다). PC: 「PC에서는 카메라를 쓰기 어려워요」만(메모).
+ * 그 밖에 카메라가 없거나 다른 앱이 쓰는 중이라 못 연 경우는 그림이 없어 PC와 같은 틀에 임시 제목(남은 질문 45)
+ */
+function CannotOpen({ place }: { place: CameraPlace | null }) {
+  if (place?.kind === "in-app") {
+    const { openExternal } = place;
+    return (
+      <div className="flex flex-col px-5 pt-2 pb-6">
+        <h1 className="text-title1 text-text-strong">
+          이 앱 안에서는
+          <br />
+          카메라가 열리지 않을 수 있어요
+        </h1>
+        <p className="pt-2 text-body2 text-text-sub">
+          다른 브라우저에서 열면 바로 찍을 수 있어요.
+        </p>
+        {openExternal && (
+          <Button
+            type="button"
+            className="mt-6"
+            onClick={() => {
+              window.location.href = openExternal(window.location.href);
+            }}
+          >
+            다른 브라우저로 열기
+          </Button>
+        )}
+      </div>
+    );
+  }
+  return (
+    <h1 className="px-5 pt-2 pb-6 text-title1 text-text-strong">
+      {place?.kind === "pc"
+        ? "PC에서는 카메라를 쓰기 어려워요"
+        : "이 기기에서는 카메라를 열 수 없어요"}
+    </h1>
+  );
+}
