@@ -21,7 +21,14 @@ import { CameraPermission } from "./camera-permission";
 type Step =
   | { name: "checking" | "ask" | "denied" | "scan" }
   /** 0-3x의 카메라 없이 찾기. 카메라가 꺼진 채로 스캔 화면의 사진·번호 입력을 쓴다 */
-  | { name: "no-camera"; gtin?: Gtin; manual?: boolean; cameraOff?: boolean };
+  | {
+      name: "no-camera";
+      gtin?: Gtin;
+      /** gtin이 주소(`?gtin=`)로 왔다 */
+      fromUrl?: boolean;
+      manual?: boolean;
+      cameraOff?: boolean;
+    };
 
 function queryCamera(): Promise<PermissionState | "unknown"> {
   // permissions.query가 없거나 "camera"를 모르는 브라우저는 알 수 없음으로 둔다
@@ -46,7 +53,7 @@ export function ScanEntry({
   const router = useRouter();
   const [step, setStep] = useState<Step>(
     gtin || manual
-      ? { name: "no-camera", gtin, manual, cameraOff: true }
+      ? { name: "no-camera", gtin, fromUrl: !!gtin, manual, cameraOff: true }
       : { name: "checking" },
   );
 
@@ -97,6 +104,7 @@ export function ScanEntry({
         <main>
           <ScanStage
             initialGtin={step.name === "no-camera" ? step.gtin : null}
+            initialFromUrl={step.name === "no-camera" && !!step.fromUrl}
             initialManualOpen={step.name === "no-camera" && step.manual}
             cameraOff={step.name === "no-camera" && step.cameraOff}
             onPermissionDenied={
