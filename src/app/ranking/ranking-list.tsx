@@ -76,6 +76,7 @@ export function RankingList({
     filters: parseRankingFilters(
       searchParams.getAll("seller"),
       searchParams.getAll("brand"),
+      searchParams.getAll("nutrient"),
     ),
   }));
   const [sort, setSort] = useState<RankingSort>(restored.sort);
@@ -114,6 +115,9 @@ export function RankingList({
     for (const seller of filters.sellers) params.append("seller", seller);
     params.delete("brand");
     for (const brand of filters.brands) params.append("brand", brand);
+    params.delete("nutrient");
+    for (const nutrient of filters.nutrients)
+      params.append("nutrient", nutrient);
     if (shown > PAGE_SIZE) params.set("n", String(shown));
     else params.delete("n");
     const query = params.toString();

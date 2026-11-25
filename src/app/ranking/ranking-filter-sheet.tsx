@@ -8,11 +8,18 @@ import { Button } from "@/components/common/button";
 import { Chip } from "@/components/common/chip";
 import { IconClose } from "@/components/icons";
 
-import type { fixtureFilterSheet, RankingFilters, Seller } from "./_fixtures";
+import {
+  type fixtureFilterSheet,
+  NO_FILTERS,
+  NUTRIENT_CHIPS,
+  type NutrientFilter,
+  type RankingFilters,
+  type Seller,
+} from "./_fixtures";
 import {
   FILTER_TAB_LABEL,
-  FILTER_TAB_SCREEN,
   type FilterTab,
+  nutrientLabel,
   SELLER_OPTIONS,
   sellerLabel,
 } from "./format";
@@ -104,6 +111,16 @@ export function RankingFilterSheet({
       .map((name) => ({ name, count: sheet.brands.counts[name] ?? 0 })),
   ];
 
+  const toggleNutrient = (nutrient: NutrientFilter) =>
+    setDraft((d) => ({
+      ...d,
+      nutrients: d.nutrients.includes(nutrient)
+        ? d.nutrients.filter((n) => n !== nutrient)
+        : NUTRIENT_CHIPS.map((c) => c.code).filter(
+            (n) => n === nutrient || d.nutrients.includes(n),
+          ),
+    }));
+
   const chips = [
     ...draft.sellers.map((seller) => ({
       key: `seller-${seller}`,
@@ -114,6 +131,11 @@ export function RankingFilterSheet({
       key: `brand-${brand}`,
       label: brand,
       remove: () => toggleBrand(brand),
+    })),
+    ...draft.nutrients.map((nutrient) => ({
+      key: `nutrient-${nutrient}`,
+      label: nutrientLabel(nutrient),
+      remove: () => toggleNutrient(nutrient),
     })),
   ];
 
@@ -245,15 +267,56 @@ export function RankingFilterSheet({
                   value="nutrient"
                   className="min-h-0 flex-1 overflow-y-auto outline-none"
                 >
-                  {/* 영양성분 탭은 07단계 다음 순서에서 붙인다 */}
-                  <p className="px-5 py-10 text-center text-body2 text-text-sub">
-                    아직 만들지 않은 화면이에요: {FILTER_TAB_SCREEN.nutrient}
+                  <div className="flex flex-col gap-3 px-5 pt-4 pb-2">
+                    {/* 그 종류에서 해당 제품이 너무 적거나 많은 칩은 서버가 숨긴다(hidden) */}
+                    <div className="flex flex-wrap gap-2">
+                      {sheet.nutrients
+                        // 열 때 이미 걸려 있던 칩(다른 종류에서 이어 옴 · 주소로 들어옴)은 이 종류에서 숨김이어도
+                        // 보이고 풀 수 있게 둔다. 시트를 연 동안은 풀어도 남아 포커스를 잃지 않는다
+                        .filter(
+                          (chip) =>
+                            !chip.hidden ||
+                            applied.nutrients.includes(chip.code),
+                        )
+                        .map((chip) => (
+                          <Chip
+                            key={chip.code}
+                            selected={draft.nutrients.includes(chip.code)}
+                            onClick={() => toggleNutrient(chip.code)}
+                          >
+                            {chip.label}
+                          </Chip>
+                        ))}
+                    </div>
+                    {/* 고른 칩의 기준 숫자. 여럿이면 칩 순서대로 한 줄씩(그림은 하나만, 남은 질문 36) */}
+                    {draft.nutrients.length > 0 && (
+                      <div className="rounded-md bg-bg-field px-3.5 py-3 text-body2 text-text-body">
+                        {draft.nutrients.map((code) => {
+                          const chip = sheet.nutrients.find(
+                            (c) => c.code === code,
+                          )!;
+                          return (
+                            <p key={code}>
+                              {chip.label}: {chip.rule}
+                            </p>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  <p className="px-5 py-3 text-body2 text-text-sub">
+                    식약처 표시 기준과 같아요
                   </p>
                 </Tabs.Content>
               </Tabs.Root>
 
               <BottomCta
                 className="border-t border-line-default"
+                // 2-5 메모: 영양성분 칩을 2개 이상 고르면 버튼 위에 한 줄. 공통 BottomCta는 이 줄을 조건 칩 위에 둔다
+                note={
+                  draft.nutrients.length > 1 &&
+                  "고른 조건 중 하나라도 맞는 제품"
+                }
                 chips={
                   chips.length > 0 &&
                   chips.map(({ key, label, remove }) => (
@@ -266,7 +329,7 @@ export function RankingFilterSheet({
                 <Button
                   kind="tertiary"
                   className="px-5"
-                  onClick={() => setDraft({ sellers: [], brands: [] })}
+                  onClick={() => setDraft(NO_FILTERS)}
                 >
                   초기화
                 </Button>

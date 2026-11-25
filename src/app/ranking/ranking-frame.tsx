@@ -15,6 +15,8 @@ import {
   brandChipLabel,
   FILTER_TAB_LABEL,
   type FilterTab,
+  nutrientChipLabel,
+  nutrientLabel,
   sellerChipLabel,
   sellerLabel,
 } from "./format";
@@ -211,7 +213,11 @@ export function FilterChips({
       label: brandChipLabel(filters.brands),
       values: filters.brands,
     },
-    { tab: "nutrient", label: "영양성분", values: [] },
+    {
+      tab: "nutrient",
+      label: nutrientChipLabel(filters.nutrients),
+      values: filters.nutrients.map(nutrientLabel),
+    },
   ];
   const any = chips.some((c) => c.values.length > 0);
 

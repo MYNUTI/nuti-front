@@ -14,7 +14,9 @@ import {
   brandChipLabel,
   brandIndexLetter,
   groupBrandsByLetter,
+  nutrientChipLabel,
   parseRankingBrands,
+  parseRankingNutrients,
   parseRankingSellers,
   parseRankingShown,
   parseRankingSort,
@@ -124,13 +126,14 @@ describe("랭킹 fixture", () => {
       rankingHref("01S4", {
         sort: "SCORE",
         goal: "WEIGHT_LOSS",
-        filters: { sellers: ["CU", "GS25"], brands: [] },
+        filters: { sellers: ["CU", "GS25"], brands: [], nutrients: [] },
       }),
     ).toBe("/ranking/01S4?seller=CU&seller=GS25");
 
     const cu = fixtureRanking("01S4", "SCORE", {
       sellers: ["CU"],
       brands: [],
+      nutrients: [],
     });
     expect(cu.items).toHaveLength(4);
     expect(cu.items.map((p) => p.rank)).toEqual([1, 2, 3, 4]);
@@ -139,6 +142,7 @@ describe("랭킹 fixture", () => {
     const sheet = fixtureFilterSheet("01S4", {
       sellers: ["CU"],
       brands: [],
+      nutrients: [],
     });
     expect(sheet.count).toBe(4);
     expect(sheet.sellers.CU).toBe(4);
@@ -159,7 +163,11 @@ describe("랭킹 fixture", () => {
   });
 
   it("브랜드 탭은 제품 수 순 8개까지, 「제조 ○○」는 빼고 전체 수에만 센다. 탭끼리는 AND", () => {
-    const sheet = fixtureFilterSheet("01S4", { sellers: [], brands: [] });
+    const sheet = fixtureFilterSheet("01S4", {
+      sellers: [],
+      brands: [],
+      nutrients: [],
+    });
     expect(sheet.brands.top).toHaveLength(8);
     expect(sheet.brands.top[0]).toEqual({ name: "마이프로틴", count: 3 });
     expect(sheet.brands.top.some((b) => b.name.startsWith("제조 "))).toBe(
@@ -168,12 +176,19 @@ describe("랭킹 fixture", () => {
     expect(sheet.brands.counts["제조 씨알푸드"]).toBe(1);
     expect(sheet.brands.totalBrands).toBeGreaterThan(8);
 
-    const both = { sellers: ["CU" as const], brands: ["마이프로틴"] };
+    const both = {
+      sellers: ["CU" as const],
+      brands: ["마이프로틴"],
+      nutrients: [],
+    };
     expect(fixtureRanking("01S4", "SCORE", both).items).toHaveLength(1);
-    // 판매처 수는 브랜드 조건만, 브랜드 수는 판매처 조건만 걸고 센다
+    // 서버처럼 탭마다의 수는 고른 조건 없이 센다. 「n개 제품 보기」만 고른 조건으로
     const counted = fixtureFilterSheet("01S4", both);
-    expect(counted.sellers.COUPANG).toBe(3);
-    expect(counted.brands.counts["마이프로틴"]).toBe(1);
+    expect(counted.sellers.COUPANG).toBe(
+      fixtureRanking("01S4", "SCORE").items.length,
+    );
+    expect(counted.brands.counts["마이프로틴"]).toBe(3);
+    expect(counted.count).toBe(1);
     expect(
       rankingHref("01S4", {
         sort: "SCORE",
@@ -218,8 +233,76 @@ describe("랭킹 fixture", () => {
     expect(list.map((b) => b.name)).toContain("제조 씨알푸드");
     expect(list.find((b) => b.name === "마이프로틴")?.count).toBe(3);
     expect(list).toHaveLength(
-      fixtureFilterSheet("01S4", { sellers: [], brands: [] }).brands
-        .totalBrands,
+      fixtureFilterSheet("01S4", { sellers: [], brands: [], nutrients: [] })
+        .brands.totalBrands,
     );
+  });
+
+  it("영양성분은 아는 값만 칩 순서로 읽고, 칩 글자는 1개면 이름 · 2개 이상이면 「영양성분 n」", () => {
+    expect(
+      parseRankingNutrients(["HIGH_PROTEIN", "LOW_SUGAR", "SALTY"]),
+    ).toEqual(["LOW_SUGAR", "HIGH_PROTEIN"]);
+    expect(nutrientChipLabel([])).toBe("영양성분");
+    expect(nutrientChipLabel(["HIGH_PROTEIN"])).toBe("고단백");
+    expect(nutrientChipLabel(["LOW_SUGAR", "HIGH_PROTEIN"])).toBe("영양성분 2");
+  });
+
+  it("영양성분 칩은 탭 안 OR · 다른 탭과 AND로 거르고, 칩 수는 다른 조건 없이 센다(서버처럼)", () => {
+    const none = { sellers: [], brands: [], nutrients: [] };
+    const lowSugar = fixtureRanking("01S4", "SCORE", {
+      ...none,
+      nutrients: ["LOW_SUGAR"],
+    }).items;
+    expect(lowSugar.length).toBe(4);
+    expect(
+      fixtureRanking("01S4", "SCORE", {
+        ...none,
+        nutrients: ["LOW_SUGAR", "HIGH_PROTEIN"],
+      }).items.length,
+    ).toBe(fixtureRanking("01S4", "SCORE").items.length);
+    expect(
+      fixtureRanking("01S4", "SCORE", {
+        ...none,
+        sellers: ["KURLY"],
+        nutrients: ["LOW_SUGAR"],
+      }).items,
+    ).toHaveLength(0);
+
+    const sheet = fixtureFilterSheet("01S4", {
+      ...none,
+      sellers: ["CU"],
+      nutrients: ["LOW_SUGAR"],
+    });
+    const chip = (code: string) =>
+      sheet.nutrients.find((c) => c.code === code)!;
+    expect(chip("LOW_SUGAR")).toMatchObject({
+      label: "저당",
+      count: 4,
+      hidden: false,
+    });
+    expect(chip("LOW_FAT")).toMatchObject({ count: 0, hidden: true });
+    // 「n개 제품 보기」만 고른 조건(CU이면서 저당)으로 센다
+    expect(sheet.count).toBe(
+      fixtureRanking("01S4", "SCORE", {
+        ...none,
+        sellers: ["CU"],
+        nutrients: ["LOW_SUGAR"],
+      }).items.length,
+    );
+    expect(sheet.count).toBeLessThan(chip("LOW_SUGAR").count);
+  });
+
+  it("순위 주소에 영양성분을 칩 순서로 적는다", () => {
+    expect(
+      rankingHref("01S4", {
+        sort: "SCORE",
+        goal: "WEIGHT_LOSS",
+        filters: {
+          sellers: [],
+          brands: [],
+          nutrients: ["LOW_SUGAR", "HIGH_PROTEIN"],
+        },
+      }),
+    ).toBe("/ranking/01S4?nutrient=LOW_SUGAR&nutrient=HIGH_PROTEIN");
   });
 });

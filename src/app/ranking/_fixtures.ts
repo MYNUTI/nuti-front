@@ -27,14 +27,28 @@ export type Seller =
   | "OLIVE_YOUNG"
   | "KURLY";
 
-/** 필터(API `RankingFilters`). 탭끼리는 AND, 탭 안 값끼리는 OR. 영양성분은 07단계 뒤 순서에서 붙인다 */
+/** 영양성분 칩 6개(API `NutrientFilter`, 백엔드 `FilterChip`) */
+export type NutrientFilter =
+  | "LOW_SUGAR"
+  | "ZERO_SUGAR"
+  | "LOW_CALORIE"
+  | "ZERO_CALORIE"
+  | "HIGH_PROTEIN"
+  | "LOW_FAT";
+
+/** 필터(API `RankingFilters`). 탭끼리는 AND, 탭 안 값끼리는 OR */
 export type RankingFilters = {
   sellers: Seller[];
   /** 브랜드 줄 이름 그대로(「제조 ○○」 포함) */
   brands: string[];
+  nutrients: NutrientFilter[];
 };
 
-export const NO_FILTERS: RankingFilters = { sellers: [], brands: [] };
+export const NO_FILTERS: RankingFilters = {
+  sellers: [],
+  brands: [],
+  nutrients: [],
+};
 
 export type RankingMajor = {
   code: string;
@@ -67,7 +81,8 @@ export type RankedProduct = {
 const UPDATED_AT = "2026-10-18T03:00:00";
 
 type FixtureProduct = Omit<RankedProduct, "rank" | "sortText"> & {
-  per100: { calories: number; protein: number; sugar: number };
+  /** 지방은 fixture에 값이 없다 — 서버처럼 값이 없으면 저지방에 해당하지 않는다 */
+  per100: { calories: number; protein: number; sugar: number; fat?: number };
 };
 
 const tag = (label: string, warn = false) => ({ label, warn });
@@ -383,11 +398,53 @@ const SELLERS_BY_ID: Record<string, Seller[]> = {
 
 const sellersOf = (id: string): Seller[] => SELLERS_BY_ID[id] ?? ["COUPANG"];
 
+/*
+ * 영양성분 칩 판정(백엔드 `FilterChip.sql()`, 식약처 영양강조표시 기준 · 100g당). fixture 제품은 모두 음료가 아니라
+ * 음료 기준(100mL당)은 옮기지 않았다. 제로 칼로리는 음료만 해당이라 늘 아니다
+ */
+const NUTRIENT_TEST: Record<
+  NutrientFilter,
+  (p: FixtureProduct["per100"]) => boolean
+> = {
+  LOW_SUGAR: (p) => p.sugar < 5,
+  ZERO_SUGAR: (p) => p.sugar < 0.5,
+  LOW_CALORIE: (p) => p.calories < 40,
+  ZERO_CALORIE: () => false,
+  HIGH_PROTEIN: (p) =>
+    p.protein >= 11 ||
+    (p.calories > 0 && (p.protein * 100) / p.calories >= 5.5),
+  LOW_FAT: (p) => p.fat !== undefined && p.fat < 3,
+};
+
+/** 백엔드 `FilterChip`의 라벨 · 기준 글(필터 시트 `nutrients[].label` · `rule`) */
+export const NUTRIENT_CHIPS: {
+  code: NutrientFilter;
+  label: string;
+  rule: string;
+}[] = [
+  { code: "LOW_SUGAR", label: "저당", rule: "당류 5g(음료 2.5g) 미만" },
+  { code: "ZERO_SUGAR", label: "제로 슈거", rule: "당류 0.5g 미만" },
+  { code: "LOW_CALORIE", label: "저칼로리", rule: "40kcal(음료 20kcal) 미만" },
+  {
+    code: "ZERO_CALORIE",
+    label: "제로 칼로리",
+    rule: "음료 100mL당 4kcal 미만",
+  },
+  {
+    code: "HIGH_PROTEIN",
+    label: "고단백",
+    rule: "단백질 11g(음료 5.5g) 이상, 또는 100kcal당 5.5g 이상",
+  },
+  { code: "LOW_FAT", label: "저지방", rule: "지방 3g(음료 1.5g) 미만" },
+];
+
 const matches = (product: FixtureProduct, filters: RankingFilters) =>
   (filters.sellers.length === 0 ||
     sellersOf(product.id).some((s) => filters.sellers.includes(s))) &&
   (filters.brands.length === 0 ||
-    (product.brand !== null && filters.brands.includes(product.brand)));
+    (product.brand !== null && filters.brands.includes(product.brand))) &&
+  (filters.nutrients.length === 0 ||
+    filters.nutrients.some((n) => NUTRIENT_TEST[n](product.per100)));
 
 /** 대분류 15개(백엔드 분류 시드의 코드 · 이름 · 순서). 순위가 열린 칩은 앞의 두 대분류에만 둔다 */
 export const FIXTURE_MAJORS: RankingMajor[] = [
@@ -503,9 +560,9 @@ export function fixtureBrandList(
 const TOP_BRANDS = 8;
 
 /**
- * 필터 시트 값(`GET /rankings/filters`): 판매처 · 브랜드마다 제품 수와 지금 고른 조건의 제품 수(「n개 제품 보기」).
- * 탭마다의 수는 그 탭을 뺀 나머지 조건으로 센다(탭 안 값끼리 OR이라 서로 줄이지 않는다).
- * 브랜드 순서는 2025 생산량 순인데 fixture엔 생산량이 없어 메모의 「기록이 없으면」처럼 제품 수 순.
+ * 필터 시트 값(`GET /rankings/filters`): 판매처 · 브랜드 · 영양성분마다 제품 수와 지금 고른 조건의 제품 수(「n개 제품 보기」).
+ * 서버(`RankingService.filters`)처럼 탭마다의 수는 고른 조건 없이 그 종류 전체로 세고, 「n개 제품 보기」만 고른 조건으로 센다.
+ * 브랜드 순서도 서버처럼 제품 수 순(메모의 2025 생산량 순과 다름, 남은 질문 34).
  * 「제조 ○○」 회사는 위 8개에 넣지 않고 전체 수(`totalBrands`)에만 센다.
  * `brands.counts`(위 8개 밖 브랜드의 수)는 API `FilterSheetDto`에 없는 값이다. 「제조 ○○」 빼기 · 순서와 함께 남은 질문 34
  */
@@ -515,6 +572,13 @@ export function fixtureFilterSheet(
 ): {
   count: number;
   sellers: Record<Seller, number>;
+  nutrients: {
+    code: NutrientFilter;
+    label: string;
+    rule: string;
+    count: number;
+    hidden: boolean;
+  }[];
   brands: {
     top: { name: string; count: number }[];
     totalBrands: number;
@@ -524,11 +588,11 @@ export function fixtureFilterSheet(
 } {
   const all = PRODUCTS[chipCode] ?? [];
   const sellers = {} as Record<Seller, number>;
-  for (const p of all.filter((p) => matches(p, { ...filters, sellers: [] })))
+  for (const p of all)
     for (const s of sellersOf(p.id)) sellers[s] = (sellers[s] ?? 0) + 1;
 
   const brandCounts = new Map<string, number>();
-  for (const p of all.filter((p) => matches(p, { ...filters, brands: [] })))
+  for (const p of all)
     if (p.brand) brandCounts.set(p.brand, (brandCounts.get(p.brand) ?? 0) + 1);
   const top = [...brandCounts]
     .filter(([name]) => !name.startsWith("제조 "))
@@ -537,8 +601,16 @@ export function fixtureFilterSheet(
     .sort((a, b) => b.count - a.count)
     .slice(0, TOP_BRANDS);
 
+  // 서버는 칩마다 수를 다른 조건 없이 세고, 10개 미만이거나 85%를 넘으면 숨긴다. fixture는 제품이 14개뿐이라
+  // 그 규칙을 걸면 칩이 모두 숨어 0개인 칩만 숨긴다
+  const nutrients = NUTRIENT_CHIPS.map((chip) => {
+    const count = all.filter((p) => NUTRIENT_TEST[chip.code](p.per100)).length;
+    return { ...chip, count, hidden: count === 0 };
+  });
+
   return {
     count: all.filter((p) => matches(p, filters)).length,
+    nutrients,
     sellers,
     brands: {
       top,

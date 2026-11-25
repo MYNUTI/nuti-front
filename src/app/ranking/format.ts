@@ -6,6 +6,8 @@ import { toChosung } from "../search/hangul";
 
 import {
   NO_FILTERS,
+  NUTRIENT_CHIPS,
+  type NutrientFilter,
   type RankingCoverage,
   type RankingFilters,
   type RankingGoal,
@@ -92,15 +94,39 @@ export function parseRankingSellers(value: unknown): Seller[] {
 export function parseRankingFilters(
   seller: unknown,
   brand: unknown,
+  nutrient: unknown,
 ): RankingFilters {
   return {
     sellers: parseRankingSellers(seller),
     brands: parseRankingBrands(brand),
+    nutrients: parseRankingNutrients(nutrient),
   };
 }
 
 export const hasFilters = (filters: RankingFilters) =>
-  filters.sellers.length > 0 || filters.brands.length > 0;
+  filters.sellers.length > 0 ||
+  filters.brands.length > 0 ||
+  filters.nutrients.length > 0;
+
+/** 주소의 `?nutrient=`(여러 번 올 수 있다)를 영양성분 칩으로 읽는다. 모르는 값은 버리고 칩 순서로 둔다 */
+export function parseRankingNutrients(value: unknown): NutrientFilter[] {
+  const values = Array.isArray(value) ? value : [value];
+  return NUTRIENT_CHIPS.map((c) => c.code).filter((c) => values.includes(c));
+}
+
+export const nutrientLabel = (code: NutrientFilter) =>
+  NUTRIENT_CHIPS.find((c) => c.code === code)!.label;
+
+/**
+ * 고른 영양성분 칩 글자: 1개면 그 이름, 2개 이상이면 「영양성분 2」. 여럿일 때는 그림 · 메모에 없어
+ * 2-5 브랜드 메모(「브랜드 2」)를 따랐다(남은 질문 32)
+ */
+export function nutrientChipLabel(nutrients: NutrientFilter[]): string {
+  if (nutrients.length === 0) return "영양성분";
+  return nutrients.length === 1
+    ? nutrientLabel(nutrients[0])
+    : `영양성분 ${nutrients.length}`;
+}
 
 /** 주소의 `?brand=`(여러 번 올 수 있다)를 브랜드 이름으로 읽는다. 빈 값 · 겹친 값은 버린다 */
 export function parseRankingBrands(value: unknown): string[] {
@@ -193,6 +219,7 @@ export function rankingHref(
   if (sort !== DEFAULT_RANKING_SORT) params.set("sort", sort);
   for (const seller of filters.sellers) params.append("seller", seller);
   for (const brand of filters.brands) params.append("brand", brand);
+  for (const nutrient of filters.nutrients) params.append("nutrient", nutrient);
   if (goal === "MUSCLE_GAIN") params.set("goal", "muscle");
   const query = params.toString();
   return `/ranking/${encodeURIComponent(code)}${query ? `?${query}` : ""}`;
