@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { MAJOR_ICON } from "@/app/ranking/format";
 import { Button } from "@/components/common/button";
 import { CategoryTile } from "@/components/common/category-tile";
 import { ProductCard } from "@/components/common/product-card";
@@ -57,18 +58,21 @@ export function SearchSection() {
   );
 }
 
-/* 대분류 15개 중 앞 10개(10-29 확정). 그림은 【최종】 일러스트(그림 한 장을 칸마다 잘라 씀) */
+/*
+ * 대분류 15개 중 앞 10개(10-29 확정). 누르면 그 대분류 전체 순위(2-2, 메모 「오는 곳: 홈의 대분류 타일」).
+ * 그림은 【최종】 일러스트(그림 한 장을 칸마다 잘라 씀)로 2-5f 식품 분류와 같은 표(`MAJOR_ICON`)를 쓴다
+ */
 const CATEGORIES = [
-  { slug: "diet-protein", label: "다이어트·\n단백질" },
-  { slug: "ready-meal", label: "간편식" },
-  { slug: "drink", label: "음료" },
-  { slug: "bakery", label: "빵·케이크·잼" },
-  { slug: "snack", label: "과자·\n초콜릿·떡" },
-  { slug: "noodle", label: "라면·면" },
-  { slug: "meat", label: "고기·햄·달걀" },
-  { slug: "dairy", label: "유제품·\n아이스크림" },
-  { slug: "seafood", label: "수산물·\n건어물" },
-  { slug: "grain", label: "쌀·잡곡·견과" },
+  { code: "01", label: "다이어트·\n단백질" },
+  { code: "02", label: "간편식" },
+  { code: "03", label: "음료" },
+  { code: "04", label: "빵·케이크·잼" },
+  { code: "05", label: "과자·\n초콜릿·떡" },
+  { code: "06", label: "라면·면" },
+  { code: "07", label: "고기·햄·달걀" },
+  { code: "08", label: "유제품·\n아이스크림" },
+  { code: "09", label: "수산물·\n건어물" },
+  { code: "10", label: "쌀·잡곡·견과" },
 ];
 
 export function CategorySection() {
@@ -82,14 +86,14 @@ export function CategorySection() {
       <div className="grid grid-cols-5 gap-y-2.5 px-4 pt-3 pb-3">
         {CATEGORIES.map((c) => (
           <CategoryTile
-            key={c.slug}
-            href={`/ranking?category=${c.slug}`}
+            key={c.code}
+            href={`/ranking/${c.code}`}
             size="S"
             label={c.label}
             className="h-[94px] w-full min-w-0"
             image={
               <Image
-                src={`/home/category/${c.slug}.png`}
+                src={`/home/category/${MAJOR_ICON[c.code]}.png`}
                 width={168}
                 height={168}
                 sizes="56px"
@@ -99,7 +103,7 @@ export function CategorySection() {
           />
         ))}
       </div>
-      {/* 【최종】 메모: 2-5f 식품 분류 시트(대분류 15줄 접힌 채). 시트 여는 주소는 07단계에서 정한다 */}
+      {/* 【최종】 메모: 2-5f 식품 분류 시트(대분류 15줄 접힌 채) */}
       <div className="flex justify-center">
         <Link
           href="/ranking?sheet=category"

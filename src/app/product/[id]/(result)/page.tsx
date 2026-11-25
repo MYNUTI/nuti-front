@@ -375,9 +375,12 @@ export default async function ProductPage({
                   <p className="text-text-sub">
                     쿠팡에서 이 제품을 찾지 못했어요
                   </p>
-                  {/* 2-2 등급 순위. 종류를 고른 채로 여는 주소는 07단계에서 정한다 */}
                   <Link
-                    href="/ranking"
+                    href={
+                      product.categoryCode
+                        ? `/ranking/${encodeURIComponent(product.categoryCode)}`
+                        : "/ranking"
+                    }
                     className="self-start font-medium text-brand-link"
                   >
                     같은 종류 순위 보기 <span aria-hidden>›</span>

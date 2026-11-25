@@ -138,12 +138,12 @@ export function SearchResults({
           검색 결과 {result.total}개
         </h2>
         {result.category && (
-          // 2-2 점수 순위. 종류를 고른 채로 여는 주소는 07단계에서 정한다
+          // 2-2 점수 순위(그 중분류)
           <Link
-            href={`/ranking?category=${encodeURIComponent(result.category)}`}
+            href={`/ranking/${encodeURIComponent(result.category.code)}`}
             className="shrink-0 text-[12px] font-medium text-brand-link"
           >
-            {result.category} 순위 보기 <span aria-hidden>›</span>
+            {result.category.name} 순위 보기 <span aria-hidden>›</span>
           </Link>
         )}
       </div>

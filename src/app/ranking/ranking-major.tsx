@@ -136,7 +136,7 @@ export function RankingMajorAll({
             />
           ) : groups.length === 0 ? (
             <EmptyState
-              // 순위가 열린 중분류가 없는 대분류(2-5f에서는 「전체」를 보이지 않아 주소로만 닿는다). 그림이 없어 임시 문장
+              // 순위가 열린 중분류가 없는 대분류(2-5f는 「전체」를 보이지 않지만 홈 대분류 타일은 메모대로 여기로 온다). 그림이 없어 임시 문장
               title="이 종류는 아직 순위가 열리지 않았어요"
               description="점수 있는 제품이 충분히 모이면 순위가 열려요."
               className="rounded-md bg-white"

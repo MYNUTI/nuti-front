@@ -83,7 +83,8 @@ export const SEARCH_SORTS: { value: SearchSort; label: string }[] = [
 ];
 
 export type SearchResultItem = ProductCardInput & {
-  category: string;
+  /** 분류(API `category` — 코드 · 이름) */
+  category: { code: string; name: string };
   /** 정렬용 100g(음료는 100mL)당 값 */
   per100: { calories: number; protein: number; sugar: number } | null;
   /** 누르면 갈 곳. 기본은 3-2 제품 결과 */
@@ -111,7 +112,7 @@ const item = (
   band,
   tags,
   per100,
-  category: "프로틴바·간식",
+  category: { code: "01S4", name: "프로틴바·간식" },
   href,
 });
 
@@ -280,8 +281,11 @@ export type SearchResult = {
   /** 검색어가 제품 이름 전체와 같으면 그 제품(맨 위 한 칸에 따로) */
   exact: SearchResultItem | null;
   items: SearchResultItem[];
-  /** 「○○ 순위 보기」에 쓰는 결과의 대표 분류(가장 많은 분류) */
-  category: string | null;
+  /**
+   * 「○○ 순위 보기」에 쓰는 분류. 서버(`SearchResponse.category`)는 검색어가 중분류 이름과 같을 때만 주는데
+   * fixture는 결과에 가장 많은 분류로 둔다(남은 질문 28)
+   */
+  category: { code: string; name: string } | null;
 };
 
 const SORT_KEY: Record<SearchSort, (i: SearchResultItem) => number | null> = {
@@ -311,10 +315,19 @@ export function fixtureSearch(query: string, sort: SearchSort): SearchResult {
     )
     .map(({ p }) => p);
   const exact = sorted.find((p) => p.name === q) ?? null;
-  const counts = new Map<string, number>();
-  for (const p of hits)
-    counts.set(p.category, (counts.get(p.category) ?? 0) + 1);
-  const category = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  const counts = new Map<
+    string,
+    { category: SearchResultItem["category"]; n: number }
+  >();
+  for (const p of hits) {
+    const seen = counts.get(p.category.code);
+    counts.set(p.category.code, {
+      category: p.category,
+      n: (seen?.n ?? 0) + 1,
+    });
+  }
+  const category =
+    [...counts.values()].sort((a, b) => b.n - a.n)[0]?.category ?? null;
   return {
     total: hits.length,
     exact,
