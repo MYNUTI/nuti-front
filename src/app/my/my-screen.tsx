@@ -139,7 +139,14 @@ export function MyScreen({
         />
         <Divider />
         <ValueLinkRow
-          href="/my/body"
+          // 미리보기 연결: 맞춘 뒤 → 5-7(이미 맞췄을 때) · 로그인 후 → 5-7(동의 전) · 로그인 전 → 5-7
+          href={
+            info.bodyKcal
+              ? "/my/body?state=saved"
+              : info.account
+                ? "/my/body?state=login"
+                : "/my/body"
+          }
           title="내 몸에 맞추기"
           value={
             info.bodyKcal

@@ -102,7 +102,8 @@ export function DoneScreen({
           }
         >
           <Button asChild className="flex-1">
-            <Link href="/my/body">내 몸에 맞추기</Link>
+            {/* 가입을 마쳤으니 5-7 로그인 후 모양으로. 동의했는지는 API를 붙이면 5-7이 정한다 */}
+            <Link href="/my/body?state=login">내 몸에 맞추기</Link>
           </Button>
         </BottomCta>
       ) : (

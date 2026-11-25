@@ -247,9 +247,12 @@ describe("sanitizeEvent", () => {
 });
 
 describe("isSensitivePath", () => {
-  it("목표 화면과 그 아래만", () => {
+  it("목표 · 몸 정보 화면과 그 아래만", () => {
     expect(isSensitivePath("/intro/goal")).toBe(true);
     expect(isSensitivePath("/my/goal/edit")).toBe(true);
+    expect(isSensitivePath("/login/goal")).toBe(true);
+    expect(isSensitivePath("/my/body")).toBe(true);
+    expect(isSensitivePath("/my/bodyguard")).toBe(false);
     expect(isSensitivePath("/intro/goalkeeper")).toBe(false);
     expect(isSensitivePath("/home")).toBe(false);
   });
