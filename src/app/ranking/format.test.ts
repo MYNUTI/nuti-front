@@ -13,6 +13,7 @@ import {
   parseRankingGoal,
   brandChipLabel,
   brandIndexLetter,
+  filterSummary,
   groupBrandsByLetter,
   nutrientChipLabel,
   parseRankingBrands,
@@ -22,6 +23,7 @@ import {
   parseRankingSort,
   rankingHref,
   sellerChipLabel,
+  writeFilterParams,
 } from "./format";
 
 // `review/v3-rankings`의 `src/lib/ranking/format.test.ts`를 옮겼다(목표 값은 fixture 미리 보기 기준)
@@ -304,5 +306,49 @@ describe("랭킹 fixture", () => {
         },
       }),
     ).toBe("/ranking/01S4?nutrient=LOW_SUGAR&nutrient=HIGH_PROTEIN");
+  });
+
+  it("대분류 전체 필터: 묶음마다 맞는 제품만 · 맞는 게 없는 묶음은 빼고, 시트는 대분류의 칩 전체로 센다", () => {
+    const none = { sellers: [], brands: [], nutrients: [] };
+    const cu = { ...none, sellers: ["CU" as const] };
+    const groups = fixtureOverview(FIXTURE_MAJORS[0], 3, cu);
+    expect(groups.map((g) => g.chip.code)).toEqual(["01S4"]);
+    expect(groups[0].items.map((p) => p.rank)).toEqual([1, 2, 3]);
+
+    const all = fixtureFilterSheet("01", none);
+    expect(all.count).toBe(
+      FIXTURE_MAJORS[0].chips.reduce(
+        (n, c) => n + fixtureRanking(c.code, "SCORE").items.length,
+        0,
+      ),
+    );
+    expect(fixtureBrandList("01").map((b) => b.name)).toContain("샐러리아");
+  });
+
+  it("걸린 필터를 기준 줄 앞말 · 주소 값으로 바꾼다", () => {
+    const none = { sellers: [], brands: [], nutrients: [] };
+    expect(filterSummary(none)).toBeNull();
+    expect(filterSummary({ ...none, sellers: ["COUPANG"] })).toBe(
+      "쿠팡 제품만",
+    );
+    expect(
+      filterSummary({
+        sellers: ["CU"],
+        brands: ["마이프로틴"],
+        nutrients: ["LOW_SUGAR"],
+      }),
+    ).toBe("CU · 마이프로틴 · 저당 제품만");
+
+    const params = new URLSearchParams(
+      "sort=PROTEIN_HIGH&seller=GS25&goal=muscle",
+    );
+    writeFilterParams(params, {
+      ...none,
+      sellers: ["CU"],
+      nutrients: ["LOW_FAT"],
+    });
+    expect(params.toString()).toBe(
+      "sort=PROTEIN_HIGH&goal=muscle&seller=CU&nutrient=LOW_FAT",
+    );
   });
 });

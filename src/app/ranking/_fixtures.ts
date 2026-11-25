@@ -543,15 +543,25 @@ export function fixtureRanking(
   return { items, coverage: { total, analyzed, updatedAt: UPDATED_AT } };
 }
 
+/** 순위 · 필터 시트의 범위: 칩 코드면 그 칩, 대분류 코드면 그 대분류의 칩 전체(같은 제품은 한 번) */
+function productsOf(code: string): FixtureProduct[] {
+  const major = findMajor(code);
+  if (!major) return PRODUCTS[code] ?? [];
+  const byId = new Map<string, FixtureProduct>();
+  for (const chip of major.chips)
+    for (const p of PRODUCTS[chip.code] ?? []) byId.set(p.id, p);
+  return [...byId.values()];
+}
+
 /**
  * 2-5e 브랜드 더 보기 목록(`GET /rankings/brands`): 그 종류의 전체 브랜드(「제조 ○○」 포함)와 제품 수.
  * API는 분류 · 찾는 글자(`q`)만 받아 판매처 등 다른 필터를 반영하지 않는다(남은 질문 35)
  */
 export function fixtureBrandList(
-  chipCode: string,
+  code: string,
 ): { name: string; count: number }[] {
   const counts = new Map<string, number>();
-  for (const p of PRODUCTS[chipCode] ?? [])
+  for (const p of productsOf(code))
     if (p.brand) counts.set(p.brand, (counts.get(p.brand) ?? 0) + 1);
   return [...counts].map(([name, count]) => ({ name, count }));
 }
@@ -567,7 +577,7 @@ const TOP_BRANDS = 8;
  * `brands.counts`(위 8개 밖 브랜드의 수)는 API `FilterSheetDto`에 없는 값이다. 「제조 ○○」 빼기 · 순서와 함께 남은 질문 34
  */
 export function fixtureFilterSheet(
-  chipCode: string,
+  code: string,
   filters: RankingFilters,
 ): {
   count: number;
@@ -586,7 +596,7 @@ export function fixtureFilterSheet(
     counts: Record<string, number>;
   };
 } {
-  const all = PRODUCTS[chipCode] ?? [];
+  const all = productsOf(code);
   const sellers = {} as Record<Seller, number>;
   for (const p of all)
     for (const s of sellersOf(p.id)) sellers[s] = (sellers[s] ?? 0) + 1;
@@ -622,14 +632,15 @@ export function fixtureFilterSheet(
 
 /**
  * 대분류 하나의 묶음: 순위가 열린 칩마다 점수 높은 순 위 `count`개와 그 칩의 개수 줄(`GET /rankings/overview`).
- * 묶음 순서는 탭 순서이고 제품이 없는 칩은 뺀다
+ * 묶음 순서는 탭 순서이고 (필터에 맞는) 제품이 없는 칩은 뺀다
  */
 export function fixtureOverview(
   major: RankingMajor,
   count: number,
+  filters: RankingFilters = NO_FILTERS,
 ): { chip: RankingChip; items: RankedProduct[]; coverage: RankingCoverage }[] {
   return major.chips.flatMap((chip) => {
-    const { items, coverage } = fixtureRanking(chip.code, "SCORE");
+    const { items, coverage } = fixtureRanking(chip.code, "SCORE", filters);
     return items.length > 0
       ? [{ chip, items: items.slice(0, count), coverage }]
       : [];

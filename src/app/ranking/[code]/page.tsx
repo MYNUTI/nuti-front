@@ -2,11 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { findMajor, majorOf } from "../_fixtures";
-import {
-  parseRankingFilters,
-  parseRankingGoal,
-  parseRankingSort,
-} from "../format";
+import { parseRankingGoal, parseRankingSort } from "../format";
 import { RankingList } from "../ranking-list";
 import { RankingMajorAll } from "../ranking-major";
 
@@ -25,8 +21,8 @@ export async function generateMetadata({
  * (API도 필터 시트의 `category`에 둘 다 받는다).
  * 주소 값: ?sort= — 고른 정렬(기본은 적지 않음. 대분류 전체는 탭을 옮길 때 잇기만 한다),
  * ?n= — 불러온 개수(12개 넘게 불러왔을 때만. 상세에서 뒤로 오면 되살린다),
- * ?seller= · ?brand= · ?nutrient= — 고른 판매처(API 코드) · 브랜드(브랜드 줄 이름) · 영양성분(API 코드). 여럿이면 여러 번. 중분류 하나에서만 건다
- * (대분류는 잇기만 하고 거는 것은 07단계 뒤 순서),
+ * ?seller= · ?brand= · ?nutrient= — 고른 판매처(API 코드) · 브랜드(브랜드 줄 이름) · 영양성분(API 코드). 여럿이면 여러 번
+ * (화면이 라우터 주소에서 읽는다),
  * ?goal=muscle · ?state=error — 미리 보기
  */
 export default async function RankingCodePage({
@@ -34,7 +30,7 @@ export default async function RankingCodePage({
   searchParams,
 }: PageProps<"/ranking/[code]">) {
   const { code } = await params;
-  const { goal, sort, seller, brand, nutrient, state } = await searchParams;
+  const { goal, sort, state } = await searchParams;
 
   const major = findMajor(code);
   if (major)
@@ -43,7 +39,6 @@ export default async function RankingCodePage({
         major={major}
         goal={parseRankingGoal(goal)}
         sort={parseRankingSort(sort)}
-        filters={parseRankingFilters(seller, brand, nutrient)}
         failed={state === "error"}
       />
     );

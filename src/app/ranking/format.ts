@@ -128,6 +128,32 @@ export function nutrientChipLabel(nutrients: NutrientFilter[]): string {
     : `영양성분 ${nutrients.length}`;
 }
 
+/** 주소 값에 필터를 쓴다(있던 필터 값은 지우고 다시 쓴다. 다른 값은 그대로) */
+export function writeFilterParams(
+  params: URLSearchParams,
+  filters: RankingFilters,
+) {
+  params.delete("seller");
+  for (const seller of filters.sellers) params.append("seller", seller);
+  params.delete("brand");
+  for (const brand of filters.brands) params.append("brand", brand);
+  params.delete("nutrient");
+  for (const nutrient of filters.nutrients) params.append("nutrient", nutrient);
+}
+
+/**
+ * 대분류 전체 기준 줄 앞에 붙는 걸린 필터(【최종】 「쿠팡 제품만, …」). 그림은 판매처 하나뿐이라 여럿 · 다른 탭은
+ * 고른 값을 「 · 」로 잇는다(남은 질문 37). 걸린 필터가 없으면 null
+ */
+export function filterSummary(filters: RankingFilters): string | null {
+  const values = [
+    ...filters.sellers.map(sellerLabel),
+    ...filters.brands,
+    ...filters.nutrients.map(nutrientLabel),
+  ];
+  return values.length > 0 ? `${values.join(" · ")} 제품만` : null;
+}
+
 /** 주소의 `?brand=`(여러 번 올 수 있다)를 브랜드 이름으로 읽는다. 빈 값 · 겹친 값은 버린다 */
 export function parseRankingBrands(value: unknown): string[] {
   const values = Array.isArray(value) ? value : [value];
@@ -217,9 +243,7 @@ export function rankingHref(
 ): string {
   const params = new URLSearchParams();
   if (sort !== DEFAULT_RANKING_SORT) params.set("sort", sort);
-  for (const seller of filters.sellers) params.append("seller", seller);
-  for (const brand of filters.brands) params.append("brand", brand);
-  for (const nutrient of filters.nutrients) params.append("nutrient", nutrient);
+  writeFilterParams(params, filters);
   if (goal === "MUSCLE_GAIN") params.set("goal", "muscle");
   const query = params.toString();
   return `/ranking/${encodeURIComponent(code)}${query ? `?${query}` : ""}`;

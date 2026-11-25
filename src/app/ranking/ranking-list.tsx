@@ -19,25 +19,23 @@ import {
   fixtureFilterSheet,
   fixtureRanking,
   majorOf,
-  NO_FILTERS,
-  type RankingFilters,
   type RankingGoal,
   type RankingSort,
 } from "./_fixtures";
 import {
   formatCoverage,
   hasFilters,
-  parseRankingFilters,
   parseRankingShown,
   parseRankingSort,
   RANKING_GOAL_LABEL,
   RANKING_PAGE_SIZE as PAGE_SIZE,
   RANKING_SORT_OPTIONS,
   rankingHref,
-  type FilterTab,
+  writeFilterParams,
 } from "./format";
 import { writeLastChip } from "./last-chip";
 import { RankingFilterSheet } from "./ranking-filter-sheet";
+import { useRankingFilters } from "./use-ranking-filters";
 import {
   FilterChips,
   MidTabs,
@@ -73,17 +71,12 @@ export function RankingList({
   const [restored] = useState(() => ({
     sort: parseRankingSort(searchParams.get("sort") ?? undefined),
     shown: parseRankingShown(searchParams.get("n") ?? undefined),
-    filters: parseRankingFilters(
-      searchParams.getAll("seller"),
-      searchParams.getAll("brand"),
-      searchParams.getAll("nutrient"),
-    ),
   }));
   const [sort, setSort] = useState<RankingSort>(restored.sort);
   const [sortOpen, setSortOpen] = useState(false);
-  const [filters, setFilters] = useState<RankingFilters>(restored.filters);
-  const [filterTab, setFilterTab] = useState<FilterTab | null>(null);
   const [shown, setShown] = useState(restored.shown);
+  const filter = useRankingFilters(() => setShown(PAGE_SIZE));
+  const { filters } = filter;
   const [loadingMore, setLoadingMore] = useState(false);
   const [tooFew, setTooFew] = useState(0);
   const compare = useCompare();
@@ -111,13 +104,7 @@ export function RankingList({
     const params = new URLSearchParams(window.location.search);
     if (sort !== "SCORE") params.set("sort", sort);
     else params.delete("sort");
-    params.delete("seller");
-    for (const seller of filters.sellers) params.append("seller", seller);
-    params.delete("brand");
-    for (const brand of filters.brands) params.append("brand", brand);
-    params.delete("nutrient");
-    for (const nutrient of filters.nutrients)
-      params.append("nutrient", nutrient);
+    writeFilterParams(params, filters);
     if (shown > PAGE_SIZE) params.set("n", String(shown));
     else params.delete("n");
     const query = params.toString();
@@ -131,17 +118,6 @@ export function RankingList({
   // 【최종】 메모: 정렬 · 고른 필터는 중분류 탭을 옮겨도 유지하고 랭킹을 새로 열면 기본으로
   const hrefFor = (chipCode: string) =>
     rankingHref(chipCode, { sort, goal, filters });
-
-  const applyFilters = (next: RankingFilters) => {
-    setFilters(next);
-    setShown(PAGE_SIZE);
-  };
-  const sellerChip = useRef<HTMLButtonElement>(null);
-  // 누른 「초기화」가 사라지므로 포커스를 첫 칩(판매처)으로 옮긴다
-  const resetFilters = () => {
-    applyFilters(NO_FILTERS);
-    sellerChip.current?.focus();
-  };
 
   useEffect(() => {
     const el = sentinel.current;
@@ -194,9 +170,9 @@ export function RankingList({
         </header>
         <FilterChips
           filters={filters}
-          onFilterClick={setFilterTab}
-          onReset={resetFilters}
-          sellerChipRef={sellerChip}
+          onFilterClick={filter.open}
+          onReset={filter.reset}
+          sellerChipRef={filter.sellerChip}
         />
         <div className="flex h-11 items-center justify-between pr-2 pl-4">
           <div className="flex h-[38px] min-w-0 flex-col gap-0.5 text-[12px]">
@@ -237,7 +213,7 @@ export function RankingList({
                 title="고른 조건에 맞는 제품이 없어요"
                 description="조건을 바꾸거나 필터를 초기화해 보세요."
                 actions={
-                  <Button kind="secondary" size="M" onClick={resetFilters}>
+                  <Button kind="secondary" size="M" onClick={filter.reset}>
                     필터 초기화
                   </Button>
                 }
@@ -293,19 +269,19 @@ export function RankingList({
           setShown(PAGE_SIZE);
         }}
       />
-      {filterTab && (
+      {filter.tab && (
         // 열 때마다 새로 붙여 시트 안의 고른 것이 지금 걸린 필터에서 시작하게 한다
         <RankingFilterSheet
           open
-          onOpenChange={(open) => !open && setFilterTab(null)}
-          tab={filterTab}
+          onOpenChange={(open) => !open && filter.close()}
+          tab={filter.tab}
           categoryName={
             major?.chips.find((chip) => chip.code === code)?.name ?? ""
           }
           applied={filters}
           sheetFor={(draft) => fixtureFilterSheet(code, draft)}
           brandList={fixtureBrandList(code)}
-          onApply={applyFilters}
+          onApply={filter.apply}
         />
       )}
       {tooFew > 0 && (
