@@ -543,12 +543,16 @@ export function fixtureRanking(
   return { items, coverage: { total, analyzed, updatedAt: UPDATED_AT } };
 }
 
-/** 순위 · 필터 시트의 범위: 칩 코드면 그 칩, 대분류 코드면 그 대분류의 칩 전체(같은 제품은 한 번) */
-function productsOf(code: string): FixtureProduct[] {
-  const major = findMajor(code);
-  if (!major) return PRODUCTS[code] ?? [];
+/**
+ * 순위 · 필터 시트의 범위: 칩 코드면 그 칩, 대분류 코드면 그 대분류의 칩 전체, null(종류를 고르지 않음)이면 모든 칩
+ * (같은 제품은 한 번). API의 `/rankings/filters` · `/rankings/brands`는 `category`가 필수라 null 범위가 없다(남은 질문 38)
+ */
+function productsOf(code: string | null): FixtureProduct[] {
+  const major = code === null ? null : findMajor(code);
+  if (code !== null && !major) return PRODUCTS[code] ?? [];
+  const chips = major ? major.chips : FIXTURE_MAJORS.flatMap((m) => m.chips);
   const byId = new Map<string, FixtureProduct>();
-  for (const chip of major.chips)
+  for (const chip of chips)
     for (const p of PRODUCTS[chip.code] ?? []) byId.set(p.id, p);
   return [...byId.values()];
 }
@@ -558,7 +562,7 @@ function productsOf(code: string): FixtureProduct[] {
  * API는 분류 · 찾는 글자(`q`)만 받아 판매처 등 다른 필터를 반영하지 않는다(남은 질문 35)
  */
 export function fixtureBrandList(
-  code: string,
+  code: string | null,
 ): { name: string; count: number }[] {
   const counts = new Map<string, number>();
   for (const p of productsOf(code))
@@ -577,7 +581,7 @@ const TOP_BRANDS = 8;
  * `brands.counts`(위 8개 밖 브랜드의 수)는 API `FilterSheetDto`에 없는 값이다. 「제조 ○○」 빼기 · 순서와 함께 남은 질문 34
  */
 export function fixtureFilterSheet(
-  code: string,
+  code: string | null,
   filters: RankingFilters,
 ): {
   count: number;

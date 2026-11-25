@@ -351,4 +351,17 @@ describe("랭킹 fixture", () => {
       "sort=PROTEIN_HIGH&goal=muscle&seller=CU&nutrient=LOW_FAT",
     );
   });
+
+  it("종류를 고르지 않았을 때 시트는 모든 칩의 제품(같은 제품은 한 번)으로 센다", () => {
+    const none = { sellers: [], brands: [], nutrients: [] };
+    const everything = fixtureFilterSheet(null, none);
+    const majorsTotal = FIXTURE_MAJORS.reduce(
+      (n, m) => n + fixtureFilterSheet(m.code, none).count,
+      0,
+    );
+    expect(everything.count).toBe(majorsTotal);
+    expect(fixtureBrandList(null).map((b) => b.name)).toEqual(
+      expect.arrayContaining(["샐러리아", "CJ", "마이프로틴"]),
+    );
+  });
 });
