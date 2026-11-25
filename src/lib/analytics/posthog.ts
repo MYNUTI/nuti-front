@@ -64,8 +64,14 @@ export function maskNetworkRequest(
     : request;
 }
 
-// 목표를 고르는 화면. 녹화는 `ph-no-capture` 로 가리고, 이 화면의 클릭 · 히트맵은 위치만으로 고른 칸이 드러나 버린다
-const SENSITIVE_PATHS = ["/intro/goal", "/onboarding/goal", "/my/goal"];
+// 목표 · 몸 정보(성별 · 활동량)를 고르는 화면. 녹화는 `ph-no-capture` 로 가리고, 이 화면의 클릭 · 히트맵은 위치만으로 고른 칸이 드러나 버린다
+const SENSITIVE_PATHS = [
+  "/intro/goal",
+  "/onboarding/goal",
+  "/my/goal",
+  "/login/goal",
+  "/my/body",
+];
 const POSITIONAL_EVENTS = new Set([
   "$autocapture",
   "$rageclick",

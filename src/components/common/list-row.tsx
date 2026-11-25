@@ -6,12 +6,13 @@ import { cn } from "@/lib/utils";
 
 /*
  * v2/ListRow — 설정·메뉴 한 줄(최소 56). 디자인 trailing과의 대응:
- *   chevron → href · value → value · toggle → toggle · none → 아무것도 넘기지 않음
+ *   chevron → href(이동) 또는 onClick(화면 안 동작) · value → value · toggle → toggle · none → 아무것도 넘기지 않음
  */
 export function ListRow({
   title,
   description,
   href,
+  onClick,
   value,
   toggle,
   className,
@@ -20,6 +21,8 @@ export function ListRow({
   description?: React.ReactNode;
   /** 넘기면 줄 전체가 링크가 되고 오른쪽에 › 가 붙는다 */
   href?: string;
+  /** 이동 없이 화면 안 동작만 할 때. 모양은 href와 같다(›). href · toggle과 함께 쓰지 않는다(href가 우선) */
+  onClick?: () => void;
   /** 오른쪽 값 글자 */
   value?: React.ReactNode;
   /** 넘기면 오른쪽에 토글이 붙고 줄 전체가 그 라벨이 된다. props는 input으로 간다 */
@@ -42,6 +45,19 @@ export function ListRow({
         {text}
         <IconChevronRight className="size-5 shrink-0 text-icon-sub" />
       </Link>
+    );
+  }
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(rowClass, "w-full text-left", className)}
+      >
+        {text}
+        <IconChevronRight className="size-5 shrink-0 text-icon-sub" />
+      </button>
     );
   }
 
