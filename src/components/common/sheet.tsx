@@ -177,6 +177,7 @@ export function BottomSheet({
 
 /*
  * 되돌릴 수 없는 일을 묻는 확인 시트(5-7c 지우기 확인 등). 손잡이·닫기 버튼 없이 제목 + 설명 + 버튼 두 개.
+ * confirmLabel을 빼면 취소 버튼 하나만 남는다(5-10b 기기 기록 삭제 요청처럼 읽고 닫기만 하는 같은 틀의 시트).
  * 바깥을 눌러도 닫히지 않게 AlertDialog를 쓴다(dismissible이면 덮개로도 닫힌다).
  */
 export function ConfirmSheet({
@@ -197,8 +198,6 @@ export function ConfirmSheet({
   title: React.ReactNode;
   description?: React.ReactNode;
   cancelLabel: React.ReactNode;
-  confirmLabel: React.ReactNode;
-  onConfirm: () => void;
   /** 지우기·철회처럼 되돌릴 수 없는 일이면 확인 버튼을 빨간색으로 */
   danger?: boolean;
   /** 덮개를 눌러도 닫는다(취소와 같음). 【최종】 메모가 「바깥 → 닫힘」이라 정한 시트에서만(3-5 비교함 비우기 · 5-5 로그아웃 · 5-6 동의 시트) */
@@ -207,7 +206,11 @@ export function ConfirmSheet({
   onCancel?: () => void;
   /** 설명과 버튼 사이 내용(5-6 동의 시트의 「알릴 4가지」 상자 등) */
   children?: React.ReactNode;
-}) {
+} & (
+  | { confirmLabel: React.ReactNode; onConfirm: () => void }
+  // 확인 버튼 없이 닫기 하나. 이름표만 있고 동작이 없는 확인 버튼이 생기지 않게 둘을 함께 빼게 한다
+  | { confirmLabel?: undefined; onConfirm?: undefined }
+)) {
   // BottomSheet와 같은 이유로 연 순간의 포커스 요소를 기억했다가 닫히면 돌려준다
   const returnFocus = useRef<HTMLElement | null>(null);
 
@@ -256,15 +259,17 @@ export function ConfirmSheet({
                 {cancelLabel}
               </Button>
             </AlertDialog.Cancel>
-            <AlertDialog.Action asChild>
-              <Button
-                kind={danger ? "danger" : "primary"}
-                className="flex-1"
-                onClick={onConfirm}
-              >
-                {confirmLabel}
-              </Button>
-            </AlertDialog.Action>
+            {onConfirm && (
+              <AlertDialog.Action asChild>
+                <Button
+                  kind={danger ? "danger" : "primary"}
+                  className="flex-1"
+                  onClick={onConfirm}
+                >
+                  {confirmLabel}
+                </Button>
+              </AlertDialog.Action>
+            )}
           </div>
         </AlertDialog.Content>
       </AlertDialog.Portal>

@@ -8,6 +8,7 @@ import { BackButton } from "@/components/common/back-button";
 import { ListRow } from "@/components/common/list-row";
 import { ConfirmSheet } from "@/components/common/sheet";
 import { TopBar, TopBarButton } from "@/components/common/top-bar";
+import { DeviceDeleteRow } from "@/components/device-delete/device-delete-sheet";
 import { IconSearch } from "@/components/icons";
 
 function Band() {
@@ -42,9 +43,11 @@ function SectionTitle({
 export function SettingsScreen({
   loggedIn,
   version,
+  deviceDelete,
 }: {
   loggedIn: boolean;
   version: string;
+  deviceDelete: { initialOpen: boolean; deviceId: string; email: string };
 }) {
   const router = useRouter();
   const [logoutOpen, setLogoutOpen] = useState(false);
@@ -80,11 +83,7 @@ export function SettingsScreen({
           {!loggedIn && (
             <>
               <Divider />
-              {/* 5-10b는 설정 위에 뜨는 시트다. 시트는 5-10b 작업 때 이 주소 값으로 띄운다 */}
-              <ListRow
-                title="이 기기 기록 지우기"
-                href="/settings?sheet=device-delete"
-              />
+              <DeviceDeleteRow title="이 기기 기록 지우기" {...deviceDelete} />
             </>
           )}
         </section>

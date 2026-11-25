@@ -42,3 +42,10 @@ export const PRIVACY_SECTIONS: PolicySection[] = [
   { title: "12. 개인정보 보호책임자", body: PENDING },
   { title: "13. 처리방침의 변경", body: PENDING },
 ];
+
+/*
+ * 5-10b 기기 번호(【최종】 그림 값) · 보낼 곳(임의 값 — 그림 값은 개인 메일이라 쓰지 않는다). 5-5 설정도 같은 시트를 띄워 여기서 가져간다.
+ * 기기 번호는 API 연결 때 익명 ID(`readIdentity().anonymousId`)로 바꾼다. 보낼 곳은 안 정함(ACCT_009)
+ */
+export const FIXTURE_DEVICE_ID = "a1b2c3d4-e5f6-7890";
+export const DELETE_REQUEST_EMAIL = "privacy@nuti.example";

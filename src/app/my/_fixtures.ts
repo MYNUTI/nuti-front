@@ -25,5 +25,5 @@ export const FIXTURE_GOAL: Goal = "diet";
 
 export const FIXTURE_BODY_KCAL = 2_500;
 
-/** 문의하기 받는 곳. 【최종】 5-1 메모의 주소다. API 연결 때 서버 설정값(`MeSettings.supportUrl`)으로 바꿀지 정한다 */
-export const FIXTURE_INQUIRY_URL = "mailto:jho9711425@naver.com";
+/** 문의하기 받는 곳. 【최종】 5-1 메모의 주소는 개인 메일이라 임의 값을 둔다(.example은 예약 도메인). API 연결 때 서버 설정값(`MeSettings.supportUrl`)으로 바꿀지 정한다 */
+export const FIXTURE_INQUIRY_URL = "mailto:help@nuti.example";
