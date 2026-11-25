@@ -79,7 +79,7 @@ function parseNumber(raw: string, pattern: RegExp) {
 }
 
 /** 백엔드가 「올해」를 한국 시간으로 정해(`LocalDate.now(KST)`) 같은 기준으로 맞춘다 */
-function koreanYear(now: Date) {
+export function koreanYear(now: Date) {
   return Number(
     new Intl.DateTimeFormat("en-US", {
       timeZone: "Asia/Seoul",

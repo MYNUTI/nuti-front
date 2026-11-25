@@ -13,13 +13,13 @@ import type {
   Gender,
 } from "./body-input";
 
-const GENDERS: { value: Gender; label: string }[] = [
+export const GENDERS: { value: Gender; label: string }[] = [
   { value: "MALE", label: "남성" },
   { value: "FEMALE", label: "여성" },
 ];
 
 // 네 문장이 산식의 활동 등급(PA)과 맞는지는 안 정함(【최종】 메모 · ACCT_010)
-const ACTIVITIES: {
+export const ACTIVITIES: {
   value: ActivityLevel;
   title: string;
   description: string;

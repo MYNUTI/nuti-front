@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import type { Goal } from "@/app/my/_fixtures";
@@ -20,6 +20,9 @@ import {
   type BodyProfile,
   validateBody,
 } from "./body-input";
+import { estimateDailyKcal, toKcalBand } from "./body-kcal";
+import { BodyResult } from "./body-result";
+import { resultCopy } from "./result-copy";
 
 /*
  * 5-7 내 몸에 맞추기의 모양(【최종】 6장 중 시트를 뺀 5장):
@@ -28,6 +31,8 @@ import {
  *   input — 동의한 뒤 처음 입력. 빈 칸 + 「계산하기」
  *   saved — 이미 맞췄을 때. 저장한 값 + 상단 「지우기」(→ 5-7c) + 「계산하기」
  *   signup — 가입 중(5-6c 다음). 「저장하고 시작하기」 + 「나중에 할게요」
+ * input · saved에서 「계산하기」를 누르면 같은 주소에 `?step=result`를 붙여 5-7b 계산 결과를 보인다.
+ * 입력값은 화면 안 상태로만 넘겨 민감정보가 주소에 남지 않고, 브라우저 뒤로도 적은 값 그대로 입력으로 돌아온다.
  */
 export type BodyMode = "guest" | "consent" | "input" | "saved" | "signup";
 
@@ -97,13 +102,18 @@ export function BodyScreen({
   mode: initialMode,
   initial,
   goal,
+  step,
 }: {
   mode: BodyMode;
   initial: BodyInput;
+  /** `?step=result` — 5-7b 계산 결과 */
+  step?: "result";
   /** 가입 중(signup)일 때 5-6c에서 고른 목표. 5-6b로 이어 넘긴다 */
   goal?: Goal;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   // consent에서 동의하면 같은 화면에서 input으로 바뀐다
   const [mode, setMode] = useState(initialMode);
   const [input, setInput] = useState(initial);
@@ -115,6 +125,40 @@ export function BodyScreen({
   useEffect(() => {
     if (agreed && sheet === null) formHeading.current?.focus();
   }, [agreed, sheet]);
+
+  // 계산한 값. 「계산하기」로 결과에 갈 때 채운다
+  const [calculated, setCalculated] = useState<BodyProfile | null>(null);
+  const resultHeading = useRef<HTMLHeadingElement>(null);
+  const showResult = step === "result" && calculated !== null;
+
+  /** 지금 주소 값에 step만 붙이거나 뺀다(state · signup 등 다른 값은 그대로) */
+  function withStep(next: "result" | null) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (next) params.set("step", next);
+    else params.delete("step");
+    const query = params.toString();
+    return query ? `${pathname}?${query}` : pathname;
+  }
+
+  // 새로 고침 등으로 계산한 값 없이 결과 주소에 오면 입력 화면 주소로 바꾼다
+  useEffect(() => {
+    if (step !== "result" || calculated !== null) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("step");
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
+  }, [step, calculated, router, pathname, searchParams]);
+
+  // 결과 ↔ 입력이 바뀌면 화면 읽기 프로그램이 새 내용을 알게 그 화면 제목으로 초점을 옮긴다
+  // (돌아올 때는 초점을 받던 결과 제목이 사라져 그대로 두면 초점을 잃는다)
+  const wasResult = useRef(showResult);
+  useEffect(() => {
+    if (showResult) resultHeading.current?.focus();
+    else if (wasResult.current) formHeading.current?.focus();
+    wasResult.current = showResult;
+  }, [showResult]);
 
   const doneHref = goal ? `/login/done?goal=${goal}` : "/login/done";
 
@@ -145,7 +189,10 @@ export function BodyScreen({
     onValid(result.profile);
   }
 
-  const form = mode === "input" || mode === "saved" || mode === "signup";
+  const form =
+    !showResult && (mode === "input" || mode === "saved" || mode === "signup");
+  const kcal = calculated && estimateDailyKcal(calculated);
+  const copy = kcal !== null ? resultCopy(toKcalBand(kcal)) : null;
 
   return (
     <div className="flex min-h-dvh flex-col bg-bg-page pt-safe">
@@ -154,16 +201,19 @@ export function BodyScreen({
         left={
           <BackButton
             fallbackHref={
-              mode === "signup"
-                ? goal
-                  ? `/login/goal?goal=${goal}`
-                  : "/login/goal"
-                : BACK_FALLBACK[mode]
+              showResult
+                ? withStep(null)
+                : mode === "signup"
+                  ? goal
+                    ? `/login/goal?goal=${goal}`
+                    : "/login/goal"
+                  : BACK_FALLBACK[mode]
             }
           />
         }
         right={
-          mode === "saved" && (
+          mode === "saved" &&
+          !showResult && (
             <Button kind="text" size="S" onClick={() => setSheet("delete")}>
               지우기
             </Button>
@@ -196,6 +246,14 @@ export function BodyScreen({
             </div>
           </>
         )}
+        {showResult && calculated && kcal !== null && copy && (
+          <BodyResult
+            profile={calculated}
+            kcal={kcal}
+            sections={copy.sections}
+            headingRef={resultHeading}
+          />
+        )}
         {form && (
           <>
             <Head
@@ -223,11 +281,31 @@ export function BodyScreen({
           </Button>
         </BottomCta>
       )}
-      {(mode === "input" || mode === "saved") && (
+      {form && (mode === "input" || mode === "saved") && (
         <BottomCta className="sticky bottom-0">
-          {/* 5-7b 계산 결과는 다음 단계에서 같은 주소에 `?step=result`로 붙인다(값은 화면 안 상태로만 넘김) */}
-          <Button className="flex-1" onClick={() => submit(() => {})}>
+          <Button
+            className="flex-1"
+            onClick={() =>
+              submit((profile) => {
+                setCalculated(profile);
+                router.push(withStep("result"));
+              })
+            }
+          >
             계산하기
+          </Button>
+        </BottomCta>
+      )}
+      {showResult && copy && (
+        <BottomCta className="sticky bottom-0">
+          {/* 이 기기 · 계정 저장(`PUT /me/body-profile`, dailyKcal 포함)은 API 연결 때 붙인다. 지금은 5-1(내 몸에 맞춘 뒤)로만 간다.
+              replace: 저장한 뒤 뒤로 가기로 결과 화면에 돌아오지 않게 한다 */}
+          <Button
+            // 버튼 이름도 구간마다 달라(「확인했어요」 · 「N,NNNkcal 기준으로 보기」) 녹화에서 가린다
+            className="ph-mask flex-1"
+            onClick={() => router.replace("/my?state=body")}
+          >
+            {copy.button}
           </Button>
         </BottomCta>
       )}
