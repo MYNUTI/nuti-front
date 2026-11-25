@@ -167,15 +167,16 @@ const POOL: SearchResultItem[] = [
     "/fixtures/product-4.png",
     600,
   ),
+  // 3-6(검색이나 기록에서) fixture와 같은 제품(이름 · 사진). 카드는 이름 앞 브랜드를 떼고 보인다
   item(
     "p1",
     "올가니카",
-    "올라 츄이프로틴바 베리아몬드",
+    "올가니카 올라 츄이프로틴바 베리아몬드",
     null,
     null,
     [],
     null,
-    null,
+    "/fixtures/product-5.png",
     400,
     "/contribute/product/p1",
   ),
