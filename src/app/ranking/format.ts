@@ -37,11 +37,26 @@ export const FILTER_TAB_LABEL: Record<FilterTab, string> = {
   nutrient: "영양성분",
 };
 
-/** 탭마다 【최종】 화면 이름. 아직 안 붙인 곳의 알림에 쓴다 */
-export const FILTER_TAB_SCREEN: Record<FilterTab, string> = {
-  seller: "2-5b 필터(판매처)",
-  brand: "2-5 필터(브랜드)",
-  nutrient: "2-5 필터(영양성분)",
+/**
+ * 대분류 코드 → 그림 이름(`public/home/category/<이름>.png`, 홈 대분류 타일과 같은 그림).
+ * 【최종】 그림 한 장(5×3)을 칸마다 잘라 썼다. 2-5f 메모 「안 정함: 분류 아이콘」
+ */
+export const MAJOR_ICON: Record<string, string> = {
+  "01": "diet-protein",
+  "02": "ready-meal",
+  "03": "drink",
+  "04": "bakery",
+  "05": "snack",
+  "06": "noodle",
+  "07": "meat",
+  "08": "dairy",
+  "09": "seafood",
+  "10": "grain",
+  "11": "coffee-tea",
+  "12": "seasoning",
+  "13": "side-dish",
+  "14": "health",
+  "15": "fruit-veg",
 };
 
 export const DEFAULT_RANKING_SORT: RankingSort = "SCORE";

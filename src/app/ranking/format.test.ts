@@ -15,6 +15,7 @@ import {
   brandIndexLetter,
   filterSummary,
   groupBrandsByLetter,
+  MAJOR_ICON,
   nutrientChipLabel,
   parseRankingBrands,
   parseRankingNutrients,
@@ -363,5 +364,10 @@ describe("랭킹 fixture", () => {
     expect(fixtureBrandList(null).map((b) => b.name)).toEqual(
       expect.arrayContaining(["샐러리아", "CJ", "마이프로틴"]),
     );
+  });
+
+  it("대분류마다 그림 이름이 있다(없으면 2-5f에 깨진 그림이 나온다)", () => {
+    for (const major of FIXTURE_MAJORS)
+      expect(MAJOR_ICON[major.code]).toBeTruthy();
   });
 });

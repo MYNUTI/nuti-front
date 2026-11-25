@@ -34,14 +34,10 @@ import {
   writeFilterParams,
 } from "./format";
 import { writeLastChip } from "./last-chip";
+import { RankingCategorySheet } from "./ranking-category-sheet";
 import { RankingFilterSheet } from "./ranking-filter-sheet";
 import { useRankingFilters } from "./use-ranking-filters";
-import {
-  FilterChips,
-  MidTabs,
-  RankingTitleBar,
-  useNotBuiltNotice,
-} from "./ranking-frame";
+import { FilterChips, MidTabs, RankingTitleBar } from "./ranking-frame";
 import { RankCard } from "./ranking-items";
 
 // fixture는 바로 오지만 「더 불러오는 중」을 보이려고 잠깐 기다린다(API 연결 때 지운다)
@@ -74,6 +70,8 @@ export function RankingList({
   }));
   const [sort, setSort] = useState<RankingSort>(restored.sort);
   const [sortOpen, setSortOpen] = useState(false);
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const closeCategory = () => setCategoryOpen(false);
   const [shown, setShown] = useState(restored.shown);
   const filter = useRankingFilters(() => setShown(PAGE_SIZE));
   const { filters } = filter;
@@ -88,7 +86,6 @@ export function RankingList({
     barHeight > 0
       ? "bottom-[calc(57px+81px+12px+var(--safe-bottom))]"
       : undefined;
-  const notBuilt = useNotBuiltNotice(aboveBar);
   const sentinel = useRef<HTMLDivElement>(null);
 
   const major = majorOf(code);
@@ -157,7 +154,7 @@ export function RankingList({
         <header className="sticky top-0 z-10 bg-bg-page pt-safe">
           <RankingTitleBar
             major={major?.name ?? null}
-            onMajorClick={() => notBuilt.show("2-5f 식품 분류")}
+            onMajorClick={() => setCategoryOpen(true)}
           />
           {major && (
             <MidTabs
@@ -269,6 +266,15 @@ export function RankingList({
           setShown(PAGE_SIZE);
         }}
       />
+      {categoryOpen && (
+        // 열 때마다 새로 붙여 지금 보는 대분류가 펼친 채 열리게 한다
+        <RankingCategorySheet
+          open
+          onOpenChange={(open) => !open && closeCategory()}
+          activeCode={code}
+          hrefFor={hrefFor}
+        />
+      )}
       {filter.tab && (
         // 열 때마다 새로 붙여 시트 안의 고른 것이 지금 걸린 필터에서 시작하게 한다
         <RankingFilterSheet
@@ -291,7 +297,6 @@ export function RankingList({
           className={aboveBar}
         />
       )}
-      {notBuilt.element}
     </>
   );
 }

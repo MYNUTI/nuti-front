@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { Button } from "@/components/common/button";
 import { EmptyState, ErrorState } from "@/components/common/empty-state";
@@ -31,8 +31,8 @@ import {
   FilterChips,
   GroupCard,
   RankingTitleBar,
-  useNotBuiltNotice,
 } from "./ranking-frame";
+import { RankingCategorySheet } from "./ranking-category-sheet";
 import { RankingFilterSheet } from "./ranking-filter-sheet";
 import { TopRow } from "./ranking-items";
 import { useRankingFilters } from "./use-ranking-filters";
@@ -62,13 +62,32 @@ export function RankingHome({
   noneOpen: boolean;
 }) {
   const router = useRouter();
-  const notBuilt = useNotBuiltNotice();
   // 표시는 라우터의 현재 주소에서 읽는다. 서버가 넘긴 값은 뒤로 와서 다시 붙을 때 처음 받아 둔 것이 오고,
   // window.location은 화면을 옮기는 중에는 아직 이전 주소다
   const searchParams = useSearchParams();
   const fromTab = searchParams.get("from") === "tab";
   const filter = useRankingFilters();
   const { filters } = filter;
+  // 홈 「종류 전체 보기」(`?sheet=category`)로 오면 시트를 연 채 연다(【최종】 2-5f 메모)
+  const [categoryOpen, setCategoryOpen] = useState(
+    () => searchParams.get("sheet") === "category",
+  );
+  const majorButton = useRef<HTMLButtonElement>(null);
+  // 닫으면 주소의 표시를 지워 새로 고치거나 뒤로 와도 다시 열리지 않게 한다
+  const closeCategory = () => {
+    setCategoryOpen(false);
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("sheet")) return;
+    // 저절로 열린 시트는 누른 버튼이 없어 닫으면 포커스가 맨 앞으로 간다. 시트가 포커스를 돌려준 뒤 「종류」 버튼으로 옮긴다
+    requestAnimationFrame(() => majorButton.current?.focus());
+    params.delete("sheet");
+    const query = params.toString();
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}${query ? `?${query}` : ""}`,
+    );
+  };
   // 서버 그림에는 저장소가 없어 null. 브라우저에서 바로 열 때는 처음부터 읽어 목록이 잠깐 보이지 않게 한다
   const last = useSyncExternalStore(
     noSubscribe,
@@ -137,7 +156,8 @@ export function RankingHome({
         <header className="sticky top-0 z-10 bg-bg-page pt-safe">
           <RankingTitleBar
             major={null}
-            onMajorClick={() => notBuilt.show("2-5f 식품 분류")}
+            onMajorClick={() => setCategoryOpen(true)}
+            majorButtonRef={majorButton}
           />
         </header>
         <FilterChips
@@ -200,6 +220,17 @@ export function RankingHome({
         </div>
       </main>
       <TabBar />
+      {categoryOpen && (
+        // 열 때마다 새로 붙여 지금 보는 대분류가 펼친 채 열리게 한다
+        <RankingCategorySheet
+          open
+          onOpenChange={(open) => !open && closeCategory()}
+          activeCode={null}
+          hrefFor={(code) =>
+            rankingHref(code, { sort: DEFAULT_RANKING_SORT, goal, filters })
+          }
+        />
+      )}
       {filter.tab && (
         <RankingFilterSheet
           open
@@ -213,7 +244,6 @@ export function RankingHome({
           onApply={filter.apply}
         />
       )}
-      {notBuilt.element}
     </>
   );
 }

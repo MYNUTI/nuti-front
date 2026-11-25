@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 import { CheckboxMark } from "@/components/common/check-mark";
 import { Chip } from "@/components/common/chip";
-import { Toast } from "@/components/common/toast";
 import { TopBarButton } from "@/components/common/top-bar";
 import { IconSearch } from "@/components/icons";
 import { cn } from "@/lib/utils";
@@ -33,17 +32,21 @@ import {
 export function RankingTitleBar({
   major,
   onMajorClick,
+  majorButtonRef,
 }: {
   /** 고른 대분류 이름. 없으면 고르지 않은 모양(「종류」) */
   major: string | null;
   /** 없으면 대분류 버튼을 숨긴다(순위가 열린 종류가 없을 때) */
   onMajorClick?: () => void;
+  /** 대분류 버튼(시트가 저절로 열렸다 닫힐 때 포커스를 돌려줄 곳) */
+  majorButtonRef?: React.Ref<HTMLButtonElement>;
 }) {
   return (
     <div className="flex h-13 items-center bg-bg-page pr-2 pl-5">
       <h1 className="text-title1 text-text-strong">랭킹</h1>
       {onMajorClick && (
         <Chip
+          ref={majorButtonRef}
           kind="dropdown"
           aria-haspopup="dialog"
           onClick={onMajorClick}
@@ -259,32 +262,6 @@ export function FilterChips({
       )}
     </div>
   );
-}
-
-/*
- * 07단계에서 차례로 붙일 화면(브랜드 · 영양성분 필터 · 대분류 화면의 필터 · 2-5f 식품 분류)으로 가는 버튼을 눌렀을 때의 알림.
- * 버튼 모양은 그림 그대로 두고, 그 화면을 붙이면 이 알림 대신 연결한다(그 브랜치의 검토용 알림과 같은 쓰임).
- */
-export function useNotBuiltNotice(
-  /** 아래 고정 줄(비교함 바) 위에 띄울 때 Toast의 bottom을 덮어 쓴다 */
-  className?: string,
-) {
-  const [notice, setNotice] = useState<{ id: number; screen: string } | null>(
-    null,
-  );
-
-  return {
-    show: (screen: string) =>
-      setNotice((prev) => ({ id: (prev?.id ?? 0) + 1, screen })),
-    element: notice && (
-      <Toast
-        // 같은 버튼을 다시 눌러도 알림이 다시 뜨게 한다
-        key={notice.id}
-        message={`아직 만들지 않은 화면이에요: ${notice.screen}`}
-        className={className}
-      />
-    ),
-  };
 }
 
 /** 체크 + 이름 + 제품 수 한 줄(줄 전체를 누른다) */

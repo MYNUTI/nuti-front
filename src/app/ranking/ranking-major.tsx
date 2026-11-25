@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/common/button";
 import { EmptyState, ErrorState } from "@/components/common/empty-state";
@@ -22,6 +22,7 @@ import {
   rankingHref,
   writeFilterParams,
 } from "./format";
+import { RankingCategorySheet } from "./ranking-category-sheet";
 import { RankingFilterSheet } from "./ranking-filter-sheet";
 import {
   CriteriaRow,
@@ -29,7 +30,6 @@ import {
   GroupCard,
   MidTabs,
   RankingTitleBar,
-  useNotBuiltNotice,
 } from "./ranking-frame";
 import { RankRow } from "./ranking-items";
 import { useRankingFilters } from "./use-ranking-filters";
@@ -59,8 +59,9 @@ export function RankingMajorAll({
   failed: boolean;
 }) {
   const router = useRouter();
-  const notBuilt = useNotBuiltNotice();
   const filter = useRankingFilters();
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const closeCategory = () => setCategoryOpen(false);
   const { filters } = filter;
 
   // 걸린 필터를 주소에 남겨 새로 고치거나 상세에서 뒤로 와도 같은 묶음이 열린다(정렬 등 다른 값은 그대로)
@@ -91,7 +92,7 @@ export function RankingMajorAll({
         <header className="sticky top-0 z-10 bg-bg-page pt-safe">
           <RankingTitleBar
             major={major.name}
-            onMajorClick={() => notBuilt.show("2-5f 식품 분류")}
+            onMajorClick={() => setCategoryOpen(true)}
           />
           <MidTabs
             majorCode={major.code}
@@ -135,7 +136,7 @@ export function RankingMajorAll({
             />
           ) : groups.length === 0 ? (
             <EmptyState
-              // 순위가 열린 중분류가 없는 대분류는 2-5f에서 고를 수 없어 그림이 없다. 임시 문장
+              // 순위가 열린 중분류가 없는 대분류(2-5f에서는 「전체」를 보이지 않아 주소로만 닿는다). 그림이 없어 임시 문장
               title="이 종류는 아직 순위가 열리지 않았어요"
               description="점수 있는 제품이 충분히 모이면 순위가 열려요."
               className="rounded-md bg-white"
@@ -161,6 +162,15 @@ export function RankingMajorAll({
         </div>
       </main>
       <TabBar />
+      {categoryOpen && (
+        // 열 때마다 새로 붙여 지금 보는 대분류가 펼친 채 열리게 한다
+        <RankingCategorySheet
+          open
+          onOpenChange={(open) => !open && closeCategory()}
+          activeCode={major.code}
+          hrefFor={hrefFor}
+        />
+      )}
       {filter.tab && (
         <RankingFilterSheet
           open
@@ -173,7 +183,6 @@ export function RankingMajorAll({
           onApply={filter.apply}
         />
       )}
-      {notBuilt.element}
     </>
   );
 }
