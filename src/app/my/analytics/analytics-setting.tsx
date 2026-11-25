@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import { ListRow } from "@/components/common/list-row";
@@ -9,20 +10,17 @@ import {
   useAnalyticsOptOut,
   useOptOutStorageReadable,
 } from "@/lib/analytics/use-opt-out";
-import { usePolicies } from "@/lib/me/queries";
 
-// 5-11 이용 통계. 문구는 디자인 확정본(11-16 · 기능명세서 ACCT_011)
+// 5-11 이용 통계. 문구는 【최종】 그대로(기능명세서 ACCT_011)
 export function AnalyticsSetting() {
   const optedOut = useAnalyticsOptOut(false);
   const readable = useOptOutStorageReadable();
   // 저장 실패 알림을 다시 띄우려면 Toast를 새로 마운트해야 해서(key) 횟수로 센다
   const [saveFailures, setSaveFailures] = useState(0);
-  const { data: policies } = usePolicies();
-  const privacyUrl = policies?.privacy?.url;
 
   return (
-    <div className="flex flex-col pb-10">
-      <p className="px-5 pt-2 pb-6 text-body1 break-keep text-text-sub">
+    <div className="flex flex-col">
+      <p className="px-5 pt-4 pb-2 text-body2 break-keep text-text-sub">
         {/* 디자인 확정 11-17. 「이름, 이메일」은 이름 · 이메일을 글자로 보여 주는 화면(내 정보 계정 줄 등)에
             ph-mask 를 붙인 뒤에만 넣는다 — 그 전에는 녹화에 담길 수 있어 뺀 판(디자인 세션이 정한 대체 문구) */}
         어느 화면에서 이용을 멈추는지 알고 고치려고, 열어 본 화면과 머문 시간은
@@ -54,22 +52,17 @@ export function AnalyticsSetting() {
           className="bottom-[calc(24px+var(--safe-bottom))]"
         />
       )}
-      <p className="px-5 pt-4 text-body2 break-keep text-text-sub">
+      <p className="px-5 py-2 text-body2 break-keep text-text-sub">
         이 브라우저에만 적용돼요. 다른 브라우저나 기기로 열거나 쿠키와 사이트
         데이터를 지우면 {"'이용 통계 보내지 않기'"}를 다시 켜 주세요. 보내지
         않아도 모든 기능을 그대로 쓸 수 있어요.
       </p>
-      {/* 디자인 확정본은 앱 안 5-10 처리방침 화면으로 간다. 그 화면이 생기기 전까지 바깥 주소 */}
-      {privacyUrl && (
-        <a
-          href={privacyUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="px-5 pt-6 text-body2 text-text-sub underline"
-        >
-          개인정보 처리방침 보기
-        </a>
-      )}
+      <Link
+        href="/privacy"
+        className="self-start px-5 pt-1 pb-4 text-[13px] leading-[normal] font-medium text-brand-link"
+      >
+        개인정보 처리방침 보기 ›
+      </Link>
     </div>
   );
 }
