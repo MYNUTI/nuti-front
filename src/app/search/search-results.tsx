@@ -193,7 +193,7 @@ export function SearchResults({
           찾는 제품이 없나요?
         </p>
         <Button kind="text" size="M" asChild>
-          <Link href="/contribute/name">제품 요청하기</Link>
+          <Link href={requestHref(query)}>제품 요청하기</Link>
         </Button>
       </div>
 
@@ -249,6 +249,11 @@ function useBarVisible() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
   return visible;
+}
+
+/** 3-6 제품 요청하기. 검색어를 제품 이름 칸에 채워 넘긴다 */
+function requestHref(query: string) {
+  return `/contribute/request?${new URLSearchParams({ name: query })}`;
 }
 
 /*
@@ -345,7 +350,7 @@ function NoResults({
           </p>
         </div>
         <Button kind="text" size="M" asChild>
-          <Link href="/contribute/name">제품 요청하기</Link>
+          <Link href={requestHref(query)}>제품 요청하기</Link>
         </Button>
       </section>
     </>

@@ -210,7 +210,7 @@ export function RequestSection() {
         </p>
       </div>
       <Button kind="text" size="M" asChild>
-        <Link href="/contribute/name">제품 요청하기</Link>
+        <Link href="/contribute/request">제품 요청하기</Link>
       </Button>
     </section>
   );

@@ -15,7 +15,7 @@ export const FIXTURE_NAMED_BARCODES: Record<
 
 /**
  * 3-6 메모 「이럴 땐」: 다른 사람이 먼저 요청한 바코드 · 이 기기에서 이미 요청한 바코드.
- * 이 기기에서 요청한 것은 3-6 제품 요청하기를 만들 때 기기에 남긴 것으로 바꾼다
+ * 이 기기에서 요청한 것은 3-6 제품 요청하기가 기기에 남긴 것(`requested-gtins.ts`)도 함께 본다
  */
 export const FIXTURE_REQUESTED: Record<Gtin, "others" | "mine"> = {
   "08801000000012": "others",

@@ -30,6 +30,7 @@ import {
   FIXTURE_REQUESTED,
 } from "@/components/scan/_fixtures";
 import { ReportSheet } from "@/components/product/report-sheet";
+import { isRequestedHere } from "@/components/scan/requested-gtins";
 import {
   clearPendingGtin,
   readPendingGtin,
@@ -329,7 +330,12 @@ export function ScanStage({
           key={noScore}
           gtin={noScore}
           named={named}
-          requested={FIXTURE_REQUESTED[noScore] ?? null}
+          // 둘 다면 「내가 요청함」이 더 맞다
+          requested={
+            isRequestedHere(noScore)
+              ? "mine"
+              : (FIXTURE_REQUESTED[noScore] ?? null)
+          }
           // 정보가 틀렸어요에서 돌아오면 그 버튼으로. 번호 · 사진으로 찾았으면 누른 버튼이 가려져 제목으로.
           // 카메라로 찾았으면 폰을 든 채라 포커스를 옮기지 않고 위 영역으로 알리기만 한다
           focusOnMount={
