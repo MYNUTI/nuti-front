@@ -3,6 +3,7 @@
  * `GET /search/suggestions`(일치 구간 `matchedRanges`를 서버가 준다)로 바꾼다(UI 플랜 「데이터」).
  * 자동완성 후보는 3-2 제품 결과 fixture의 제품이라 눌러도 제품 결과가 열린다.
  */
+import type { Goal } from "@/app/my/_fixtures";
 import { FIXTURE_PRODUCTS } from "@/app/product/[id]/_fixtures";
 import type { ProductCardInput } from "@/components/common/product-card";
 import type { ScoreBand } from "@/components/common/score-ring";
@@ -72,7 +73,7 @@ export function fixtureSuggestions(query: string): Suggestion[] {
 export type SearchSort = "score" | "calories" | "protein" | "sugar";
 
 /** 2-4 「목표: ○○ ›」. API 연결 때 내 목표(`goal`)로 바꾼다 */
-export const FIXTURE_SEARCH_GOAL_LABEL = "다이어트";
+export const FIXTURE_SEARCH_GOAL: Goal = "diet";
 
 /** 【최종】 정렬 시트 4줄(「인기순」은 인기 자료가 생기면 다시 보인다) */
 export const SEARCH_SORTS: { value: SearchSort; label: string }[] = [
@@ -83,7 +84,8 @@ export const SEARCH_SORTS: { value: SearchSort; label: string }[] = [
 ];
 
 export type SearchResultItem = ProductCardInput & {
-  category: string;
+  /** 분류(API `category` — 코드 · 이름) */
+  category: { code: string; name: string };
   /** 정렬용 100g(음료는 100mL)당 값 */
   per100: { calories: number; protein: number; sugar: number } | null;
   /** 누르면 갈 곳. 기본은 3-2 제품 결과 */
@@ -111,7 +113,7 @@ const item = (
   band,
   tags,
   per100,
-  category: "프로틴바·간식",
+  category: { code: "01S4", name: "프로틴바·간식" },
   href,
 });
 
@@ -166,15 +168,16 @@ const POOL: SearchResultItem[] = [
     "/fixtures/product-4.png",
     600,
   ),
+  // 3-6(검색이나 기록에서) fixture와 같은 제품(이름 · 사진). 카드는 이름 앞 브랜드를 떼고 보인다
   item(
     "p1",
     "올가니카",
-    "올라 츄이프로틴바 베리아몬드",
+    "올가니카 올라 츄이프로틴바 베리아몬드",
     null,
     null,
     [],
     null,
-    null,
+    "/fixtures/product-5.png",
     400,
     "/contribute/product/p1",
   ),
@@ -280,8 +283,11 @@ export type SearchResult = {
   /** 검색어가 제품 이름 전체와 같으면 그 제품(맨 위 한 칸에 따로) */
   exact: SearchResultItem | null;
   items: SearchResultItem[];
-  /** 「○○ 순위 보기」에 쓰는 결과의 대표 분류(가장 많은 분류) */
-  category: string | null;
+  /**
+   * 「○○ 순위 보기」에 쓰는 분류. 서버(`SearchResponse.category`)는 검색어가 중분류 이름과 같을 때만 주는데
+   * fixture는 결과에 가장 많은 분류로 둔다(남은 질문 28)
+   */
+  category: { code: string; name: string } | null;
 };
 
 const SORT_KEY: Record<SearchSort, (i: SearchResultItem) => number | null> = {
@@ -311,14 +317,56 @@ export function fixtureSearch(query: string, sort: SearchSort): SearchResult {
     )
     .map(({ p }) => p);
   const exact = sorted.find((p) => p.name === q) ?? null;
-  const counts = new Map<string, number>();
-  for (const p of hits)
-    counts.set(p.category, (counts.get(p.category) ?? 0) + 1);
-  const category = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  const counts = new Map<
+    string,
+    { category: SearchResultItem["category"]; n: number }
+  >();
+  for (const p of hits) {
+    const seen = counts.get(p.category.code);
+    counts.set(p.category.code, {
+      category: p.category,
+      n: (seen?.n ?? 0) + 1,
+    });
+  }
+  const category =
+    [...counts.values()].sort((a, b) => b.n - a.n)[0]?.category ?? null;
   return {
     total: hits.length,
     exact,
     items: exact ? sorted.filter((p) => p !== exact) : sorted,
     category,
   };
+}
+
+// ── 2-4b 검색 0건 ───────────────────────────────────────────────────────────
+// POOL(프로틴바 계열)에 안 맞는 말이면 0건이다. 그림과 같은 칩은 `/search?q=단백질 웨하스`
+
+// 같은 뜻으로 바꿔 볼 말(자리 표시). API 연결 때 `didYouMean` · 서버 추천으로 바꾼다
+const SYNONYMS: Record<string, string> = {
+  단백질: "프로틴",
+  프로틴: "단백질",
+};
+
+/**
+ * 「이렇게 찾아볼까요?」 칩. 띄어쓰기를 붙인 말, 같은 뜻의 말로 바꾼 말, 마지막 낱말 순(【최종】 그림:
+ * 「단백질 웨하스」 → 「단백질웨하스」 · 「프로틴 웨하스」 · 「웨하스」). 찾은 말과 같은 것은 뺀다
+ */
+export function fixtureAlternatives(query: string): string[] {
+  const q = query.trim();
+  const words = q.split(/\s+/);
+  const candidates = [
+    words.join(""),
+    words.map((w) => SYNONYMS[w] ?? w).join(" "),
+    words.at(-1) ?? "",
+  ];
+  return candidates.filter(
+    (c, i) => c !== "" && c !== q && candidates.indexOf(c) === i,
+  );
+}
+
+/** 「점수가 높은 비슷한 제품」 3개(API의 `sameCategoryTop`, 자리 표시는 【최종】 그림 제품) */
+export function fixtureSimilarTop(): SearchResultItem[] {
+  return POOL.filter((p) => p.score !== null && p.image !== null)
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+    .slice(0, 3);
 }

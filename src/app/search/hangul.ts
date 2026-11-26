@@ -46,14 +46,27 @@ export function matchRange(
   return [kept[at], kept[at + compact.length - 1] + 1];
 }
 
+/** 말 뒤에 붙일 「와/과」. 받침이 있으면 「과」. 한글 음절로 끝나지 않으면 「(와)과」 */
+export function particleWa(word: string): string {
+  const jong = finalConsonant(word);
+  if (jong === null) return "(와)과";
+  return jong === 0 ? "와" : "과";
+}
+
+// 마지막 글자의 받침 번호(0 = 없음). 한글 음절로 끝나지 않으면 null
+function finalConsonant(word: string): number | null {
+  const last = word.normalize("NFC").trim().slice(-1);
+  const code = last.charCodeAt(0);
+  if (!last || code < SYLLABLE_START || code > SYLLABLE_END) return null;
+  return (code - SYLLABLE_START) % 28;
+}
+
 /**
  * 말 뒤에 붙일 「로/으로」. 받침이 없거나 ㄹ 받침이면 「로」, 다른 받침이면 「으로」.
  * 한글 음절로 끝나지 않으면(영문 · 숫자) 읽는 법을 몰라 「(으)로」
  */
 export function particleRo(word: string): string {
-  const last = word.normalize("NFC").trim().slice(-1);
-  const code = last.charCodeAt(0);
-  if (!last || code < SYLLABLE_START || code > SYLLABLE_END) return "(으)로";
-  const jong = (code - SYLLABLE_START) % 28;
+  const jong = finalConsonant(word);
+  if (jong === null) return "(으)로";
   return jong === 0 || jong === 8 ? "로" : "으로";
 }

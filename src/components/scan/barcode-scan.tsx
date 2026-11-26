@@ -221,7 +221,7 @@ function Notice({
   onRetry?: () => void;
 }) {
   return (
-    <div className="absolute inset-x-4 top-15 flex items-center gap-2 rounded-2xl bg-black/70 px-4 py-3 text-[13px] text-white">
+    <div className="absolute inset-x-4 top-15 flex items-center gap-2 rounded-md bg-black/70 px-4 py-3 text-body2 text-white">
       <span className="flex-1">{children}</span>
       {onRetry && (
         <button type="button" onClick={onRetry} className="font-bold underline">

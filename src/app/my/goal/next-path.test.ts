@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { toGoalNextPath, withGoal } from "./next-path";
+import { goalPickerHref, toGoalNextPath, withGoal } from "./next-path";
 
 describe("toGoalNextPath", () => {
   it("홈 · 검색 결과 · 랭킹 주소는 받는다", () => {
@@ -43,5 +43,29 @@ describe("withGoal", () => {
 
   it("이미 있던 목표는 바꾼다", () => {
     expect(withGoal("/home?goal=diet", "muscle")).toBe("/home?goal=muscle");
+  });
+});
+
+describe("goalPickerHref", () => {
+  it("지금 목표와 돌아올 주소를 넘긴다", () => {
+    expect(goalPickerHref("diet", "/search?q=바")).toBe(
+      "/my/goal?goal=diet&next=%2Fsearch%3Fq%3D%25EB%25B0%2594",
+    );
+    expect(goalPickerHref("muscle", "/ranking/01S4?goal=muscle")).toBe(
+      "/my/goal?goal=muscle&next=%2Franking%2F01S4%3Fgoal%3Dmuscle",
+    );
+  });
+
+  it("한 번만 띄우는 계정 삭제 알림 값은 돌아올 주소에서 뺀다", () => {
+    expect(goalPickerHref("diet", "/home?state=deleted&seller=CU")).toBe(
+      "/my/goal?goal=diet&next=%2Fhome%3Fseller%3DCU",
+    );
+    expect(goalPickerHref("diet", "/home?state=deleted")).toBe(
+      "/my/goal?goal=diet&next=%2Fhome",
+    );
+  });
+
+  it("받는 화면이 아니면 돌아올 주소를 빼고 연다", () => {
+    expect(goalPickerHref("diet", "/product/4")).toBe("/my/goal?goal=diet");
   });
 });

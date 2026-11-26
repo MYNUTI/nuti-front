@@ -85,4 +85,10 @@ describe("formatValue", () => {
     expect(formatValue(35, "g")).toBe("35g");
     expect(formatValue(3.33, "g")).toBe("3.3g");
   });
+
+  it("천 단위 쉼표(⑩ 공통 규칙)", () => {
+    expect(formatValue(2150, "mg")).toBe("2,150mg");
+    expect(formatValue(1234.56, "g")).toBe("1,234.6g");
+    expect(formatValue(0, "g")).toBe("0g");
+  });
 });

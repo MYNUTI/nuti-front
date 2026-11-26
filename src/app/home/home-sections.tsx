@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { GoalLink } from "@/app/my/goal/goal-link";
+import { MAJOR_ICON } from "@/app/ranking/format";
 import { Button } from "@/components/common/button";
 import { CategoryTile } from "@/components/common/category-tile";
 import { ProductCard } from "@/components/common/product-card";
@@ -15,11 +17,6 @@ import type { Goal, PopularProduct } from "./_fixtures";
  * 2-1 홈의 칸들. 【최종】 2-1 홈(첫 방문 · 사용 중 · 담아 둔 비교함이 있을 때)과 메모를 따른다.
  * 이동할 화면이 아직 없는 링크는 플랜 라우트 표의 경로만 걸어 둔다.
  */
-
-const GOAL_LABEL: Record<Goal, string> = {
-  diet: "다이어트",
-  muscle: "근육 증가",
-};
 
 /** 맨 위: 검색칸 + 바코드 버튼, 그 아래 「AI 영양 진단」 배너(늘 보임) */
 export function SearchSection() {
@@ -57,18 +54,21 @@ export function SearchSection() {
   );
 }
 
-/* 대분류 15개 중 앞 10개(10-29 확정). 그림은 【최종】 일러스트(그림 한 장을 칸마다 잘라 씀) */
+/*
+ * 대분류 15개 중 앞 10개(10-29 확정). 누르면 그 대분류 전체 순위(2-2, 메모 「오는 곳: 홈의 대분류 타일」).
+ * 그림은 【최종】 일러스트(그림 한 장을 칸마다 잘라 씀)로 2-5f 식품 분류와 같은 표(`MAJOR_ICON`)를 쓴다
+ */
 const CATEGORIES = [
-  { slug: "diet-protein", label: "다이어트·\n단백질" },
-  { slug: "ready-meal", label: "간편식" },
-  { slug: "drink", label: "음료" },
-  { slug: "bakery", label: "빵·케이크·잼" },
-  { slug: "snack", label: "과자·\n초콜릿·떡" },
-  { slug: "noodle", label: "라면·면" },
-  { slug: "meat", label: "고기·햄·달걀" },
-  { slug: "dairy", label: "유제품·\n아이스크림" },
-  { slug: "seafood", label: "수산물·\n건어물" },
-  { slug: "grain", label: "쌀·잡곡·견과" },
+  { code: "01", label: "다이어트·\n단백질" },
+  { code: "02", label: "간편식" },
+  { code: "03", label: "음료" },
+  { code: "04", label: "빵·케이크·잼" },
+  { code: "05", label: "과자·\n초콜릿·떡" },
+  { code: "06", label: "라면·면" },
+  { code: "07", label: "고기·햄·달걀" },
+  { code: "08", label: "유제품·\n아이스크림" },
+  { code: "09", label: "수산물·\n건어물" },
+  { code: "10", label: "쌀·잡곡·견과" },
 ];
 
 export function CategorySection() {
@@ -82,14 +82,14 @@ export function CategorySection() {
       <div className="grid grid-cols-5 gap-y-2.5 px-4 pt-3 pb-3">
         {CATEGORIES.map((c) => (
           <CategoryTile
-            key={c.slug}
-            href={`/ranking?category=${c.slug}`}
+            key={c.code}
+            href={`/ranking/${c.code}`}
             size="S"
             label={c.label}
             className="h-[94px] w-full min-w-0"
             image={
               <Image
-                src={`/home/category/${c.slug}.png`}
+                src={`/home/category/${MAJOR_ICON[c.code]}.png`}
                 width={168}
                 height={168}
                 sizes="56px"
@@ -99,7 +99,7 @@ export function CategorySection() {
           />
         ))}
       </div>
-      {/* 【최종】 메모: 2-5f 식품 분류 시트(대분류 15줄 접힌 채). 시트 여는 주소는 07단계에서 정한다 */}
+      {/* 【최종】 메모: 2-5f 식품 분류 시트(대분류 15줄 접힌 채) */}
       <div className="flex justify-center">
         <Link
           href="/ranking?sheet=category"
@@ -125,15 +125,13 @@ export function PopularSection({
       <SectionHeader
         title="쿠팡에서 살 수 있는 제품"
         actionLabel="전체"
-        actionHref={`/ranking?seller=${encodeURIComponent("쿠팡")}`}
+        actionHref="/ranking?seller=COUPANG"
         description={
           // 【최종】 메모: 목표 → 5-2 목표 바꾸기
-          <Link
-            href="/my/goal"
+          <GoalLink
+            fallback={goal}
             className="text-[12px] leading-5 font-medium text-brand-link"
-          >
-            목표: {GOAL_LABEL[goal]} <span aria-hidden>›</span>
-          </Link>
+          />
         }
       />
       <div className="flex gap-2.5 overflow-x-auto px-5 pt-1 pb-8">
@@ -145,14 +143,15 @@ export function PopularSection({
   );
 }
 
+// code는 순위 화면 주소 `?seller=`의 값(API `Seller`)
 const SELLERS = [
-  { slug: "coupang", name: "쿠팡" },
-  { slug: "cu", name: "CU" },
-  { slug: "gs25", name: "GS25" },
-  { slug: "seven-eleven", name: "세븐일레븐" },
-  { slug: "emart24", name: "이마트24" },
-  { slug: "oliveyoung", name: "올리브영" },
-  { slug: "kurly", name: "컬리" },
+  { slug: "coupang", code: "COUPANG", name: "쿠팡" },
+  { slug: "cu", code: "CU", name: "CU" },
+  { slug: "gs25", code: "GS25", name: "GS25" },
+  { slug: "seven-eleven", code: "SEVEN_ELEVEN", name: "세븐일레븐" },
+  { slug: "emart24", code: "EMART24", name: "이마트24" },
+  { slug: "oliveyoung", code: "OLIVE_YOUNG", name: "올리브영" },
+  { slug: "kurly", code: "KURLY", name: "컬리" },
 ];
 
 export function SellerSection() {
@@ -165,7 +164,7 @@ export function SellerSection() {
           {SELLERS.map((s) => (
             <Link
               key={s.slug}
-              href={`/ranking?seller=${encodeURIComponent(s.name)}`}
+              href={`/ranking?seller=${s.code}`}
               className="flex w-20 shrink-0 flex-col items-center gap-1.5"
             >
               <span className="flex size-20 items-center justify-center rounded-sm border border-line-default bg-bg-page">
@@ -205,7 +204,7 @@ export function RequestSection() {
         </p>
       </div>
       <Button kind="text" size="M" asChild>
-        <Link href="/contribute/name">제품 요청하기</Link>
+        <Link href="/contribute/request">제품 요청하기</Link>
       </Button>
     </section>
   );

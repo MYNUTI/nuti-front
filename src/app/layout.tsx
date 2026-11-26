@@ -7,6 +7,8 @@ import {
   iosSplashMedia,
   iosSplashPath,
 } from "@/lib/pwa";
+import { InstallPromptCatcher } from "@/components/pwa/install-prompt-catcher";
+
 import { GoogleAnalytics } from "./google-analytics";
 import { PosthogAnalytics } from "./posthog-analytics";
 import Providers from "./providers";
@@ -58,6 +60,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <div className="mx-auto flex min-h-dvh w-full max-w-app flex-col bg-background">
           <Providers>{children}</Providers>
         </div>
+        <InstallPromptCatcher />
         <GoogleAnalytics />
         <PosthogAnalytics />
       </body>

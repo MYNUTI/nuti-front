@@ -191,6 +191,7 @@ export function ConfirmSheet({
   onCancel,
   danger = false,
   dismissible = false,
+  cancelKind = "secondary",
   children,
 }: {
   open: boolean;
@@ -200,6 +201,8 @@ export function ConfirmSheet({
   cancelLabel: React.ReactNode;
   /** 지우기·철회처럼 되돌릴 수 없는 일이면 확인 버튼을 빨간색으로 */
   danger?: boolean;
+  /** 닫기 버튼 모양. 닫기 하나뿐인 안내(4-1 홈 화면에 추가 「알겠어요」)는 그림이 검정 주 버튼 */
+  cancelKind?: "secondary" | "primary";
   /** 덮개를 눌러도 닫는다(취소와 같음). 【최종】 메모가 「바깥 → 닫힘」이라 정한 시트에서만(3-5 비교함 비우기 · 5-5 로그아웃 · 5-6 동의 시트) */
   dismissible?: boolean;
   /** 취소 버튼만의 동작(「몸 정보 없이 시작」처럼 닫기 말고도 할 일이 있을 때). 덮개로 닫을 때는 부르지 않는다 */
@@ -255,7 +258,7 @@ export function ConfirmSheet({
           )}
           <div className="flex gap-2 pt-3">
             <AlertDialog.Cancel asChild>
-              <Button kind="secondary" className="flex-1" onClick={onCancel}>
+              <Button kind={cancelKind} className="flex-1" onClick={onCancel}>
                 {cancelLabel}
               </Button>
             </AlertDialog.Cancel>

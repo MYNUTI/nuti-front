@@ -18,7 +18,8 @@ import { cn } from "@/lib/utils";
  */
 const TABS = [
   { href: "/home", label: "홈", Icon: IconHome },
-  { href: "/ranking", label: "랭킹", Icon: IconRanking },
+  // 탭으로 열 때만 마지막에 본 중분류로 이어 간다(뒤로 가기 · 다른 화면의 링크와 구분, 2-2 메모)
+  { href: "/ranking?from=tab", label: "랭킹", Icon: IconRanking },
   { href: "/scan", label: "스캔", Icon: IconBarcode },
   { href: "/history", label: "기록", Icon: IconRecord },
   { href: "/my", label: "내 정보", Icon: IconMy },
@@ -31,7 +32,8 @@ export function TabBar() {
     <nav className="fixed-app bottom-0 border-t border-line-default bg-bg-page pb-safe">
       <ul className="flex h-14">
         {TABS.map(({ href, label, Icon }) => {
-          const active = pathname === href || pathname.startsWith(`${href}/`);
+          const path = href.split("?")[0];
+          const active = pathname === path || pathname.startsWith(`${path}/`);
 
           if (href === "/scan") {
             return (

@@ -48,6 +48,8 @@ export type ProductResult = {
   brand: string | null;
   /** 「프로틴바·간식」 */
   category: string;
+  /** 그 분류의 코드(API `category.code`). 「같은 종류 순위 보기」가 그 순위(`/ranking/[code]`)로 간다 */
+  categoryCode: string | null;
   name: string;
   image: { src: string; size: number } | null;
   score: number;
@@ -152,6 +154,7 @@ const DESIGN: ProductResult = {
   id: "4",
   brand: "미트리",
   category: "프로틴바·간식",
+  categoryCode: "01S4",
   name: "카카오초코 프로틴바",
   image: { src: "/fixtures/product-4.png", size: 600 },
   score: 62,
@@ -246,6 +249,7 @@ const KIRKLAND: ProductResult = {
   id: "5",
   brand: "커클랜드 시그니처",
   category: "프로틴바·간식",
+  categoryCode: "01S4",
   name: "프로틴바 초콜릿 브라우니",
   image: { src: "/fixtures/product-1.png", size: 800 },
   score: 92,
@@ -346,6 +350,8 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
     id: "1",
     brand: null,
     category: "음료",
+    // 실제 API는 중분류 이하 코드를 준다. 순위가 열리지 않은 대분류 화면을 보이려고 대분류 코드를 둔 예시
+    categoryCode: "03",
     name: "더단백 라떼 350ml",
     nutrition: { ...DESIGN.nutrition, unit: "mL", serving: null },
     image: null,
@@ -363,6 +369,8 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
     id: "2",
     brand: null,
     category: "음료",
+    // 실제 API는 중분류 이하 코드를 준다. 순위가 열리지 않은 대분류 화면을 보이려고 대분류 코드를 둔 예시
+    categoryCode: "03",
     name: "잇더핏 프로틴 190ml",
     nutrition: { ...DESIGN.nutrition, unit: "mL", serving: null },
     // 일부러 없는 파일. 사진 주소가 깨졌을 때 그림으로 바뀌는지 본다
@@ -444,6 +452,7 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
     id: "12",
     brand: null,
     category: "단백질 음료",
+    categoryCode: "01S5",
     name: "고단백 균형영양식 (환자용)",
     image: null,
     rank: null,

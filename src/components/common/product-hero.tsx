@@ -27,7 +27,10 @@ export function ProductHero({
       </div>
       <div className="flex flex-col gap-1 px-5 pt-2 pb-1">
         {meta && <p className="text-body2 text-text-sub">{meta}</p>}
-        <h1 className="text-title1 text-text-strong">{name}</h1>
+        {/* ⑩ 공통 규칙: 결과 머리 이름은 3줄까지, 단어 가운데서 줄을 바꾸지 않는다 */}
+        <h1 className="line-clamp-3 text-title1 break-keep text-text-strong">
+          {name}
+        </h1>
         {basis && <p className="text-body2 text-text-sub">{basis}</p>}
       </div>
     </div>

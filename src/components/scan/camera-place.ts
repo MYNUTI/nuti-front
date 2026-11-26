@@ -22,7 +22,14 @@ const IN_APP: { pattern: RegExp; app: string }[] = [
   { pattern: /Instagram/i, app: "인스타그램" },
   { pattern: /FBAN|FBAV/i, app: "페이스북" },
   { pattern: /\bLine\//i, app: "라인" },
+  { pattern: /DaumApps/i, app: "다음" },
+  { pattern: /everytimeApp/i, app: "에브리타임" },
 ];
+
+/** 앱 안 브라우저인지(3-1 카메라를 못 여는 곳 · 4-1 홈 화면에 추가가 같이 쓴다) */
+export function isInAppBrowser(userAgent: string) {
+  return IN_APP.some(({ pattern }) => pattern.test(userAgent));
+}
 
 // 카카오톡이 바깥 브라우저로 넘기는 주소. 공식 문서는 없고 개발자들이 쓰는 방법이라 동작은 기기에서 확인해야 한다
 const kakaoExternal = (url: string) =>

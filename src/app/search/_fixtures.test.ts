@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { fixtureSearch } from "./_fixtures";
+import { fixtureAlternatives, fixtureSearch } from "./_fixtures";
 
 describe("fixtureSearch", () => {
   it("점수 높은 순이 기본이고 점수 없는 제품은 맨 뒤", () => {
@@ -57,5 +57,19 @@ describe("fixtureSearch", () => {
 
   it("빈 검색어는 0건", () => {
     expect(fixtureSearch("  ", "score").total).toBe(0);
+  });
+});
+
+describe("fixtureAlternatives", () => {
+  it("띄어쓰기를 붙인 말 · 같은 뜻으로 바꾼 말 · 마지막 낱말", () => {
+    expect(fixtureAlternatives("단백질 웨하스")).toEqual([
+      "단백질웨하스",
+      "프로틴 웨하스",
+      "웨하스",
+    ]);
+  });
+
+  it("찾은 말과 같거나 겹치는 후보는 뺀다", () => {
+    expect(fixtureAlternatives("웨하스")).toEqual([]);
   });
 });

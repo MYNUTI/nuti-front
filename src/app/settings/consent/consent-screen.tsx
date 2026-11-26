@@ -31,7 +31,7 @@ const ROW_LABEL: Record<Key, string> = {
   ads: "광고성 정보 수신",
 };
 
-// 철회 확인 시트(5-5b 동의 철회 확인 · 목표 저장 철회 확인). 광고성 정보는 같은 틀이고 문장이 그림에 없다(「남은 질문」)
+// 철회 확인 시트(5-5b 동의 철회 확인 · 목표 저장 철회 확인). 광고성 정보는 같은 틀이고 문장이 그림에 없다(UI 플랜 남은 질문 70)
 const REVOKE: Record<
   Key,
   { title: string; description: string; confirm: string }

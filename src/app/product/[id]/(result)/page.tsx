@@ -105,7 +105,8 @@ function Band() {
 /*
  * 3-2 제품 결과. 위에서부터 제품 머리 · 점수 · 이 점수인 이유 · 영양성분 · 더 맞는 제품 · 쿠팡 고지, 아래 고정 줄.
  *
- * ?state=loading|error — 3-2 불러오는 중·불러오지 못했을 때(확인용) · ?state=no-goal — 3-2 공유 링크·목표 없음
+ * ?state=loading|error — 3-2 불러오는 중·불러오지 못했을 때(확인용) · ?state=no-goal — 3-2 공유 링크·목표 없음 ·
+ * ?state=report-failed — 정보가 틀렸어요 시트에서 보내기가 실패했을 때
  * ?preview=muscle|diet — 3-2 다른 목표로 보기. 점수·순위·이유만 그 목표 기준으로 바꿔 보이고 내 목표 설정은 바꾸지 않는다.
  */
 export default async function ProductPage({
@@ -348,7 +349,7 @@ export default async function ProductPage({
             nutrition={nutrition}
             bodyFitKcal={bodyFit ? product.bodyFitKcal : null}
           />
-          <ReportButton />
+          <ReportButton failPreview={state === "report-failed"} />
           {(noBetter || noCoupang) && (
             <div className="flex flex-col gap-1.5 px-5 pb-3 text-body2">
               {noBetter && (
@@ -375,9 +376,12 @@ export default async function ProductPage({
                   <p className="text-text-sub">
                     쿠팡에서 이 제품을 찾지 못했어요
                   </p>
-                  {/* 2-2 등급 순위. 종류를 고른 채로 여는 주소는 07단계에서 정한다 */}
                   <Link
-                    href="/ranking"
+                    href={
+                      product.categoryCode
+                        ? `/ranking/${encodeURIComponent(product.categoryCode)}`
+                        : "/ranking"
+                    }
                     className="self-start font-medium text-brand-link"
                   >
                     같은 종류 순위 보기 <span aria-hidden>›</span>

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { isChosungOnly, matchRange, particleRo, toChosung } from "./hangul";
+import {
+  isChosungOnly,
+  matchRange,
+  particleRo,
+  particleWa,
+  toChosung,
+} from "./hangul";
 
 describe("toChosung", () => {
   it("한글 음절은 초성으로, 다른 글자는 그대로 둔다", () => {
@@ -58,5 +64,19 @@ describe("particleRo", () => {
     expect(particleRo("BAR")).toBe("(으)로");
     expect(particleRo("350")).toBe("(으)로");
     expect(particleRo("ㄷㄷㅂ")).toBe("(으)로");
+  });
+});
+
+describe("particleWa", () => {
+  it("받침이 없으면 「와」, 있으면 「과」, 한글로 끝나지 않으면 「(와)과」", () => {
+    expect(particleWa("단백질 웨하스")).toBe("와");
+    expect(particleWa("닭가슴살")).toBe("과");
+    expect(particleWa("BAR")).toBe("(와)과");
+  });
+
+  it("ㄹ 받침은 「로」와 달리 「과」, 초성만이면 「(와)과」, 나뉜 글자(NFD)도 받침을 본다", () => {
+    expect(particleWa("단백질")).toBe("과");
+    expect(particleWa("ㄷㄷㅂ")).toBe("(와)과");
+    expect(particleWa("닭가슴살".normalize("NFD"))).toBe("과");
   });
 });

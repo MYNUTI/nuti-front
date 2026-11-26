@@ -20,3 +20,18 @@ export function withGoal(path: string, goal: Goal) {
   url.searchParams.set("goal", goal);
   return `${url.pathname}${url.search}`;
 }
+
+/**
+ * 홈 · 검색 결과 · 랭킹의 「목표: ○○」 → 5-2 목표 바꾸기 주소. 지금 목표(?goal=)와 돌아올 지금 주소(?next=)를 넘긴다.
+ * 돌아올 주소가 받는 화면 모양이 아니면 next를 빼고 5-2를 연다(그러면 바꾼 뒤 5-1로 간다)
+ */
+export function goalPickerHref(goal: Goal, currentPath: string) {
+  const params = new URLSearchParams({ goal });
+  const current = new URL(currentPath, "http://local");
+  // 한 번만 띄우는 알림 값은 돌아올 주소에서 뺀다(계정 삭제 뒤 홈 「계정을 삭제했어요」가 다시 뜨지 않게)
+  if (current.searchParams.get("state") === "deleted")
+    current.searchParams.delete("state");
+  const next = toGoalNextPath(`${current.pathname}${current.search}`);
+  if (next) params.set("next", next);
+  return `/my/goal?${params}`;
+}

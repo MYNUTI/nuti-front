@@ -1,7 +1,7 @@
 /*
  * 5-7 내 몸에 맞추기 입력 값과 검사. 값 이름 · 범위는 백엔드 `PUT /me/body-profile`(BodyProfileRequest · BodyProfileService)과 같다.
  * 범위: 출생 연도 1900 ~ 만 14세가 되는 해, 키 100~250cm, 체중 25~250kg.
- * 범위 밖 문장은 【최종】 메모가 「ACCT_010 표대로」인데 그 표를 열지 못해 임시 문장이다(UI 플랜 「남은 질문」).
+ * 범위 밖 문장은 【최종】 메모가 「ACCT_010 표대로」인데 그 표를 열지 못해 임시 문장이다(UI 플랜 남은 질문 82).
  */
 
 export type Gender = "MALE" | "FEMALE";

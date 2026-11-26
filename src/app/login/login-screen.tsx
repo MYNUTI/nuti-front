@@ -69,7 +69,7 @@ export function LoginScreen({ failed }: { failed: boolean }) {
           )}
           {googleBlocked && inApp && (
             <Notice className="w-full rounded-md">
-              이 앱 안에서는 구글 로그인이 열리지 않을 수 있어요.
+              이 앱 안에서는 구글 로그인이 열리지 않을 수 있어요
               {/* 바깥 브라우저로 열 방법이 없는 곳은 버튼을 뺀다(0-4 앱 안 브라우저 안내와 같음) */}
               {openExternal && (
                 <Button

@@ -1,38 +1,44 @@
 "use client";
 
 import { skipToken, useQuery } from "@tanstack/react-query";
-import { useEffect, useEffectEvent, useState } from "react";
-import Link from "next/link";
-import { useGoBack } from "@/components/common/back-button";
-import { CtaButton } from "@/components/common/cta-button";
-import { Skeleton } from "@/components/common/skeleton";
-import { CompareFullSheet } from "@/components/compare/compare-full-sheet";
 import {
-  addToCompare,
-  useCompare,
-  type CompareItem,
-} from "@/components/compare/compare-store";
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useGoBack } from "@/components/common/back-button";
+import { Button } from "@/components/common/button";
+import { Skeleton } from "@/components/common/skeleton";
+import { Toast } from "@/components/common/toast";
 import { TopBar, TopBarButton } from "@/components/common/top-bar";
 import { IconClose, IconHash, IconImage, IconSearch } from "@/components/icons";
 import { BarcodeScan } from "@/components/scan/barcode-scan";
 import { useImageBarcode } from "@/components/scan/scan-image-input";
-import {
-  FIXTURE_SCAN_EXTRA,
-  FIXTURE_SCAN_GOAL_LABEL,
-} from "@/components/scan/_fixtures";
 import { ScanManualSheet } from "@/components/scan/scan-manual-sheet";
 import {
   PhotoMissSheet,
   ScanMissSheet,
 } from "@/components/scan/scan-miss-sheet";
+import { ScanMessageSheet } from "@/components/scan/scan-result-sheet";
+import { ScanNoScoreSheet } from "@/components/scan/scan-no-score-sheet";
 import {
-  ScanMessageSheet,
-  ScanResultSheet,
-  type ScanSheetProduct,
-} from "@/components/scan/scan-result-sheet";
+  FIXTURE_NAMED_BARCODES,
+  FIXTURE_REQUESTED,
+} from "@/components/scan/_fixtures";
+import { ReportSheet } from "@/components/product/report-sheet";
+import { isRequestedHere } from "@/components/scan/requested-gtins";
+import {
+  clearPendingGtin,
+  readPendingGtin,
+  writePendingGtin,
+} from "@/components/scan/pending-gtin";
+import { isValidGtinChecksum } from "@/lib/scan/gtin";
 import { lookupProduct } from "@/lib/scan/lookup";
-import type { ScanState } from "@/lib/scan/machine";
-import type { Gtin, ScanResult, ScanSource } from "@/lib/scan/types";
+import type { Gtin, ScanSource } from "@/lib/scan/types";
 import { cn } from "@/lib/utils";
 
 /*
@@ -41,22 +47,32 @@ import { cn } from "@/lib/utils";
  *   20초 = 실패 2번 → 「바코드를 못 읽었을 때」 시트(메모 「2번 실패하거나 20초」가 같은 시점이 된다)
  */
 const SLOW_AFTER_MS = 10_000;
+const CHECKSUM_NOTICE = "바코드 숫자가 완전하지 않아요. 한 번 더 비춰 주세요.";
 const MISS_AFTER_MS = 20_000;
 
 /**
  * 3-1 스캔. 화면 전체가 카메라이고 아래에 버튼 3개(사진 올리기·바코드 번호 입력·이름으로 찾기).
  *
  * 카메라·앨범·직접 입력이 모두 같은 `handleGtin`으로 모인다. 상세는 내부 상품 ID로
- * 라우팅하므로 GTIN은 반드시 조회를 거쳐 결과 시트가 된다.
+ * 라우팅하므로 GTIN은 반드시 조회를 거친다.
+ * 【최종】 3-1 메모(SCAN_010): 조회 결과에 따라 3-2 제품 결과(시트가 아닌 전체 화면)로 바로 가거나, 카메라 위 시트
+ * (3-6 아직 점수가 없는 제품 · 이 제품인가요? · 바코드에 제품이 여러 개일 때)를 띄운다.
+ * 체크 디지트가 틀리면 조회하지 않고 알림, 조회 중 연결이 끊기면 바코드를 기기에 저장해 두고 알림 → 연결이 돌아오면 조회.
  */
 export function ScanStage({
   initialGtin = null,
+  initialFromUrl = false,
   initialManualOpen = false,
   cameraOff = false,
   onPermissionDenied,
 }: {
   /** 0-3x에서 사진으로 읽은 바코드. 들어오자마자 조회한다 */
   initialGtin?: Gtin | null;
+  /**
+   * initialGtin이 주소(`/scan?gtin=`)로 넘어왔다. 찾으면 3-2로 바꿔 간다(replace) — 주소를 남기면 뒤로 가기마다
+   * 같은 조회로 다시 3-2에 온다
+   */
+  initialFromUrl?: boolean;
   /** 0-3x 「바코드 번호 입력」으로 들어오면 입력 칸을 연 채로 시작한다 */
   initialManualOpen?: boolean;
   /** 카메라를 열지 않는다(PC·앱 안 브라우저에서 사진·번호로 찾을 때) */
@@ -64,7 +80,34 @@ export function ScanStage({
   /** 카메라 권한이 거부되면 부른다(0-3x로 보내기) */
   onPermissionDenied?: () => void;
 } = {}) {
-  const [gtin, setGtin] = useState<Gtin | null>(initialGtin);
+  const router = useRouter();
+  // 사진으로 읽어 넘어온 바코드도 체크 디지트가 틀리면 조회하지 않는다
+  const initialInvalid =
+    initialGtin !== null && !isValidGtinChecksum(initialGtin);
+  const [picked, setGtin] = useState<Gtin | null>(
+    initialGtin !== null && !initialInvalid ? initialGtin : null,
+  );
+  // 연결이 끊겨 조회하지 못한 바코드가 기기에 있으면 그것부터 조회한다(【최종】 3-1 메모).
+  // 저장소는 브라우저에만 있어 서버 그림과 같은 첫 그림 뒤에 읽는다
+  const pending = usePendingGtin();
+  // 「나중에 할게요」로 결과를 치웠으면 저장해 둔 바코드도 다시 쓰지 않는다
+  const [pendingDismissed, setPendingDismissed] = useState(false);
+  const gtin = picked ?? (pendingDismissed ? null : pending);
+  // 3-6 이름을 아는 바코드의 「정보 수정 요청」 시트. 떠 있는 동안 3-6 시트를 내리고(시트 위에 시트를 띄우지 않는다),
+  // 닫히면 다시 붙는 3-6 시트가 「정보 수정 요청」 버튼으로 포커스를 돌려받는다
+  const [reportOpen, setReportOpen] = useState(false);
+  const [backFromReport, setBackFromReport] = useState(false);
+  const manualButton = useRef<HTMLButtonElement>(null);
+  // 연결이 끊겨 있는 동안 뜬 알림이면 그 바코드를 적어 둔다(아래 알림 자리를 하나로 쓴다)
+  const [notice, setNotice] = useState<{
+    id: number;
+    text: string;
+    whileOffline: Gtin | null;
+  } | null>(() =>
+    initialInvalid
+      ? { id: 1, text: CHECKSUM_NOTICE, whileOffline: null }
+      : null,
+  );
   // 「바코드를 읽었어요」는 카메라·사진으로 읽었을 때만 맞다. 0-3x·홈 시트에서 넘어온 바코드는 사진으로 읽은 것이다
   const [source, setSource] = useState<ScanSource>("photo");
   const [photoMissOpen, setPhotoMissOpen] = useState(false);
@@ -85,16 +128,17 @@ export function ScanStage({
     queryFn: gtin ? ({ signal }) => lookupProduct(gtin, signal) : skipToken,
   });
 
-  // 비교함은 3-2·3-4와 같은 저장소를 쓴다(화면 사이에 유지 — UI 플랜 결정 2026-11-21)
-  const compare = useCompare();
-  // 꽉 찼을 때 담으려던 제품(3-4 비교함이 다 찼을 때 시트)
-  const [pending, setPending] = useState<CompareItem | null>(null);
-
   const handleGtin = (value: Gtin, source: ScanSource) => {
-    // 다른 제품을 읽었으면 그 전 제품을 담으려던 「비교함이 다 찼어요」 시트는 맞지 않는다(시트 뒤에서도 카메라는 돈다)
-    if (value !== gtin) setPending(null);
+    // 정보가 틀렸어요 시트를 쓰는 동안 카메라가 다른 바코드를 잡아 대상이 바뀌거나 3-2로 떠나지 않게 한다
+    if (reportOpen && source === "camera") return;
+    // 【최종】 3-1 메모: 체크 디지트가 틀리면 조회하지 않는다. 직접 입력은 입력 칸에서 이미 거른다
+    if (source !== "manual" && !isValidGtinChecksum(value)) {
+      showNotice(CHECKSUM_NOTICE);
+      return;
+    }
     setGtin(value);
     setSource(source);
+    setBackFromReport(false);
     setPhotoMissOpen(false);
     setSlow(false);
     // 못 읽음 시트 뒤에서도 카메라는 돈다. 읽었으면 실패 안내는 거짓이 된다
@@ -104,18 +148,38 @@ export function ScanStage({
     if (source === "manual") setManualOpen(false);
   };
 
+  // 연결이 끊기면 조회가 멈춰 있다가(TanStack Query `paused`) 연결이 돌아오면 이어서 조회한다
+  const offline = gtin !== null && lookup.fetchStatus === "paused";
   // 3-1(읽힌 뒤 찾는 중). 디자인 메모: 결과가 오면 바로 3-2. 짧은 진동은 스캐너가 읽은 순간 낸다(use-scanner)
-  const finding = gtin !== null && lookup.isPending;
-  const found =
-    lookup.data?.status === "found" ? toSheetProduct(lookup.data.result) : null;
-  const addFound = (product: ScanSheetProduct) => {
-    const item = {
-      id: product.id,
-      name: product.name,
-      image: product.imageUrl,
-    };
-    if (addToCompare(item) === "full") setPending(item);
-  };
+  const finding = gtin !== null && lookup.isPending && !offline;
+  const foundId =
+    lookup.data?.status === "found" ? lookup.data.result.id : null;
+
+  const showNotice = (text: string) =>
+    setNotice((prev) => ({
+      id: (prev?.id ?? 0) + 1,
+      text,
+      whileOffline: offline ? gtin : null,
+    }));
+
+  // 조회가 멈추면 바코드를 기기에 남긴다(알림은 아래에서 멈춘 동안 그린다).
+  // 연결이 돌아와 응답을 받았으면(찾음 · 없음 · 오류) 지운다. 오류의 다시 시도는 시트의 「다시 시도」로
+  useEffect(() => {
+    if (offline && gtin !== null) writePendingGtin(gtin);
+  }, [offline, gtin]);
+  useEffect(() => {
+    if (lookup.data || lookup.isError) clearPendingGtin();
+  }, [lookup.data, lookup.isError]);
+
+  // 【최종】 3-1 메모: 찾으면 시트가 아닌 3-2 제품 결과 전체 화면으로 바로 간다. 기기 뒤로 가기는 다시 3-1.
+  // 주소(`?gtin=`)로 넘어온 바코드는 바꿔 가서 뒤로 가기가 들어오기 전 화면으로 간다
+  const replaceOnFound = initialFromUrl && gtin === initialGtin;
+  useEffect(() => {
+    if (!foundId) return;
+    const href = `/product/${encodeURIComponent(foundId)}`;
+    if (replaceOnFound) router.replace(href);
+    else router.push(href);
+  }, [foundId, replaceOnFound, router]);
 
   const renderSheet = () => {
     // 찾는 중 시트는 화면 아래에 따로 그린다(ScanFindingSheet)
@@ -125,24 +189,35 @@ export function ScanStage({
         <ScanMessageSheet
           title="상품 정보를 불러오지 못했어요"
           action={
-            <CtaButton tone="secondary" onClick={() => lookup.refetch()}>
+            <Button
+              kind="secondary"
+              className="w-full"
+              onClick={() => lookup.refetch()}
+            >
               다시 시도
-            </CtaButton>
+            </Button>
           }
         />
       );
     }
-    if (lookup.data.status === "not-found") {
-      // TODO: IA 3-6 미등록 화면이 생기면 그쪽으로 보낸다.
-      return (
-        <ScanMessageSheet
-          title="등록되지 않은 상품이에요"
-          description={`바코드 ${lookup.data.gtin} · 다른 상품을 찍어 보세요`}
-        />
-      );
-    }
-    // 결과 시트는 화면 아래에 따로 그린다(ScanResultSheet)
+    // 미등록(3-6)은 화면 아래에 따로 그린다(ScanNoScoreSheet). 찾았으면 3-2로 옮기는 중이다
     return null;
+  };
+
+  // 3-6 아직 점수가 없는 제품
+  const noScore = lookup.data?.status === "not-found" ? lookup.data.gtin : null;
+  const named = noScore ? (FIXTURE_NAMED_BARCODES[noScore] ?? null) : null;
+  // 알림 자리: 아래 버튼 줄(186) 위 12. 3-6 시트가 버튼 줄을 덮고 있으면 시트를 가리지 않게 화면 위(닫기 줄 아래)
+  const toastPlace = noScore
+    ? "top-[calc(var(--safe-top)+64px)] bottom-auto"
+    : "bottom-[calc(186px+12px+var(--safe-bottom))]";
+  // 「나중에 할게요」 → 3-1 스캔(결과를 치우고 다시 비춘다)
+  const later = () => {
+    setGtin(null);
+    setPendingDismissed(true);
+    restartReading();
+    // 누른 버튼이 사라지므로 다시 보이는 아래 버튼 줄의 첫 버튼으로 포커스를 옮긴다(그려진 뒤)
+    requestAnimationFrame(() => manualButton.current?.focus());
   };
 
   const photo = useImageBarcode({
@@ -156,15 +231,6 @@ export function ScanStage({
 
   return (
     <div className="flex h-dvh flex-col bg-bg-dark pt-safe">
-      {/* 결과 시트는 사용자가 닫는 시트가 아니라 모달이 아니다. 어떤 제품인지는 이 영역으로 알린다(영역은 늘 둔다) */}
-      <p role="status" className="sr-only">
-        {found && `${found.name}, ${found.score}점`}
-      </p>
-      <CompareFullSheet
-        key={pending?.id}
-        pending={pending}
-        onClose={() => setPending(null)}
-      />
       <BarcodeScan
         className="flex-1"
         cameraOff={cameraOff}
@@ -190,17 +256,16 @@ export function ScanStage({
               // 조준 틀(세로 160) 아래 20
               <p
                 aria-live="polite"
-                // 결과가 떠 있을 때 문장은 디자인에서 한 단계 작은 글자다
-                className={cn(
-                  "absolute inset-x-0 top-[calc(50%+100px)] px-6 text-center text-white",
-                  found ? "text-body2" : "text-body1",
-                )}
+                className="absolute inset-x-0 top-[calc(50%+100px)] px-6 text-center text-body1 text-white"
               >
                 {/* 다른 앱이 카메라를 쓰는 중이면 원인이 비추는 방법이 아니라서 바꾸지 않는다 */}
-                {found
-                  ? "다음 바코드를 비추면 결과가 바로 바뀌어요"
-                  : finding && source !== "manual"
-                    ? "바코드를 읽었어요"
+                {(finding || foundId) && source !== "manual"
+                  ? "바코드를 읽었어요"
+                  : noScore
+                    ? // 【최종】 3-6 그림: 이름을 아는 바코드 시트만 이 문장이 있고 기본 시트는 비어 있다
+                      named
+                      ? "다른 바코드를 찍으면 결과가 바로 바뀌어요"
+                      : ""
                     : slow && state.retryable === null
                       ? "빛 반사가 심한 것 같아요. 조금 기울여서 다시 비춰 볼까요?"
                       : "바코드를 틀 안에 맞춰 주세요"}
@@ -219,17 +284,6 @@ export function ScanStage({
                 />
               )}
             {renderSheet()}
-            {found && (
-              <ScanResultSheet
-                product={found}
-                // 카메라가 읽고 있을 때만 디자인대로 화면 아래에 붙인다. 카메라가 안 읽는 단계(사진·번호·점유 중)에서는
-                // 다른 제품을 더 찾을 아래 버튼 줄을 가리지 않게 카메라 자리 안에 띄운다(UI 플랜 「남은 질문」 6)
-                placement={cameraReading(state) ? "bottom" : "inline"}
-                added={compare.some((item) => item.id === found.id)}
-                compareCount={compare.length}
-                onAdd={() => addFound(found)}
-              />
-            )}
           </>
         )}
       >
@@ -237,15 +291,20 @@ export function ScanStage({
           <nav
             aria-label="다른 방법으로 찾기"
             // 디자인 186은 홈 인디케이터(34)를 뺀 높이라 기기 safe area를 더한다
-            // 찾는 중·결과 시트가 떠 있으면 디자인처럼 버튼 줄을 비워 두고 그 위에 시트를 올린다(자리는 남긴다)
+            // 찾는 중 시트가 떠 있으면 디자인처럼 버튼 줄을 비워 두고 그 위에 시트를 올린다(자리는 남긴다).
+            // 3-2로 옮기는 사이에도 시트를 둔다
             className={cn(
               "flex h-[calc(186px+var(--safe-bottom))] shrink-0 items-start justify-between px-10 pt-[46px] pb-safe",
-              (finding || (found && cameraReading(state))) && "invisible",
+              (finding || foundId || noScore) && "invisible",
             )}
           >
             {photo.input}
             {/* 【최종】 메모: 어느 화면에서나 「바코드 번호 입력 → 바코드 사진 올리기 → 이름으로 찾기」 */}
-            <ScanAction icon={<IconHash />} onClick={() => setManualOpen(true)}>
+            <ScanAction
+              ref={manualButton}
+              icon={<IconHash />}
+              onClick={() => setManualOpen(true)}
+            >
               바코드 번호 입력
             </ScanAction>
             <ScanAction
@@ -264,7 +323,57 @@ export function ScanStage({
         )}
       </BarcodeScan>
 
-      {finding && <ScanFindingSheet />}
+      {(finding || foundId) && <ScanFindingSheet />}
+      {/* 결과 자리는 모달이 아니라 결과만 읽어 준다(영역은 늘 두고 안쪽만 바꾼다) */}
+      <p aria-live="polite" className="sr-only">
+        {noScore && !finding ? "아직 점수가 없는 제품이에요" : ""}
+      </p>
+      {noScore && !finding && !reportOpen && (
+        <ScanNoScoreSheet
+          // 다른 바코드로 바뀌면 새 시트로 읽히게 한다
+          key={noScore}
+          gtin={noScore}
+          named={named}
+          // 둘 다면 「내가 요청함」이 더 맞다
+          requested={
+            isRequestedHere(noScore)
+              ? "mine"
+              : (FIXTURE_REQUESTED[noScore] ?? null)
+          }
+          // 정보가 틀렸어요에서 돌아오면 그 버튼으로. 번호 · 사진으로 찾았으면 누른 버튼이 가려져 제목으로.
+          // 카메라로 찾았으면 폰을 든 채라 포커스를 옮기지 않고 위 영역으로 알리기만 한다
+          focusOnMount={
+            backFromReport ? "report" : source !== "camera" ? "title" : null
+          }
+          onLater={later}
+          onReport={() => setReportOpen(true)}
+        />
+      )}
+      <ReportSheet
+        // 보낸 내용 기억(같은 내용 다시 보내기)은 바코드마다 따로
+        // 형제인 3-6 시트의 key(바코드)와 겹치지 않게 앞말을 붙인다
+        key={`report-${noScore ?? "none"}`}
+        open={reportOpen}
+        onOpenChange={(open) => {
+          setReportOpen(open);
+          if (!open) setBackFromReport(true);
+        }}
+        onSent={showNotice}
+      />
+
+      {/* 알림 자리는 하나다. 연결이 끊긴 뒤에 다른 알림(체크 디지트)이 뜨지 않았으면 연결 끊김 알림 */}
+      {offline && notice?.whileOffline !== gtin ? (
+        <Toast
+          // 바코드마다 한 번
+          key={`offline-${gtin}`}
+          message="연결이 불안정해요. 바코드는 저장해 뒀어요."
+          className={toastPlace}
+        />
+      ) : (
+        notice && (
+          <Toast key={notice.id} message={notice.text} className={toastPlace} />
+        )
+      )}
 
       <ScanMissSheet
         open={missOpen}
@@ -310,12 +419,14 @@ export function ScanStage({
 
 /** 아래 둥근 버튼. href가 있으면 링크, 없으면 버튼 */
 function ScanAction({
+  ref,
   icon,
   href,
   onClick,
   disabled,
   children,
 }: {
+  ref?: React.Ref<HTMLButtonElement>;
   icon: React.ReactNode;
   href?: string;
   onClick?: () => void;
@@ -340,6 +451,7 @@ function ScanAction({
     </Link>
   ) : (
     <button
+      ref={ref}
       type="button"
       className={className}
       onClick={onClick}
@@ -398,26 +510,25 @@ function ScanFindingSheet() {
   );
 }
 
-/** 카메라가 실제로 바코드를 읽는 중인지. 사진·번호 단계나 다른 앱이 카메라를 쓰는 중이면 아니다 */
-function cameraReading(state: ScanState) {
-  return state.stage === "camera" && state.retryable === null;
-}
+// 3-1이 붙어 있는 동안은 처음 읽은 값을 그대로 쓴다(조회가 끝나 저장값을 지워도 화면의 바코드는 바뀌지 않게)
+let pendingSnapshot: Gtin | null | undefined;
+const noSubscribe = () => () => {};
 
-// 목 등급 A–E를 점수 구간 1(매우 높음)~5(매우 낮음)로. 실제 API도 등급 글자를 주므로 같은 대응을 쓴다
-const GRADE_BAND = { A: 1, B: 2, C: 3, D: 4, E: 5 } as const;
-
-/** 목 조회 결과 → 결과 시트 모양. 목에 없는 값은 fixture로 채운다(_fixtures.ts) */
-function toSheetProduct(result: ScanResult): ScanSheetProduct {
-  const extra = FIXTURE_SCAN_EXTRA[result.id];
-  return {
-    id: result.id,
-    name: result.name,
-    brand: extra?.brand ?? null,
-    imageUrl: extra?.imageUrl ?? null,
-    score: extra?.score ?? 0,
-    band: GRADE_BAND[result.grade],
-    rank: extra?.rank ?? null,
-    goalLabel: FIXTURE_SCAN_GOAL_LABEL,
-    summary: result.summary,
-  };
+function usePendingGtin(): Gtin | null {
+  const value = useSyncExternalStore(
+    noSubscribe,
+    () => {
+      if (pendingSnapshot === undefined) pendingSnapshot = readPendingGtin();
+      return pendingSnapshot;
+    },
+    () => null,
+  );
+  // 3-1을 떠나면 다음에 다시 읽는다
+  useEffect(
+    () => () => {
+      pendingSnapshot = undefined;
+    },
+    [],
+  );
+  return value;
 }
