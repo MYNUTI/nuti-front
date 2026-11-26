@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { GoalLink } from "@/app/my/goal/goal-link";
 import { Button } from "@/components/common/button";
 import { EmptyState, ErrorState } from "@/components/common/empty-state";
 import { SortSheet } from "@/components/common/sort-sheet";
@@ -27,7 +27,6 @@ import {
   hasFilters,
   parseRankingShown,
   parseRankingSort,
-  RANKING_GOAL_LABEL,
   RANKING_PAGE_SIZE as PAGE_SIZE,
   RANKING_SORT_OPTIONS,
   rankingHref,
@@ -173,12 +172,10 @@ export function RankingList({
         />
         <div className="flex h-11 items-center justify-between pr-2 pl-4">
           <div className="flex h-[38px] min-w-0 flex-col gap-0.5 text-[12px]">
-            <Link
-              href="/my/goal"
+            <GoalLink
+              fallback={goal === "MUSCLE_GAIN" ? "muscle" : "diet"}
               className="self-start leading-5 font-medium whitespace-nowrap text-brand-link"
-            >
-              목표: {RANKING_GOAL_LABEL[goal]} <span aria-hidden>›</span>
-            </Link>
+            />
             <p className="truncate leading-4 text-text-sub">
               {formatCoverage(coverage)}
             </p>

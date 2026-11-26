@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { GoalLink } from "@/app/my/goal/goal-link";
 import { MAJOR_ICON } from "@/app/ranking/format";
 import { Button } from "@/components/common/button";
 import { CategoryTile } from "@/components/common/category-tile";
@@ -16,11 +17,6 @@ import type { Goal, PopularProduct } from "./_fixtures";
  * 2-1 홈의 칸들. 【최종】 2-1 홈(첫 방문 · 사용 중 · 담아 둔 비교함이 있을 때)과 메모를 따른다.
  * 이동할 화면이 아직 없는 링크는 플랜 라우트 표의 경로만 걸어 둔다.
  */
-
-const GOAL_LABEL: Record<Goal, string> = {
-  diet: "다이어트",
-  muscle: "근육 증가",
-};
 
 /** 맨 위: 검색칸 + 바코드 버튼, 그 아래 「AI 영양 진단」 배너(늘 보임) */
 export function SearchSection() {
@@ -132,12 +128,10 @@ export function PopularSection({
         actionHref="/ranking?seller=COUPANG"
         description={
           // 【최종】 메모: 목표 → 5-2 목표 바꾸기
-          <Link
-            href="/my/goal"
+          <GoalLink
+            fallback={goal}
             className="text-[12px] leading-5 font-medium text-brand-link"
-          >
-            목표: {GOAL_LABEL[goal]} <span aria-hidden>›</span>
-          </Link>
+          />
         }
       />
       <div className="flex gap-2.5 overflow-x-auto px-5 pt-1 pb-8">

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { GoalLink } from "@/app/my/goal/goal-link";
 import { Button } from "@/components/common/button";
 import { ErrorState } from "@/components/common/empty-state";
 import { ProductCard } from "@/components/common/product-card";
@@ -14,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { particleWa } from "./hangul";
 import { PAGE_SIZE, readResultParams } from "./result-params";
 import {
-  FIXTURE_SEARCH_GOAL_LABEL,
+  FIXTURE_SEARCH_GOAL,
   fixtureAlternatives,
   fixtureSearch,
   fixtureSimilarTop,
@@ -101,6 +102,9 @@ export function SearchResults({
     const params = new URLSearchParams({ q: query });
     if (sort !== "score") params.set("sort", sort);
     if (shown > PAGE_SIZE) params.set("n", String(shown));
+    // 5-2 목표 바꾸기에서 돌아온 목표(?goal=)는 이어 둔다(「목표: ○○」가 읽는다)
+    const goal = new URLSearchParams(window.location.search).get("goal");
+    if (goal) params.set("goal", goal);
     window.history.replaceState(null, "", `/search?${params}`);
   }, [query, sort, shown]);
 
@@ -148,12 +152,10 @@ export function SearchResults({
         )}
       </div>
       <div className="flex h-11 items-center justify-between px-5">
-        <Link
-          href="/my/goal"
+        <GoalLink
+          fallback={FIXTURE_SEARCH_GOAL}
           className="text-[12px] leading-5 font-medium text-brand-link"
-        >
-          목표: {FIXTURE_SEARCH_GOAL_LABEL} <span aria-hidden>›</span>
-        </Link>
+        />
         {/* v3/SortButton: 글자 14 · 꺾쇠 16 · 누르는 높이 44, 테두리 · 바탕 없음 */}
         <button
           type="button"
@@ -329,12 +331,10 @@ function NoResults({
           <h3 id="similar-title" className="text-section text-text-strong">
             점수가 높은 비슷한 제품
           </h3>
-          <Link
-            href="/my/goal"
+          <GoalLink
+            fallback={FIXTURE_SEARCH_GOAL}
             className="self-start text-[12px] leading-5 font-medium text-brand-link"
-          >
-            목표: {FIXTURE_SEARCH_GOAL_LABEL} <span aria-hidden>›</span>
-          </Link>
+          />
         </div>
         <ResultGrid items={similar} className="pb-3" />
       </section>

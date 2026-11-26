@@ -3,6 +3,7 @@
  * `GET /search/suggestions`(일치 구간 `matchedRanges`를 서버가 준다)로 바꾼다(UI 플랜 「데이터」).
  * 자동완성 후보는 3-2 제품 결과 fixture의 제품이라 눌러도 제품 결과가 열린다.
  */
+import type { Goal } from "@/app/my/_fixtures";
 import { FIXTURE_PRODUCTS } from "@/app/product/[id]/_fixtures";
 import type { ProductCardInput } from "@/components/common/product-card";
 import type { ScoreBand } from "@/components/common/score-ring";
@@ -72,7 +73,7 @@ export function fixtureSuggestions(query: string): Suggestion[] {
 export type SearchSort = "score" | "calories" | "protein" | "sugar";
 
 /** 2-4 「목표: ○○ ›」. API 연결 때 내 목표(`goal`)로 바꾼다 */
-export const FIXTURE_SEARCH_GOAL_LABEL = "다이어트";
+export const FIXTURE_SEARCH_GOAL: Goal = "diet";
 
 /** 【최종】 정렬 시트 4줄(「인기순」은 인기 자료가 생기면 다시 보인다) */
 export const SEARCH_SORTS: { value: SearchSort; label: string }[] = [

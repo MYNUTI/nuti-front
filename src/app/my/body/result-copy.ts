@@ -2,7 +2,7 @@ import type { KcalBand } from "./body-kcal";
 
 /*
  * 5-7b 구간별 문장(【최종】 그림은 2,500kcal 한 장, 2,000 · 1,500은 메모 「같은 틀에 글자만 다름」).
- * 메모의 2,000kcal 「제목 · 본문」은 「바뀌는 것」 자리의 제목 · 본문으로 읽었다(UI 플랜 「남은 질문」)
+ * 메모의 2,000kcal 「제목 · 본문」은 「바뀌는 것」 자리의 제목 · 본문으로 읽었다(UI 플랜 남은 질문 86)
  */
 
 export type ResultSection = { heading: string; body: string };
