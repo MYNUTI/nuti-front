@@ -5,6 +5,7 @@ import {
   checkKeys,
   cleanNumber,
   firstBlocker,
+  mismatches,
   type NutrientKey,
 } from "./nutrients";
 
@@ -26,6 +27,7 @@ const values = (patch: Partial<CheckValues> = {}): CheckValues => ({
   amount: { serving: "40", total: "" },
   nutrients: full,
   unsure: new Set(),
+  accepted: new Set(),
   ...patch,
 });
 
@@ -123,5 +125,74 @@ describe("firstBlocker", () => {
         values({ unsure: new Set<NutrientKey>(["protein", "sodium"]) }),
       ),
     ).toEqual({ kind: "check", key: "sodium" });
+  });
+});
+
+describe("mismatches", () => {
+  it("당류가 탄수화물보다 크면 당류 칸에 걸린다", () => {
+    const v = values({ nutrients: { ...full, sugars: "18.0" } });
+    expect(mismatches(v).map((m) => [m.rule, m.keys])).toEqual([
+      ["sugars", ["sugars"]],
+    ]);
+    expect(checkKeys(v)).toEqual(["sugars"]);
+    expect(firstBlocker(v)).toEqual({ kind: "check", key: "sugars" });
+  });
+
+  it("포화지방 · 트랜스지방이 지방보다 크면 각 칸에 걸린다", () => {
+    const v = values({
+      nutrients: { ...full, fat: "1.0", saturatedFat: "1.2", transFat: "2" },
+    });
+    expect(mismatches(v).map((m) => m.rule)).toEqual([
+      "transFat",
+      "saturatedFat",
+    ]);
+  });
+
+  it("100g당 표에서만 네 성분 합(나트륨은 mg)이 100g을 넘는지 본다", () => {
+    const nutrients = {
+      ...full,
+      carbohydrate: "60",
+      protein: "30",
+      fat: "9.9",
+      sodium: "200",
+    };
+    // 60 + 30 + 9.9 + 0.2 = 100.1
+    expect(
+      mismatches(values({ basis: "per100g", nutrients })).map((m) => m.keys),
+    ).toEqual([["sodium", "carbohydrate", "fat", "protein"]]);
+    expect(mismatches(values({ basis: "serving", nutrients }))).toEqual([]);
+  });
+
+  it("같거나 합이 정확히 100g이면 걸리지 않는다", () => {
+    expect(
+      mismatches(
+        values({ nutrients: { ...full, sugars: "16", carbohydrate: "16" } }),
+      ),
+    ).toEqual([]);
+    const nutrients = {
+      ...full,
+      carbohydrate: "60",
+      protein: "30",
+      fat: "10",
+      sodium: "0",
+    };
+    expect(mismatches(values({ basis: "per100g", nutrients }))).toEqual([]);
+  });
+
+  it("칸이 비었으면 그 검사는 하지 않는다", () => {
+    expect(
+      mismatches(
+        values({ nutrients: { ...full, sugars: "18", carbohydrate: "" } }),
+      ),
+    ).toEqual([]);
+  });
+
+  it("포장에 적힌 그대로예요로 넘긴 검사는 빠진다", () => {
+    const v = values({
+      nutrients: { ...full, sugars: "18.0" },
+      accepted: new Set(["sugars" as const]),
+    });
+    expect(mismatches(v)).toEqual([]);
+    expect(firstBlocker(v)).toBeNull();
   });
 });

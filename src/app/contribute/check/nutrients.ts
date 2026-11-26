@@ -59,7 +59,66 @@ export type CheckValues = {
   nutrients: Record<NutrientKey, string>;
   /** 사진에서 읽은 값의 신뢰도가 낮아 「확인 필요」가 붙은 칸(맞아요 · 고치면 빠진다) */
   unsure: ReadonlySet<NutrientKey>;
+  /** 「포장에 적힌 그대로예요」로 넘긴 값끼리 맞지 않음 */
+  accepted: ReadonlySet<MismatchRule>;
 };
+
+/*
+ * 읽은 값끼리 맞지 않을 때(【최종】 9723:20096 메모). 검사 세 가지: 당류 > 탄수화물, 포화지방 · 트랜스지방 > 지방,
+ * 100g당 표에서 탄수화물 · 단백질 · 지방 · 나트륨의 합 > 100g. 걸린 칸은 「확인 필요」, 문장 · 버튼은 그 검사의 첫 칸 아래 한 번.
+ * 칸이 비어 있으면 그 검사는 하지 않는다(비어 있는 칸은 따로 막는다)
+ */
+export type MismatchRule = "sugars" | "saturatedFat" | "transFat" | "sum100";
+
+export type Mismatch = {
+  rule: MismatchRule;
+  /** 포장 표 순서. 첫 칸 아래에 문장 · 버튼 */
+  keys: NutrientKey[];
+  message: string;
+};
+
+export function mismatches(values: CheckValues): Mismatch[] {
+  const n = (key: NutrientKey) =>
+    isBlank(values.nutrients[key]) ? null : Number(values.nutrients[key]);
+  const over = (part: NutrientKey, whole: NutrientKey) => {
+    const a = n(part);
+    const b = n(whole);
+    return a !== null && b !== null && a > b;
+  };
+  const found: Mismatch[] = [];
+  if (over("sugars", "carbohydrate"))
+    found.push({
+      rule: "sugars",
+      keys: ["sugars"],
+      message: "당류가 탄수화물보다 많아요.",
+    });
+  if (over("transFat", "fat"))
+    found.push({
+      rule: "transFat",
+      keys: ["transFat"],
+      message: "트랜스지방이 지방보다 많아요.",
+    });
+  if (over("saturatedFat", "fat"))
+    found.push({
+      rule: "saturatedFat",
+      keys: ["saturatedFat"],
+      message: "포화지방이 지방보다 많아요.",
+    });
+  if (values.basis === "per100g") {
+    const parts = [n("carbohydrate"), n("protein"), n("fat"), n("sodium")];
+    if (parts.every((v) => v !== null)) {
+      const [carbohydrate, protein, fat, sodiumMg] = parts as number[];
+      // 나트륨은 mg
+      if (carbohydrate + protein + fat + sodiumMg / 1000 > 100)
+        found.push({
+          rule: "sum100",
+          keys: ["sodium", "carbohydrate", "fat", "protein"],
+          message: "탄수화물, 단백질, 지방, 나트륨을 더하면 100g이 넘어요.",
+        });
+    }
+  }
+  return found.filter((m) => !values.accepted.has(m.rule));
+}
 
 /** 칸에 적을 수 있는 모양: 숫자와 소수점 하나. 쉼표는 천 단위(「1,200kcal」)로 보고 지운다 */
 export function cleanNumber(input: string) {
@@ -73,14 +132,28 @@ export function cleanNumber(input: string) {
 /** 숫자가 하나도 없으면(빈 칸 · 「.」) 비어 있는 것으로 본다 */
 export const isBlank = (value: string) => !/\d/.test(value);
 
-/** 「확인 필요」를 보일 칸: 신뢰도가 낮은 칸 + 비어 있는 필수 칸(메모: 「읽지 못했어요 · 눌러서 적어 주세요」) */
-export function needsCheck(values: CheckValues, key: NutrientKey) {
+/**
+ * 「확인 필요」를 보일 칸: 신뢰도가 낮은 칸 + 비어 있는 필수 칸(메모: 「읽지 못했어요 · 눌러서 적어 주세요」) +
+ * 값끼리 맞지 않는 칸
+ */
+export function needsCheck(
+  values: CheckValues,
+  key: NutrientKey,
+  found: Mismatch[] = mismatches(values),
+) {
   const required = NUTRIENTS.find((n) => n.key === key)?.required ?? false;
-  return values.unsure.has(key) || (required && isBlank(values.nutrients[key]));
+  return (
+    values.unsure.has(key) ||
+    (required && isBlank(values.nutrients[key])) ||
+    found.some((m) => m.keys.includes(key))
+  );
 }
 
 export function checkKeys(values: CheckValues) {
-  return NUTRIENTS.filter((n) => needsCheck(values, n.key)).map((n) => n.key);
+  const found = mismatches(values);
+  return NUTRIENTS.filter((n) => needsCheck(values, n.key, found)).map(
+    (n) => n.key,
+  );
 }
 
 /** 보내기 전에 막는 첫 곳(화면 위에서부터). null이면 보낼 수 있다 */

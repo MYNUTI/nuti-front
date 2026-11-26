@@ -41,7 +41,14 @@ type Camera = "starting" | "live" | "denied" | "unavailable";
  * - PC는 카메라를 열지 않고 「PC에서는 카메라를 쓰기 어려워요」 + 앨범만(메모)
  * 세 화면 모두 아래 「카메라 없이 올리기 · 앨범에서 고르기」.
  */
-export function LabelCamera({ nextQuery }: { nextQuery: string }) {
+export function LabelCamera({
+  nextQuery,
+  readFails,
+}: {
+  nextQuery: string;
+  /** 사진을 읽지 못함(fixture) → 3-7x */
+  readFails: boolean;
+}) {
   const router = useRouter();
   const goBack = useGoBack("/home");
   const video = useRef<HTMLVideoElement>(null);
@@ -129,11 +136,14 @@ export function LabelCamera({ nextQuery }: { nextQuery: string }) {
   useEffect(() => {
     if (!reading) return;
     const timer = setTimeout(
-      () => router.push(`/contribute/check${nextQuery ? `?${nextQuery}` : ""}`),
+      () =>
+        router.push(
+          `${readFails ? "/contribute/label/failed" : "/contribute/check"}${nextQuery ? `?${nextQuery}` : ""}`,
+        ),
       FIXTURE_READ_MS,
     );
     return () => clearTimeout(timer);
-  }, [reading, nextQuery, router]);
+  }, [reading, readFails, nextQuery, router]);
 
   const finish = async (source: CanvasImageSource, w: number, h: number) => {
     const size = fitLongEdge(w, h);

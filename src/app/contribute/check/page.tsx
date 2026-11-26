@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 
-import { toGtin14 } from "@/lib/scan/gtin";
-
 import { FIXTURE_NO_SCORE, fixtureReading } from "../_fixtures";
+import { passThrough } from "../pass-through";
 import { CheckForm } from "./check-form";
 
 export const metadata: Metadata = { title: "읽은 값 확인" };
@@ -25,13 +24,8 @@ export default async function CheckPage({
   const initialName = product
     ? [product.brand, product.name].filter(Boolean).join(" ")
     : [text("brand"), text("name")].filter(Boolean).join(" ");
-  const gtin = /^\d{8,14}$/.test(text("gtin")) ? toGtin14(text("gtin")) : null;
-
-  // 3-7로 돌아갈 때 같은 값을 다시 넘긴다
-  const back = new URLSearchParams();
-  for (const key of ["name", "brand", "gtin", "product"])
-    if (text(key)) back.set(key, text(key));
-  const labelHref = `/contribute/label${back.size ? `?${back}` : ""}`;
+  // 3-7로 돌아갈 때 · 3-9로 갈 때 같은 값을 넘긴다
+  const { query: nextQuery, gtin, labelHref } = passThrough(query);
 
   return (
     <CheckForm
@@ -41,7 +35,8 @@ export default async function CheckPage({
       initialName={initialName}
       gtin={gtin}
       labelHref={labelHref}
-      nextQuery={back.toString()}
+      nextQuery={nextQuery}
+      failPreview={text("state") === "failed"}
     />
   );
 }

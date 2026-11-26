@@ -75,7 +75,9 @@ export const FIXTURE_NO_SCORE: Record<string, NoScoreProduct> = {
 
 /*
  * 3-8 사진에서 읽은 값(【최종】 3-8 그림의 값). 사진을 읽는 API가 없어(남은 질문 44) 늘 같은 값을 돌려준다.
- * 미리 보기 주소 값 ?state=total — 총 내용량 기준으로 읽음 · nobasis — 기준을 읽지 못함 · unread — 단백질을 읽지 못함
+ * 미리 보기 주소 값 ?state=total — 총 내용량 기준으로 읽음 · nobasis — 기준을 읽지 못함 · unread — 단백질을 읽지 못함 ·
+ * mismatch — 당류가 탄수화물보다 큼 · sum — 100g당 표에서 네 성분 합이 100g을 넘음 · kj — 열량을 kJ로 읽어 바꿈 ·
+ * failed — 보내기 실패
  */
 export type LabelReading = {
   basis: "serving" | "per100g" | "per100ml" | "total" | null;
@@ -95,6 +97,8 @@ export type LabelReading = {
   >;
   /** 신뢰도가 낮은 칸(「확인 필요」) */
   unsure: string[];
+  /** 열량이 kJ로 적혀 있어 kcal로 바꿨다 */
+  energyFromKj: boolean;
 };
 
 export function fixtureReading(state: string | undefined): LabelReading {
@@ -114,10 +118,41 @@ export function fixtureReading(state: string | undefined): LabelReading {
       fiber: "4.8",
     },
     unsure: ["sodium"],
+    energyFromKj: false,
   };
   if (state === "total") return { ...reading, basis: "total" };
   if (state === "nobasis") return { ...reading, basis: null, unsure: [] };
+  if (state === "mismatch")
+    return {
+      ...reading,
+      nutrients: { ...reading.nutrients, sugars: "18.0" },
+      unsure: [],
+    };
+  if (state === "sum")
+    return {
+      ...reading,
+      basis: "per100g",
+      nutrients: {
+        ...reading.nutrients,
+        carbohydrate: "60.0",
+        protein: "30.0",
+        fat: "15.0",
+      },
+      unsure: [],
+    };
+  // 623kJ ÷ 4.184 ≈ 149kcal
+  if (state === "kj") return { ...reading, energyFromKj: true, unsure: [] };
   if (state === "unread")
     return { ...reading, nutrients: { ...reading.nutrients, protein: "" } };
   return reading;
+}
+
+/*
+ * 3-7x 영양성분표를 못 읽었을 때 「이번 사진에서 걸린 점」. 사진을 읽는 API가 없어(남은 질문 44) 그림의 두 줄을 쓴다.
+ * 미리 보기 주소 값 ?state=noreason — 걸린 점이 없어 이유 줄을 숨김 · failed — 보내기 실패
+ */
+export function fixtureUnreadReasons(state: string | undefined) {
+  return state === "noreason"
+    ? []
+    : ["빛이 반사돼 숫자 일부가 가려졌어요", "표 아래쪽이 틀 밖으로 나갔어요"];
 }

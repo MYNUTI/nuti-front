@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Dialog } from "radix-ui";
-import { useEffect, useId, useState, useSyncExternalStore } from "react";
+import { useId, useState } from "react";
 import { flushSync } from "react-dom";
 
 import { BackButton, useGoBack } from "@/components/common/back-button";
@@ -13,12 +13,12 @@ import { Chip } from "@/components/common/chip";
 import { TextField } from "@/components/common/text-field";
 import { TopBar, TopBarButton } from "@/components/common/top-bar";
 import { IconChevronDown, IconClose } from "@/components/icons";
-import { addRequestedHere } from "@/components/scan/requested-gtins";
 import type { Gtin } from "@/lib/scan/types";
 import { cn } from "@/lib/utils";
 
 import type { LabelReading } from "../_fixtures";
-import { clearLabelPhoto, getLabelPhoto } from "../label-photo";
+import { SENT_PHOTO_HREF, sendLabelPhoto } from "../label-photo";
+import { useLabelPhoto } from "../use-label-photo";
 import {
   BASIS_LABEL,
   type Basis,
@@ -28,11 +28,11 @@ import {
   firstBlocker,
   hasAmount,
   isBlank,
+  type MismatchRule,
+  mismatches,
   type NutrientKey,
   NUTRIENTS,
 } from "./nutrients";
-
-const noop = () => () => {};
 
 const AMOUNT_LABEL = {
   serving: "1회 제공량 무게",
@@ -41,13 +41,15 @@ const AMOUNT_LABEL = {
 
 /*
  * 3-8 읽은 값 확인(【최종】 ⑦ 9306:21648 · 맞아요를 눌렀을 때 21881 · 총 내용량 기준일 때 9723:20237 ·
- * 표시 기준을 고르지 않았을 때 9846:19007).
+ * 표시 기준을 고르지 않았을 때 9846:19007 · 값이 서로 맞지 않을 때 9723:20096).
  * 머리(제목 · 설명 · 찍은 사진 「크게 보기」), 「확인할 곳 n개」 띠, 제품 이름(선택), 포장 표 기준 칩, (1회 제공량 무게 ·
  * 총 내용량 + 단위 칩), 영양성분 10칸, 「사진 다시 찍기 · 이 사진 그대로 보내기」, 아래 고정 「이 값으로 점수 보기」.
  * - 신뢰도가 낮은 칸 · 비어 있는 필수 칸은 「확인 필요」. 맞아요 · 숫자를 고치면 빠진다
+ * - 값끼리 맞지 않는 칸도 「확인 필요」. 첫 칸 아래 「포장에 적힌 그대로예요」를 누르거나 고쳐서 검사를 통과하면 빠진다
+ * - kJ로 적힌 열량을 kcal로 바꿨으면 열량 칸 아래 알림(열량을 고치면 숨김)
+ * - 보내기(점수 보기 · 사진 그대로 보내기)가 실패하면 머물고 버튼 위 「보내지 못했어요…」. 미리 보기 `?state=failed`
  * - 「이 값으로 점수 보기」는 막는 곳(기준 → 무게 → 확인 필요 칸)이 있으면 보내지 않고 그 칸으로 내려가 위에 문장을 보인다
  * - 사진이 없으면(새로 고침 등) 3-7로 돌려보낸다
- * 값이 서로 맞지 않을 때 · kJ · 보내기 실패는 08단계 다음 순서
  */
 export function CheckForm({
   reading,
@@ -55,6 +57,7 @@ export function CheckForm({
   gtin,
   labelHref,
   nextQuery,
+  failPreview,
 }: {
   reading: LabelReading;
   initialName: string;
@@ -63,11 +66,12 @@ export function CheckForm({
   labelHref: string;
   /** 3-9로 넘길 값 */
   nextQuery: string;
+  failPreview: boolean;
 }) {
   const router = useRouter();
   const formId = useId();
   const retake = useGoBack(labelHref);
-  const photo = useSyncExternalStore(noop, getLabelPhoto, () => null);
+  const photo = useLabelPhoto(labelHref);
 
   const [name, setName] = useState(initialName);
   const [basis, setBasis] = useState<Basis | null>(reading.basis);
@@ -83,19 +87,20 @@ export function CheckForm({
   const [unsure, setUnsure] = useState<ReadonlySet<NutrientKey>>(
     () => new Set(reading.unsure as NutrientKey[]),
   );
+  const [accepted, setAccepted] = useState<ReadonlySet<MismatchRule>>(
+    () => new Set(),
+  );
+  const [kjNote, setKjNote] = useState(reading.energyFromKj);
+  const [failed, setFailed] = useState(false);
   const [warn, setWarn] = useState<Blocker | null>(null);
   const [photoOpen, setPhotoOpen] = useState(false);
 
   const rowId = (key: string) => `${formId}-row-${key}`;
   const fieldId = (key: string) => `${formId}-field-${key}`;
 
-  // 렌더 값이 아니라 지금 메모리를 본다(하이드레이션 첫 렌더는 서버 값 null이라 그걸로 판단하면 늘 돌려보낸다)
-  useEffect(() => {
-    if (!getLabelPhoto()) router.replace(labelHref);
-  }, [labelHref, router]);
-
-  const values = { basis, amount, nutrients, unsure };
+  const values = { basis, amount, nutrients, unsure, accepted };
   const toCheck = checkKeys(values);
+  const found = mismatches(values);
   const label = (key: NutrientKey) =>
     NUTRIENTS.find((n) => n.key === key)?.label ?? key;
 
@@ -107,6 +112,10 @@ export function CheckForm({
   const submit = () => {
     const blocker = firstBlocker(values);
     if (!blocker) {
+      if (failPreview) {
+        setFailed(true);
+        return;
+      }
       // 3-9 점수 확인은 08단계 다음 순서. API 연결 때 기준 · 무게 · 단위 · 값을 보내고 받은 점수를 보인다
       router.push(`/contribute/score${nextQuery ? `?${nextQuery}` : ""}`);
       return;
@@ -117,17 +126,20 @@ export function CheckForm({
   };
 
   const sendPhoto = () => {
-    if (gtin) addRequestedHere(gtin);
-    // 메모(3-7): 사진은 확인이 끝나면 지운다
-    clearLabelPhoto();
-    // 4-3 내 기록(분석 요청)은 09단계. 「사진을 받았어요…」 알림은 그 화면이 `sent`를 보고 띄운다
-    router.replace("/history?tab=requests&sent=photo");
+    if (failPreview) {
+      setFailed(true);
+      return;
+    }
+    sendLabelPhoto(gtin);
+    router.replace(SENT_PHOTO_HREF);
   };
 
   const setNutrient = (key: NutrientKey, value: string) => {
     setNutrients((prev) => ({ ...prev, [key]: cleanNumber(value) }));
     // 숫자를 고치면 그 칸은 사용자가 확인한 것으로 본다
     setUnsure((prev) => without(prev, key));
+    if (key === "energy") setKjNote(false);
+    setFailed(false);
     if (warn?.kind === "check" && warn.key === key) setWarn(null);
   };
 
@@ -333,7 +345,15 @@ export function CheckForm({
         const blank = isBlank(value);
         const labelId = `${formId}-${n.key}`;
         const noteId = `${formId}-${n.key}-note`;
-        const warned = warn?.kind === "check" && warn.key === n.key;
+        // 짝 칸을 고쳐 검사가 풀리면 이 칸도 더는 막지 않는다
+        const warned = warn?.kind === "check" && warn.key === n.key && flagged;
+        const mismatch = found.find((m) => m.keys.includes(n.key));
+        // 맞지 않는 검사의 문장 · 버튼은 그 검사의 첫 칸 아래 한 번
+        const lead = mismatch?.keys[0] === n.key;
+        const leadNoteId = mismatch && `${formId}-${mismatch.keys[0]}-note`;
+        const unsureNote = !mismatch && unsure.has(n.key) && !blank;
+        const kj = n.key === "energy" && kjNote;
+        const kjId = `${formId}-kj`;
         return (
           <div key={n.key} id={rowId(n.key)}>
             <div aria-hidden className="mx-5 h-px bg-line-default" />
@@ -366,14 +386,18 @@ export function CheckForm({
                   unit={n.unit}
                   labelledBy={labelId}
                   describedBy={
-                    [warned && warnId, flagged && noteId]
+                    [
+                      warned && warnId,
+                      mismatch ? leadNoteId : flagged && noteId,
+                      kj && kjId,
+                    ]
                       .filter(Boolean)
                       .join(" ") || undefined
                   }
                   flagged={flagged}
                   onChange={(next) => setNutrient(n.key, next)}
                 />
-                {flagged && !blank && (
+                {unsureNote && (
                   <button
                     type="button"
                     onClick={() => {
@@ -389,7 +413,31 @@ export function CheckForm({
                   </button>
                 )}
               </div>
-              {flagged && (
+              {lead && (
+                <>
+                  <p id={noteId} className="text-body2 text-accent-pink-text">
+                    {mismatch.message} 포장과 같으면
+                    {/* 그림의 줄바꿈. 합계 문장은 길어 그대로 흘린다 */}
+                    {mismatch.rule === "sum100" ? " " : <br />}
+                    아래 버튼을 누르고, 다르면 숫자를 고쳐 주세요.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAccepted((prev) => new Set(prev).add(mismatch.rule));
+                      if (
+                        warn?.kind === "check" &&
+                        mismatch.keys.includes(warn.key)
+                      )
+                        setWarn(null);
+                    }}
+                    className="flex h-8 items-center self-start rounded-[8px] border border-line-strong bg-bg-page px-3 text-body2-bold text-text-strong"
+                  >
+                    포장에 적힌 그대로예요
+                  </button>
+                </>
+              )}
+              {flagged && !mismatch && (
                 <p id={noteId} className="text-body2 text-accent-pink-text">
                   {blank ? (
                     "읽지 못했어요 · 눌러서 적어 주세요"
@@ -400,6 +448,11 @@ export function CheckForm({
                       다르면 숫자를 고쳐 주세요.
                     </>
                   )}
+                </p>
+              )}
+              {kj && (
+                <p id={kjId} className="pb-1 text-body2 text-text-sub">
+                  kJ로 적힌 값을 kcal로 바꿨어요
                 </p>
               )}
             </div>
@@ -425,9 +478,20 @@ export function CheckForm({
       </div>
 
       <BottomCta className="fixed-app bottom-0 z-20 border-t border-line-default">
-        <Button kind="primary" className="flex-1" onClick={submit}>
-          이 값으로 점수 보기
-        </Button>
+        <div className="flex flex-1 flex-col">
+          {/* 실패 문장 자리는 그림이 없어 3-6 제품 요청하기와 같게 버튼 바로 위. 영역이 먼저 있어야 읽으므로 늘 둔다 */}
+          <p
+            role="alert"
+            className={cn("text-body2 text-text-danger", failed && "pb-2")}
+          >
+            {failed
+              ? "보내지 못했어요. 인터넷 연결을 확인하고 다시 보내 주세요. 적은 내용은 그대로 있어요."
+              : ""}
+          </p>
+          <Button kind="primary" className="w-full" onClick={submit}>
+            이 값으로 점수 보기
+          </Button>
+        </div>
       </BottomCta>
     </main>
   );
