@@ -72,3 +72,52 @@ export const FIXTURE_NO_SCORE: Record<string, NoScoreProduct> = {
     similar: PROTEIN_BARS,
   },
 };
+
+/*
+ * 3-8 사진에서 읽은 값(【최종】 3-8 그림의 값). 사진을 읽는 API가 없어(남은 질문 44) 늘 같은 값을 돌려준다.
+ * 미리 보기 주소 값 ?state=total — 총 내용량 기준으로 읽음 · nobasis — 기준을 읽지 못함 · unread — 단백질을 읽지 못함
+ */
+export type LabelReading = {
+  basis: "serving" | "per100g" | "per100ml" | "total" | null;
+  amount: { value: string; unit: "g" | "mL" };
+  nutrients: Record<
+    | "energy"
+    | "sodium"
+    | "carbohydrate"
+    | "sugars"
+    | "fat"
+    | "transFat"
+    | "saturatedFat"
+    | "cholesterol"
+    | "protein"
+    | "fiber",
+    string
+  >;
+  /** 신뢰도가 낮은 칸(「확인 필요」) */
+  unsure: string[];
+};
+
+export function fixtureReading(state: string | undefined): LabelReading {
+  const reading: LabelReading = {
+    basis: "serving",
+    amount: { value: "40", unit: "g" },
+    nutrients: {
+      energy: "149",
+      sodium: "193",
+      carbohydrate: "16.0",
+      sugars: "3.4",
+      fat: "5.6",
+      transFat: "0",
+      saturatedFat: "1.2",
+      cholesterol: "5",
+      protein: "10.3",
+      fiber: "4.8",
+    },
+    unsure: ["sodium"],
+  };
+  if (state === "total") return { ...reading, basis: "total" };
+  if (state === "nobasis") return { ...reading, basis: null, unsure: [] };
+  if (state === "unread")
+    return { ...reading, nutrients: { ...reading.nutrients, protein: "" } };
+  return reading;
+}
