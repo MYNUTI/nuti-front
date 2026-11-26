@@ -21,8 +21,9 @@ export default async function CheckPage({
   };
 
   const product = FIXTURE_NO_SCORE[text("product")];
+  // 3-6 제품 이름에는 브랜드가 이미 들어 있다(「올가니카 올라 츄이프로틴바…」)
   const initialName = product
-    ? [product.brand, product.name].filter(Boolean).join(" ")
+    ? product.name
     : [text("brand"), text("name")].filter(Boolean).join(" ");
   // 3-7로 돌아갈 때 · 3-9로 갈 때 같은 값을 넘긴다
   const { query: nextQuery, gtin, labelHref } = passThrough(query);

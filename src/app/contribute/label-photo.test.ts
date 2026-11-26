@@ -6,8 +6,11 @@ import { stubLocalStorage } from "@/test/browser";
 
 import {
   clearLabelPhoto,
+  getLabelDraft,
   getLabelPhoto,
+  type LabelDraft,
   sendLabelPhoto,
+  setLabelDraft,
   setLabelPhoto,
 } from "./label-photo";
 
@@ -47,5 +50,21 @@ describe("영양성분표 사진 메모리", () => {
     sendLabelPhoto(null);
     expect(getLabelPhoto()).toBeNull();
     expect(store.size).toBe(0);
+  });
+});
+
+describe("3-8에서 적은 값", () => {
+  const draft = { name: "웨하스" } as LabelDraft;
+
+  it("사진을 지우거나 새로 찍으면 함께 지운다", () => {
+    setLabelPhoto(new Blob(["a"]));
+    setLabelDraft(draft);
+    expect(getLabelDraft()).toBe(draft);
+    setLabelPhoto(new Blob(["b"]));
+    expect(getLabelDraft()).toBeNull();
+
+    setLabelDraft(draft);
+    clearLabelPhoto();
+    expect(getLabelDraft()).toBeNull();
   });
 });

@@ -6,9 +6,28 @@
 import { addRequestedHere } from "@/components/scan/requested-gtins";
 import type { Gtin } from "@/lib/scan/types";
 
+import type { Basis, MismatchRule, NutrientKey } from "./check/nutrients";
+
 export type LabelPhoto = { blob: Blob; url: string };
 
+/**
+ * 3-8에서 「이 값으로 점수 보기」를 누를 때 적어 둔 값. 3-9 「읽은 값 보기」로 3-8에 돌아오면 사진에서 읽은 값 대신
+ * 이것으로 채운다(메모: 「포장과 다르면 고쳐서 다시 봄」). 사진과 함께 지운다
+ */
+export type LabelDraft = {
+  name: string;
+  basis: Basis | null;
+  amount: Record<"serving" | "total", string>;
+  amountUnit: Record<"serving" | "total", "g" | "mL">;
+  nutrients: Record<NutrientKey, string>;
+  unsure: NutrientKey[];
+  accepted: MismatchRule[];
+  /** 「kJ로 적힌 값을 kcal로 바꿨어요」를 아직 보이는지 */
+  kjNote: boolean;
+};
+
 let current: LabelPhoto | null = null;
+let draft: LabelDraft | null = null;
 
 export function setLabelPhoto(blob: Blob) {
   clearLabelPhoto();
@@ -23,6 +42,15 @@ export function getLabelPhoto(): LabelPhoto | null {
 export function clearLabelPhoto() {
   if (current) URL.revokeObjectURL(current.url);
   current = null;
+  draft = null;
+}
+
+export function setLabelDraft(next: LabelDraft) {
+  draft = next;
+}
+
+export function getLabelDraft(): LabelDraft | null {
+  return draft;
 }
 
 /** 「이 사진 그대로 보내기」(3-7x · 3-8) 뒤 갈 곳: 4-3 내 기록(분석 요청, 방금 보냈을 때). 알림은 09단계 */

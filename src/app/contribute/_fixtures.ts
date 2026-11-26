@@ -156,3 +156,32 @@ export function fixtureUnreadReasons(state: string | undefined) {
     ? []
     : ["빛이 반사돼 숫자 일부가 가려졌어요", "표 아래쪽이 틀 밖으로 나갔어요"];
 }
+
+/*
+ * 3-9 내가 찍은 값으로 낸 점수(【최종】 3-9 그림). 적은 값으로 점수를 내는 API가 없어(남은 질문 47) 늘 같은 결과를 쓴다.
+ * 미리 보기 주소 값 ?state=others — 먼저 요청한 분이 있었음 · short — 값이 모자라 점수를 못 냄
+ */
+export type MyScore = {
+  /** null = 값이 모자라 점수를 못 냄 */
+  score: { value: number; band: ScoreBand } | null;
+  /** 한 줄 해석 */
+  headline: string | null;
+  /** 같은 종류 순위로 가는 분류(2-2) */
+  category: { code: string; name: string };
+  goal: Goal;
+  /** 이미 요청돼 있던 제품 */
+  requestedBefore: boolean;
+};
+
+export function fixtureMyScore(state: string | undefined): MyScore {
+  const result: MyScore = {
+    score: { value: 64, band: 3 },
+    headline: "나트륨이 많은 편이에요",
+    category: { code: "01S4", name: "프로틴바·간식" },
+    goal: "diet",
+    requestedBefore: false,
+  };
+  if (state === "others") return { ...result, requestedBefore: true };
+  if (state === "short") return { ...result, score: null, headline: null };
+  return result;
+}

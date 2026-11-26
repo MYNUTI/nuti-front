@@ -13,11 +13,17 @@ import { Chip } from "@/components/common/chip";
 import { TextField } from "@/components/common/text-field";
 import { TopBar, TopBarButton } from "@/components/common/top-bar";
 import { IconChevronDown, IconClose } from "@/components/icons";
+import { addRequestedHere } from "@/components/scan/requested-gtins";
 import type { Gtin } from "@/lib/scan/types";
 import { cn } from "@/lib/utils";
 
 import type { LabelReading } from "../_fixtures";
-import { SENT_PHOTO_HREF, sendLabelPhoto } from "../label-photo";
+import {
+  getLabelDraft,
+  SENT_PHOTO_HREF,
+  sendLabelPhoto,
+  setLabelDraft,
+} from "../label-photo";
 import { useLabelPhoto } from "../use-label-photo";
 import {
   BASIS_LABEL,
@@ -73,24 +79,36 @@ export function CheckForm({
   const retake = useGoBack(labelHref);
   const photo = useLabelPhoto(labelHref);
 
-  const [name, setName] = useState(initialName);
-  const [basis, setBasis] = useState<Basis | null>(reading.basis);
-  const [amount, setAmount] = useState({
-    serving: reading.basis === "total" ? "" : reading.amount.value,
-    total: reading.basis === "total" ? reading.amount.value : "",
-  });
-  const [amountUnit, setAmountUnit] = useState({
-    serving: reading.amount.unit,
-    total: reading.amount.unit,
-  });
-  const [nutrients, setNutrients] = useState(reading.nutrients);
+  // 3-9 「읽은 값 보기」로 돌아왔으면 그때 적어 둔 값으로 채운다
+  const [draft] = useState(getLabelDraft);
+  const [name, setName] = useState(draft?.name ?? initialName);
+  const [basis, setBasis] = useState<Basis | null>(
+    draft ? draft.basis : reading.basis,
+  );
+  const [amount, setAmount] = useState(
+    draft?.amount ?? {
+      serving: reading.basis === "total" ? "" : reading.amount.value,
+      total: reading.basis === "total" ? reading.amount.value : "",
+    },
+  );
+  const [amountUnit, setAmountUnit] = useState(
+    draft?.amountUnit ?? {
+      serving: reading.amount.unit,
+      total: reading.amount.unit,
+    },
+  );
+  const [nutrients, setNutrients] = useState(
+    draft?.nutrients ?? reading.nutrients,
+  );
   const [unsure, setUnsure] = useState<ReadonlySet<NutrientKey>>(
-    () => new Set(reading.unsure as NutrientKey[]),
+    () => new Set(draft?.unsure ?? (reading.unsure as NutrientKey[])),
   );
   const [accepted, setAccepted] = useState<ReadonlySet<MismatchRule>>(
-    () => new Set(),
+    () => new Set(draft?.accepted ?? []),
   );
-  const [kjNote, setKjNote] = useState(reading.energyFromKj);
+  const [kjNote, setKjNote] = useState(
+    draft ? draft.kjNote : reading.energyFromKj,
+  );
   const [failed, setFailed] = useState(false);
   const [warn, setWarn] = useState<Blocker | null>(null);
   const [photoOpen, setPhotoOpen] = useState(false);
@@ -116,7 +134,19 @@ export function CheckForm({
         setFailed(true);
         return;
       }
-      // 3-9 점수 확인은 08단계 다음 순서. API 연결 때 기준 · 무게 · 단위 · 값을 보내고 받은 점수를 보인다
+      // API 연결 때 기준 · 무게 · 단위 · 값을 보내고 받은 점수를 3-9에서 보인다. 지금은 적은 값만 메모리에 둔다
+      setLabelDraft({
+        name: name.trim(),
+        basis,
+        amount,
+        amountUnit,
+        nutrients,
+        unsure: [...unsure],
+        accepted: [...accepted],
+        kjNote,
+      });
+      // 값을 보내면 분석 요청이 된다(3-9 「분석 요청 보기」). 3-6 시트가 「이미 요청하셨어요」를 보이게 남긴다
+      if (gtin) addRequestedHere(gtin);
       router.push(`/contribute/score${nextQuery ? `?${nextQuery}` : ""}`);
       return;
     }
