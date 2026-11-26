@@ -24,6 +24,13 @@ export type ProductCardInput = Omit<ProductCardItem, "score" | "band"> & {
   band: ScoreBand | null;
 };
 
+/** 이름이 브랜드와 같은 말로 시작하면 이름에서 뺀다(【최종】 2-4 메모 — 4-3 줄 이름도 같은 규칙) */
+export function nameWithoutBrand(name: string, brand: string | null) {
+  return brand && name.startsWith(`${brand} `)
+    ? name.slice(brand.length).trim() || name
+    : name;
+}
+
 /*
  * 제품 사진 카드. 2-1 홈 「편의점 인기 상품」, 3-2 「더 맞는 제품」은 가로로 미는 줄(폭 114),
  * 3-4 더 맞는 제품(전체)는 3열 격자(fluid — 칸 폭을 채운다)로 같은 카드를 쓴다.
@@ -41,10 +48,7 @@ export function ProductCard({
   /** 기본은 3-2 제품 결과 */
   href?: string;
 }) {
-  const name =
-    product.brand && product.name.startsWith(`${product.brand} `)
-      ? product.name.slice(product.brand.length).trim() || product.name
-      : product.name;
+  const name = nameWithoutBrand(product.name, product.brand);
   return (
     <Link
       href={href}

@@ -2,10 +2,16 @@ import type { Metadata } from "next";
 
 import { TabBar } from "@/components/common/tab-bar";
 
-import { fixtureHistory, fixtureSaved } from "./_fixtures";
+import {
+  fixtureHistory,
+  fixtureNeedsLabel,
+  fixtureRequests,
+  fixtureSaved,
+} from "./_fixtures";
 import { groupByDay } from "./history-days";
 import { HistoryHeader, type HistoryTab } from "./history-tabs";
 import { RecentTab } from "./recent-tab";
+import { RequestsTab } from "./requests-tab";
 import { SavedTab } from "./saved-tab";
 
 export const metadata: Metadata = {
@@ -15,7 +21,7 @@ export const metadata: Metadata = {
 const BANDS = ["1", "2", "3", "4", "5"] as const;
 
 /*
- * 기록 탭. `?tab=` 없음 — 4-1 최근 본 제품 · `saved` — 4-4 즐겨찾기 · `requests` — 4-3 분석 요청(09단계 다음 순서).
+ * 기록 탭. `?tab=` 없음 — 4-1 최근 본 제품 · `saved` — 4-4 즐겨찾기 · `requests` — 4-3 분석 요청(`&sent=`면 「보냈어요」 알림).
  * 4-1은 `?band=1~5`로 점수 구간을 거른다(점수 고르기 시트). 미리 보기 `?state=empty · error`
  */
 export default async function HistoryPage({
@@ -54,9 +60,13 @@ export default async function HistoryPage({
           error={state === "error"}
         />
       ) : (
-        <p className="px-5 py-10 text-center text-body2 text-text-sub">
-          4-3 분석 요청은 09단계 다음 순서에서 만들어요.
-        </p>
+        <RequestsTab
+          state={state === "error" ? "error" : "ok"}
+          requests={state === "empty" ? [] : fixtureRequests()}
+          needsLabel={fixtureNeedsLabel()}
+          // 3-6 제품 요청하기(`request`) · 3-7x · 3-8 이 사진 그대로 보내기(`photo`)
+          sent={query.sent === "request" || query.sent === "photo"}
+        />
       )}
       <TabBar />
     </main>

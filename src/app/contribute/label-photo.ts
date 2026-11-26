@@ -53,7 +53,7 @@ export function getLabelDraft(): LabelDraft | null {
   return draft;
 }
 
-/** 「이 사진 그대로 보내기」(3-7x · 3-8) 뒤 갈 곳: 4-3 내 기록(분석 요청, 방금 보냈을 때). 알림은 09단계 */
+/** 「이 사진 그대로 보내기」(3-7x · 3-8) 뒤 갈 곳: 4-3 내 기록(분석 요청, 방금 보냈을 때). 4-3이 `sent`를 보고 「보냈어요…」를 띄운다 */
 export const SENT_PHOTO_HREF = "/history?tab=requests&sent=photo";
 
 /**

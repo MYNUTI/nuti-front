@@ -7,6 +7,7 @@ import type { ScoreBand } from "@/components/common/score-ring";
 
 import { FIXTURE_NO_SCORE } from "../contribute/_fixtures";
 import { FIXTURE_PRODUCTS } from "../product/[id]/_fixtures";
+import type { RequestItem } from "./requests";
 
 export type HistoryItem = {
   /** 줄 키 · 즐겨찾기 키 */
@@ -115,5 +116,73 @@ export function fixtureSaved(): ProductCardInput[] {
       band: p.band,
       tags,
     };
+  });
+}
+
+/*
+ * 4-3 분석 요청(【최종】 4-3 그림의 네 줄). 날짜는 그림 그대로. API 연결 때 `GET /me/contributions`로 바꾼다.
+ * 미리 보기 주소 값 ?tab=requests&state=empty — 아직 없을 때(4-3e) · error — 불러오지 못했을 때
+ */
+export function fixtureRequests(): RequestItem[] {
+  const p1 = FIXTURE_NO_SCORE.p1;
+  const p2 = FIXTURE_NO_SCORE.p2;
+  const p4 = FIXTURE_PRODUCTS["4"];
+  return [
+    {
+      id: "r1",
+      kind: "analysis",
+      status: "FAILED",
+      brand: p2.brand,
+      name: p2.name,
+      image: p2.image,
+      sentAt: "2026-10-20T03:00:00Z",
+      via: "photo",
+      productId: null,
+      query: "product=p2",
+    },
+    {
+      id: "r2",
+      kind: "analysis",
+      status: "CHECKING",
+      brand: p1.brand,
+      name: p1.name,
+      image: p1.image,
+      sentAt: "2026-10-25T03:00:00Z",
+      via: "values",
+      productId: null,
+      query: "product=p1",
+    },
+    {
+      id: "r3",
+      kind: "analysis",
+      status: "ANALYZING",
+      brand: null,
+      name: "단백질 웨하스 초코",
+      image: null,
+      sentAt: "2026-10-22T03:00:00Z",
+      via: "name",
+      productId: null,
+      query: "",
+    },
+    {
+      id: "r4",
+      kind: "correction",
+      status: "DONE",
+      brand: p4.brand,
+      name: p4.name,
+      image: p4.image?.src ?? null,
+      sentAt: "2026-10-15T03:00:00Z",
+      via: "values",
+      productId: "4",
+      query: "",
+    },
+  ];
+}
+
+/** 4-3e 「영양성분표가 필요한 제품」(많이 찾았지만 아직 점수가 없는 제품, `GET /analysis-requests/popular`) */
+export function fixtureNeedsLabel() {
+  return (["p1", "p2"] as const).map((id) => {
+    const p = FIXTURE_NO_SCORE[id];
+    return { id, brand: p.brand, name: p.name, image: p.image };
   });
 }
