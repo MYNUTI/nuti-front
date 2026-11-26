@@ -71,6 +71,16 @@ export const FIXTURE_NO_SCORE: Record<string, NoScoreProduct> = {
     goal: "diet",
     similar: PROTEIN_BARS,
   },
+  // 4-1 내 기록의 「점수 없음」 줄(【최종】 4-1 그림). 같은 종류에서 점수가 있는 제품은 없다고 둔다
+  p2: {
+    id: "p2",
+    brand: "세븐일레븐",
+    name: "프리미엄햄에그샌드위치",
+    image: "/fixtures/product-6.png",
+    requested: null,
+    goal: "diet",
+    similar: [],
+  },
 };
 
 /*
