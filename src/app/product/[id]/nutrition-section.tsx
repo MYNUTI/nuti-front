@@ -23,10 +23,10 @@ function level(percent: number) {
 }
 
 function format(value: number, unit: NutrientValue["unit"]) {
-  // kcal·mg은 정수, g은 소수 첫째 자리(0이면 뗀다)
+  // kcal·mg은 정수, g은 소수 첫째 자리(0이면 뗀다), 천 단위 쉼표(⑩ 공통 규칙 「숫자」)
   const rounded =
     unit === "g" ? Math.round(value * 10) / 10 : Math.round(value);
-  return `${rounded}${unit}`;
+  return `${rounded.toLocaleString("ko-KR", { maximumFractionDigits: 1 })}${unit}`;
 }
 
 type Basis = "per100" | "serving";

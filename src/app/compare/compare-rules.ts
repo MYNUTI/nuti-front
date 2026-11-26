@@ -44,7 +44,10 @@ export function roundValue(value: number, unit: "kcal" | "g" | "mg"): number {
   return unit === "g" ? Math.round(value * 10) / 10 : Math.round(value);
 }
 
-/** 값 글자. 소수 첫째 자리가 0이면 뗀다(UI 플랜 결정 2026-11-07, 3-2와 같은 규칙 — 【최종】은 붙임, 「【최종】 대조」) */
+/**
+ * 값 글자. 소수 첫째 자리가 0이면 뗀다(UI 플랜 결정 2026-11-07, 3-2와 같은 규칙 — 【최종】은 붙임, 「【최종】 대조」).
+ * 천 단위 쉼표(⑩ 공통 규칙 「숫자」)
+ */
 export function formatValue(value: number, unit: "kcal" | "g" | "mg"): string {
-  return `${roundValue(value, unit)}${unit}`;
+  return `${roundValue(value, unit).toLocaleString("ko-KR", { maximumFractionDigits: 1 })}${unit}`;
 }

@@ -13,7 +13,8 @@ import { cn } from "@/lib/utils";
 /*
  * 3-2 제품 결과(정보가 틀렸어요) 바텀시트. 3-2의 「정보 수정 요청」과 3-6 이름을 아는 바코드 시트의 「정보 수정 요청」이 연다.
  * 디자인 메모: 자세한 내용·영양성분표 사진은 선택, 사진 칸은 「영양성분 값이 포장과 달라요」를 고를 때만, 연락처 칸 없음.
- * 보내기는 아직 서버로 보내지 않는다(API 연결 때 제보 API로). 그래서 「실패 → 오류 문장 + 고른 내용 유지」는 그때 붙인다.
+ * 보내기는 아직 서버로 보내지 않는다(API 연결 때 제보 API로). 실패하면 시트를 닫지 않고 보내기 위에 ⑩ 상태표 문장
+ * 「보내지 못했어요. …고른 내용은 그대로 있어요.」(그림 없음 — 3-6 제품 요청하기와 같은 자리). 미리 보기는 `failPreview`.
  * 닫으면(보내기·✕·끌어 닫기) 다음에 열 때 빈 칸으로 시작한다(바코드 번호 시트와 같게). 실패하면 시트를 닫지 않으니 고른 내용은 남는다.
  */
 const REASONS = [
@@ -29,11 +30,14 @@ export function ReportSheet({
   open,
   onOpenChange,
   onSent,
+  failPreview = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** 보낸 뒤 알림 문장(띄우는 쪽이 자기 알림 띠에 보인다) */
   onSent: (message: string) => void;
+  /** 보내기가 실패한 모습 미리 보기(3-2 `?state=report-failed`) */
+  failPreview?: boolean;
 }) {
   const errorId = useId();
   const formId = useId();
@@ -58,12 +62,14 @@ export function ReportSheet({
   const [errorKey, setErrorKey] = useState(0);
   // 같은 내용을 다시 보내면 「이미 보내 주신 내용이에요」(디자인 메모). 서버 연결 전이라 이 화면에서 보낸 것만 기억한다
   const [sent, setSent] = useState<string[]>([]);
+  const [failed, setFailed] = useState(false);
 
   const reset = () => {
     setPicked(new Set());
     setDetail("");
     setPhoto(null);
     setError(false);
+    setFailed(false);
   };
 
   const close = () => {
@@ -73,6 +79,7 @@ export function ReportSheet({
 
   const toggle = (key: ReasonKey) => {
     setError(false);
+    setFailed(false);
     // 사진 칸이 사라지면 보이지 않는 사진이 함께 보내지지 않게 비운다
     if (key === "nutrition" && picked.has("nutrition")) setPhoto(null);
     setPicked((prev) => {
@@ -87,6 +94,10 @@ export function ReportSheet({
     if (picked.size === 0) {
       setError(true);
       setErrorKey((k) => k + 1);
+      return;
+    }
+    if (failPreview) {
+      setFailed(true);
       return;
     }
     // 사진은 판정에 넣지 않는다. 같은 제보를 어떻게 가를지는 제보 API의 중복 응답이 정해질 때 맞춘다
@@ -119,9 +130,20 @@ export function ReportSheet({
         }
         footer={
           <BottomCta>
-            <Button type="submit" form={formId} className="flex-1">
-              보내기
-            </Button>
+            <div className="flex flex-1 flex-col">
+              {/* 영역이 먼저 있어야 읽으므로 늘 두고 글자만 바꾼다 */}
+              <p
+                role="alert"
+                className={cn("text-body2 text-text-danger", failed && "pb-2")}
+              >
+                {failed
+                  ? "보내지 못했어요. 인터넷 연결을 확인하고 다시 보내 주세요. 고른 내용은 그대로 있어요."
+                  : ""}
+              </p>
+              <Button type="submit" form={formId} className="w-full">
+                보내기
+              </Button>
+            </div>
           </BottomCta>
         }
       >
@@ -159,10 +181,19 @@ export function ReportSheet({
             label="자세한 내용(선택)"
             placeholder="예: 포장에는 당류 2g으로 적혀 있어요"
             value={detail}
-            onChange={(event) => setDetail(event.target.value)}
+            onChange={(event) => {
+              setDetail(event.target.value);
+              setFailed(false);
+            }}
           />
           {picked.has("nutrition") && (
-            <PhotoField photo={photo} onChange={setPhoto} />
+            <PhotoField
+              photo={photo}
+              onChange={(next) => {
+                setPhoto(next);
+                setFailed(false);
+              }}
+            />
           )}
         </form>
       </BottomSheet>

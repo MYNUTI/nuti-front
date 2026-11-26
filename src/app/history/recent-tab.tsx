@@ -254,7 +254,7 @@ function HistoryRow({
           )}
           <Link
             href={item.href}
-            className="line-clamp-2 text-body1-medium text-text-strong after:absolute after:inset-0"
+            className="line-clamp-2 text-body1-medium break-keep text-text-strong after:absolute after:inset-0"
           >
             {item.name}
           </Link>

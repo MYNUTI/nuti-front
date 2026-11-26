@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 const BANDS = ["1", "2", "3", "4", "5"] as const;
 
 /*
- * 기록 탭. `?tab=` 없음 — 4-1 최근 본 제품 · `saved` — 4-4 즐겨찾기 · `requests` — 4-3 분석 요청(`&sent=`면 「보냈어요」 알림).
+ * 기록 탭. `?tab=` 없음 — 4-1 최근 본 제품 · `saved` — 4-4 즐겨찾기 · `requests` — 4-3 분석 요청(`&sent=request · photo`면 보낸 뒤 알림).
  * 4-1은 `?band=1~5`로 점수 구간을 거른다(점수 고르기 시트). 미리 보기 `?state=empty · error`, 홈 화면에 추가 시트 `?prompt=android · ios · samsung`
  */
 export default async function HistoryPage({
@@ -66,7 +66,11 @@ export default async function HistoryPage({
           requests={state === "empty" ? [] : fixtureRequests()}
           needsLabel={fixtureNeedsLabel()}
           // 3-6 제품 요청하기(`request`) · 3-7x · 3-8 이 사진 그대로 보내기(`photo`)
-          sent={query.sent === "request" || query.sent === "photo"}
+          sent={
+            query.sent === "request" || query.sent === "photo"
+              ? query.sent
+              : null
+          }
         />
       )}
       <HomeScreenPrompt

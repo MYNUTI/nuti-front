@@ -58,7 +58,7 @@ export function ProductRow({
       <Thumb>{image}</Thumb>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         {brand && <span className="text-body2 text-text-sub">{brand}</span>}
-        <span className="line-clamp-2 text-body1-medium text-text-strong">
+        <span className="line-clamp-2 text-body1-medium break-keep text-text-strong">
           {name}
         </span>
         {meta && <span className="text-body2 text-text-sub">{meta}</span>}

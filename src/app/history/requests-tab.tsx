@@ -22,6 +22,13 @@ import {
   STATUS_TAG,
 } from "./requests";
 
+// ⑩ 상태표: 3-6 제품 요청하기 · 3-7x 그대로 보낸 뒤(3-8 「이 사진 그대로 보내기」도 같은 일)
+const SENT_MESSAGE = {
+  request: "보냈어요. 진행 상황은 여기서 볼 수 있어요.",
+  photo:
+    "사진을 받았어요. 남은 숫자는 운영팀이 마저 읽고, 분석이 끝나면 기록 › 분석 요청에서 볼 수 있어요.",
+} as const;
+
 // 아래 버튼 줄(44) · 그 아래 여백(36) · 하단 탭(57) 위 8(메모). 버튼 줄은 하단 탭 위에 붙어 있다
 const TOAST_ABOVE_BUTTONS = "bottom-[calc(145px+var(--safe-bottom))]";
 
@@ -31,14 +38,17 @@ const TOAST_ABOVE_BUTTONS = "bottom-[calc(145px+var(--safe-bottom))]";
  * 설명 한 줄 · 상태 알약. 분석 못 함 줄 아래 「사진으로 숫자를 읽지 못했어요 · 다시 찍기 ›」(→ 3-7).
  * 하단 탭 위에 붙은 「제품 요청하기」(→ 3-6 제품 요청하기) · 「바코드 찍기」(두 그림 모두 같은 자리).
  * - 확인 중 분석 요청 → 3-9, 정보 수정 요청 · 완료 → 3-2, 분석 중 · 분석 못 함은 누르는 곳이 아니다
- * - 3-6 제품 요청하기 · 이 사진 그대로 보내기에서 오면(`?sent=`) 「보냈어요. 진행 상황은 여기서 볼 수 있어요.」를 한 번
+ * - 3-6 제품 요청하기 · 이 사진 그대로 보내기에서 오면(`?sent=`) 상태표 문장을 한 번(제품 요청 「보냈어요…」 · 사진 「사진을 받았어요…」)
  *   (목록이면 버튼 줄 위 8, 빈 상태 · 오류면 공통 자리)
  * - 0건이면 「아직 보낸 요청이 없어요」 + 버튼 + 「영양성분표가 필요한 제품」(0개면 숨김)
  */
 export function RequestsTab({
   sent,
   ...props
-}: React.ComponentProps<typeof RequestsBody> & { sent: boolean }) {
+}: React.ComponentProps<typeof RequestsBody> & {
+  /** 3-6 제품 요청하기(`request`) · 3-7x · 3-8 이 사진 그대로 보내기(`photo`)에서 왔다 */
+  sent: "request" | "photo" | null;
+}) {
   const router = useRouter();
   // 한 번만 띄우고 주소에서 `sent`만 뺀다(새로 고치거나 뒤로 와도 다시 뜨지 않게, 미리 보기 `state`는 남김)
   const [showSent] = useState(sent);
@@ -56,7 +66,7 @@ export function RequestsTab({
       <RequestsBody {...props} />
       {showSent && (
         <Toast
-          message="보냈어요. 진행 상황은 여기서 볼 수 있어요."
+          message={SENT_MESSAGE[showSent]}
           className={list ? TOAST_ABOVE_BUTTONS : undefined}
         />
       )}
@@ -141,7 +151,7 @@ function RequestsBody({
                           {p.brand}
                         </span>
                       )}
-                      <span className="line-clamp-2 text-body1-medium text-text-strong">
+                      <span className="line-clamp-2 text-body1-medium break-keep text-text-strong">
                         {nameWithoutBrand(p.name, p.brand)}
                       </span>
                     </div>
@@ -237,7 +247,7 @@ function RequestRow({ request, now }: { request: RequestItem; now: Date }) {
             .filter(Boolean)
             .join(" · ")}
         </span>
-        <span className="line-clamp-2 text-body1-medium text-text-strong">
+        <span className="line-clamp-2 text-body1-medium break-keep text-text-strong">
           {nameWithoutBrand(request.name, request.brand)}
         </span>
         <span className="text-body2 text-text-sub">
