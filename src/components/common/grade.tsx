@@ -66,26 +66,3 @@ export function GradeTag({
     </span>
   );
 }
-
-/** 임시 화면 전용. v3 부품이 아니고, 마지막 사용처가 바뀌면 지운다(UI 플랜 13단계) */
-export function GradeBar({
-  grade,
-  className,
-}: {
-  grade: Grade;
-  className?: string;
-}) {
-  return (
-    <div className={cn("flex gap-1", className)} aria-hidden>
-      {GRADES.map((step) => (
-        <span
-          key={step}
-          className={cn(
-            "h-1.5 flex-1 rounded-full",
-            step === grade ? GRADE_BG[step] : "bg-muted",
-          )}
-        />
-      ))}
-    </div>
-  );
-}
