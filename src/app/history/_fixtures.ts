@@ -2,6 +2,7 @@
  * 09단계 내 기록 임시 데이터. 줄은 3-2 · 3-6 fixture 제품을 그대로 써서 눌러 들어간 화면과 점수가 맞게 한다.
  * API 연결 때 `GET /me/history`(제품당 하루 한 줄, 20개씩)로 바꾼다.
  */
+import type { ProductCardInput } from "@/components/common/product-card";
 import type { ScoreBand } from "@/components/common/score-ring";
 
 import { FIXTURE_NO_SCORE } from "../contribute/_fixtures";
@@ -75,4 +76,44 @@ export function fixtureHistory(now: Date): HistoryItem[] {
     scored("11", 1, true, now),
     noScore("p2", 1, false, now),
   ];
+}
+
+/*
+ * 4-4 즐겨찾기(【최종】 4-4 그림의 세 장, 즐겨찾기한 순서). 점수는 3-2 fixture와 맞추고 칩은 그림대로.
+ * API 연결 때 `GET /me/saved-products`(`lib/saved`)로 바꾼다
+ */
+const SAVED: { id: string; tags: ProductCardInput["tags"] }[] = [
+  {
+    id: "5",
+    tags: [
+      { label: "고단백" },
+      { label: "저당" },
+      { label: "고포화지방", warn: true },
+    ],
+  },
+  {
+    id: "11",
+    tags: [
+      { label: "고단백" },
+      { label: "저당" },
+      { label: "고포화지방", warn: true },
+    ],
+  },
+  { id: "4", tags: [{ label: "고단백" }, { label: "고칼로리", warn: true }] },
+];
+
+export function fixtureSaved(): ProductCardInput[] {
+  return SAVED.map(({ id, tags }) => {
+    const p = FIXTURE_PRODUCTS[id];
+    return {
+      id,
+      brand: p.brand ?? "",
+      name: p.name,
+      image: p.image?.src ?? null,
+      imageSize: p.image?.size ?? 400,
+      score: p.score,
+      band: p.band,
+      tags,
+    };
+  });
 }

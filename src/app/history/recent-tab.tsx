@@ -15,7 +15,6 @@ import {
 import { SortSheet } from "@/components/common/sort-sheet";
 import { StatusTag } from "@/components/common/status-tag";
 import { Thumb } from "@/components/common/thumb";
-import { useCompare } from "@/components/compare/compare-store";
 import {
   IconChevronDown,
   IconClose,
@@ -25,6 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import type { HistoryItem } from "./_fixtures";
+import { CompareStrip, EmptyLoginLink } from "./history-parts";
 
 const DOT: Record<ScoreBand, string> = {
   1: "bg-score-ring-1",
@@ -81,7 +81,6 @@ export function RecentTab({
   initialSaved: string[];
 }) {
   const router = useRouter();
-  const compare = useCompare();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [saved, setSaved] = useState(() => new Set(initialSaved));
   const trigger = useRef<HTMLButtonElement>(null);
@@ -124,13 +123,7 @@ export function RecentTab({
             </>
           }
         />
-        {/* 로그인했는지에 따라 숨기는 건 로그인 상태를 잇는 API 작업 때(남은 질문 48) */}
-        <Link
-          href="/login"
-          className="mt-8 flex h-11 items-center px-5 text-body2-medium text-brand-link"
-        >
-          다른 폰에서 쓰던 기록이 있다면 로그인 ›
-        </Link>
+        <EmptyLoginLink />
       </div>
     );
 
@@ -142,17 +135,7 @@ export function RecentTab({
 
   return (
     <>
-      {compare.length > 0 && (
-        <Link
-          href="/compare"
-          className="flex items-center bg-brand-primary-weak px-5 py-2.5 text-body2"
-        >
-          <span className="flex-1 text-body2-medium text-text-strong">
-            비교함 {compare.length}개
-          </span>
-          <span className="text-body2-bold text-brand-link">비교하기 ›</span>
-        </Link>
-      )}
+      <CompareStrip />
 
       <div className="flex h-11 items-center justify-between pt-3 pr-2 pb-1 pl-5">
         <p className="text-body2 text-text-sub">{summary}</p>

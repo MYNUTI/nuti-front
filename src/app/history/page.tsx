@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 
 import { TabBar } from "@/components/common/tab-bar";
 
-import { fixtureHistory } from "./_fixtures";
+import { fixtureHistory, fixtureSaved } from "./_fixtures";
 import { groupByDay } from "./history-days";
 import { HistoryHeader, type HistoryTab } from "./history-tabs";
 import { RecentTab } from "./recent-tab";
+import { SavedTab } from "./saved-tab";
 
 export const metadata: Metadata = {
   title: "내 기록",
@@ -46,10 +47,15 @@ export default async function HistoryPage({
           groups={groupByDay(shown, now)}
           goalLabel="다이어트"
         />
+      ) : tab === "saved" ? (
+        <SavedTab
+          initialItems={state === "empty" ? [] : fixtureSaved()}
+          goalLabel="다이어트"
+          error={state === "error"}
+        />
       ) : (
         <p className="px-5 py-10 text-center text-body2 text-text-sub">
-          {tab === "saved" ? "4-4 즐겨찾기" : "4-3 분석 요청"}은 09단계 다음
-          순서에서 만들어요.
+          4-3 분석 요청은 09단계 다음 순서에서 만들어요.
         </p>
       )}
       <TabBar />
