@@ -11,7 +11,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useGoBack } from "@/components/common/back-button";
-import { CtaButton } from "@/components/common/cta-button";
+import { Button } from "@/components/common/button";
 import { Skeleton } from "@/components/common/skeleton";
 import { Toast } from "@/components/common/toast";
 import { TopBar, TopBarButton } from "@/components/common/top-bar";
@@ -189,9 +189,13 @@ export function ScanStage({
         <ScanMessageSheet
           title="상품 정보를 불러오지 못했어요"
           action={
-            <CtaButton tone="secondary" onClick={() => lookup.refetch()}>
+            <Button
+              kind="secondary"
+              className="w-full"
+              onClick={() => lookup.refetch()}
+            >
               다시 시도
-            </CtaButton>
+            </Button>
           }
         />
       );
