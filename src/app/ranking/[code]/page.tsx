@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { findMajor, majorOf } from "../_fixtures";
 import { readServerDeviceGoal } from "@/lib/goal/device.server";
+import { getRankingCategories } from "@/lib/ranking/server";
 
+import { findMajor, majorOf } from "../model";
 import { parseRankingSort } from "../format";
 import { RankingList } from "../ranking-list";
 import { RankingMajorAll } from "../ranking-major";
@@ -12,9 +13,10 @@ export async function generateMetadata({
   params,
 }: PageProps<"/ranking/[code]">): Promise<Metadata> {
   const { code } = await params;
+  const { majors } = await getRankingCategories();
   const name =
-    findMajor(code)?.name ??
-    majorOf(code)?.chips.find((c) => c.code === code)?.name;
+    findMajor(majors, code)?.name ??
+    majorOf(majors, code)?.chips.find((c) => c.code === code)?.name;
   return { title: name ? `${name} 랭킹` : "랭킹" };
 }
 
@@ -34,11 +36,13 @@ export default async function RankingCodePage({
   const { code } = await params;
   const { sort, state } = await searchParams;
   const goal = (await readServerDeviceGoal()) ?? "WEIGHT_LOSS";
+  const { majors } = await getRankingCategories();
 
-  const major = findMajor(code);
+  const major = findMajor(majors, code);
   if (major)
     return (
       <RankingMajorAll
+        majors={majors}
         major={major}
         goal={goal}
         sort={parseRankingSort(sort)}
@@ -47,9 +51,12 @@ export default async function RankingCodePage({
     );
 
   // 순위가 열리지 않았거나 없는 칩(API는 404 `RANKING_NOT_OPEN` · `RESOURCE_NOT_FOUND`)
-  if (!majorOf(code)) notFound();
+  const chipMajor = majorOf(majors, code);
+  if (!chipMajor) notFound();
   return (
     <RankingList
+      majors={majors}
+      major={chipMajor}
       // 다른 중분류로 옮기면 화면 상태(열린 시트 · 불러온 개수)를 새로 시작한다. 정렬 · 필터 · 개수는 화면이 주소에서 읽는다
       key={code}
       code={code}

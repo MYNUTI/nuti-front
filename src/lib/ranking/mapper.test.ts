@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import type { ProductCardDto } from "@/lib/product/types";
 import {
   mergeRankingPages,
-  tagTone,
   toRankingLeaders,
   toRankingOverview,
   toRankingPage,
@@ -68,7 +67,7 @@ describe("순위 응답 → 화면 모양", () => {
       score: { value: 74.3, band: 2 },
       tags: [
         { label: "단백질 많음", warn: false },
-        { label: "나트륨 많음", warn: true },
+        { label: "나트륨 많음", warn: false },
       ],
       sortText: null,
     });
@@ -95,7 +94,7 @@ describe("순위 응답 → 화면 모양", () => {
     });
   });
 
-  it("아쉬운 점 태그는 서버 순서와 상관없이 맨 뒤에 둔다", () => {
+  it("태그는 서버 순서 그대로, 좋고 나쁨 구분이 없어 모두 같은 색이다", () => {
     const page = toRankingPage(
       rankingDto({
         items: [
@@ -107,8 +106,8 @@ describe("순위 응답 → 화면 모양", () => {
       }),
     );
     expect(page.items[0].tags).toEqual([
+      { label: "포화지방 많음", warn: false },
       { label: "단백질 많음", warn: false },
-      { label: "포화지방 많음", warn: true },
     ]);
   });
 
@@ -155,29 +154,6 @@ describe("순위 응답 → 화면 모양", () => {
       id: "31",
       score: { value: 91.5, band: 1 },
     });
-  });
-});
-
-describe("태그가 좋은 점인지 아쉬운 점인지", () => {
-  it("많을수록 좋은 성분(단백질·식이섬유)과 적을수록 좋은 성분을 가른다", () => {
-    expect(tagTone("단백질 많음", "WEIGHT_LOSS")).toBe("good");
-    expect(tagTone("식이섬유 많음", "WEIGHT_LOSS")).toBe("good");
-    expect(tagTone("단백질 적음", "WEIGHT_LOSS")).toBe("bad");
-    expect(tagTone("당류 적음", "WEIGHT_LOSS")).toBe("good");
-    expect(tagTone("당류 많음", "WEIGHT_LOSS")).toBe("bad");
-    expect(tagTone("포화지방 많음", "MUSCLE_GAIN")).toBe("bad");
-    expect(tagTone("나트륨 적음", "MUSCLE_GAIN")).toBe("good");
-  });
-
-  it("칼로리는 목표에 따라 다르다", () => {
-    expect(tagTone("칼로리 낮음", "WEIGHT_LOSS")).toBe("good");
-    expect(tagTone("칼로리 높음", "WEIGHT_LOSS")).toBe("bad");
-    expect(tagTone("칼로리 충분", "MUSCLE_GAIN")).toBe("good");
-    expect(tagTone("칼로리 낮음", "MUSCLE_GAIN")).toBe("bad");
-  });
-
-  it("규칙에 없는 말은 좋은 점(회색)으로 둔다", () => {
-    expect(tagTone("고단백", "WEIGHT_LOSS")).toBe("good");
   });
 });
 

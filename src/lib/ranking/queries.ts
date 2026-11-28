@@ -20,10 +20,10 @@ import {
   type RankingOverviewKey,
 } from "@/lib/ranking/keys";
 import { mergeRankingPages } from "@/lib/ranking/mapper";
+import { RANKING_PAGE_SIZE } from "@/lib/ranking/page-size";
 import type { RankingFilters } from "@/lib/ranking/types";
 
-// 디자인 메모(2-2): 목록 끝에 닿을 때마다 다음 12개를 이어 불러온다
-export const RANKING_PAGE_SIZE = 12;
+export { RANKING_PAGE_SIZE };
 
 // 분류와 필터 시트의 개수는 제품을 적재할 때만 바뀐다. 화면을 오갈 때마다 다시 받지 않는다
 const CATEGORIES_STALE_MS = 5 * 60_000;

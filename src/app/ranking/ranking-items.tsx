@@ -6,7 +6,7 @@ import { useState } from "react";
 import { ScoreRing } from "@/components/common/score-ring";
 import { cn } from "@/lib/utils";
 
-import type { RankedProduct } from "./_fixtures";
+import type { RankedProduct } from "./model";
 
 /*
  * 2-2 점수 순위의 제품 줄 · 카드. `review/v3-rankings`의 `ranking-items.tsx`를 옮겼다.
@@ -69,7 +69,7 @@ export function RankCard({ product }: { product: RankedProduct }) {
 
   return (
     <Link
-      href={product.href ?? `/product/${product.id}`}
+      href={`/product/${encodeURIComponent(product.id)}`}
       className="flex flex-col gap-1.5"
     >
       <span
@@ -161,7 +161,7 @@ function RowPhoto({ src }: { src: string | null }) {
 export function RankRow({ product }: { product: RankedProduct }) {
   return (
     <Link
-      href={product.href ?? `/product/${product.id}`}
+      href={`/product/${encodeURIComponent(product.id)}`}
       className="flex items-center gap-2.5 py-1.5"
     >
       <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-bg-dark text-[11px] leading-[14px] font-bold text-white">
@@ -197,7 +197,7 @@ export function TopRow({
 }) {
   return (
     <Link
-      href={product.href ?? `/product/${product.id}`}
+      href={`/product/${encodeURIComponent(product.id)}`}
       className="flex items-center gap-2.5 py-1.5"
     >
       <RowPhoto src={product.imageUrl} />

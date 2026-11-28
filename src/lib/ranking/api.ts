@@ -29,7 +29,7 @@ const paramsSerializer = { indexes: null };
  * 값이 하나뿐이면 서버(Spring)는 그 글자를 쉼표에서 나눠 목록으로 읽는다. 그래서 쉼표가 든 브랜드 하나
  * (「A,B」)는 「A」와 「B」 두 브랜드로 읽힌다. 값이 둘 이상이면 나누지 않으므로, 이 경우에만 같은 이름을
  * 두 번 보낸다. 서버가 같은 값을 하나로 합친다(`RankingService.filters`의 `distinct()`).
- * 실제 서버에서 확인하지는 못했다(2026-11-20 랭킹 조회가 500) — 필터 화면을 붙일 때(12-6) 확인한다.
+ * 실제 서버에서 확인하지는 못했다(배포 서버를 시험 삼아 부르지 않는다). API 플랜 「남은 질문」에서 확인을 기다린다.
  */
 function brandParams(brands: string[] = []) {
   if (brands.length === 0) return undefined;

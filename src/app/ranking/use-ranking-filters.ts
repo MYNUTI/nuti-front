@@ -3,8 +3,29 @@
 import { useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 
-import { NO_FILTERS, type RankingFilters } from "./_fixtures";
+import { logFilter } from "@/lib/logging/track";
+
 import { type FilterTab, parseRankingFilters } from "./format";
+import { NO_FILTERS, type RankingFilters } from "./model";
+
+const FILTER_LOG_TYPE = {
+  sellers: "seller",
+  brands: "brand",
+  nutrients: "nutrient",
+} as const;
+
+/** 새로 건 값마다 필터 로그 한 건(뺀 값 · 그대로 둔 값은 보내지 않는다) */
+export function addedFilters(before: RankingFilters, after: RankingFilters) {
+  return (Object.keys(FILTER_LOG_TYPE) as (keyof RankingFilters)[]).flatMap(
+    (tab) =>
+      (after[tab] as string[])
+        .filter((value) => !(before[tab] as string[]).includes(value))
+        .map((value) => ({
+          filterType: FILTER_LOG_TYPE[tab],
+          filterValue: value,
+        })),
+  );
+}
 
 /**
  * 2-2 순위 화면(중분류 하나 · 대분류 전체)의 필터 상태: 걸린 필터, 열린 시트의 탭, 초기화 뒤 포커스를 받을 판매처 칩.
@@ -24,6 +45,7 @@ export function useRankingFilters(onApply?: () => void) {
   const sellerChip = useRef<HTMLButtonElement>(null);
 
   const apply = (next: RankingFilters) => {
+    addedFilters(filters, next).forEach(logFilter);
     setFilters(next);
     onApply?.();
   };

@@ -9,7 +9,7 @@ import { TopBarButton } from "@/components/common/top-bar";
 import { IconSearch } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
-import { NO_FILTERS, type RankingChip, type RankingFilters } from "./_fixtures";
+import { NO_FILTERS, type RankingChip, type RankingFilters } from "./model";
 import {
   brandChipLabel,
   FILTER_TAB_LABEL,
@@ -264,7 +264,7 @@ export function FilterChips({
   );
 }
 
-/** 체크 + 이름 + 제품 수 한 줄(줄 전체를 누른다) */
+/** 체크 + 이름 + 제품 수 한 줄(줄 전체를 누른다). 수를 모르면(첫 화면 · 불러오는 중) 수를 빼고 그린다 */
 export function CheckLine({
   label,
   count,
@@ -272,7 +272,7 @@ export function CheckLine({
   onChange,
 }: {
   label: string;
-  count: number;
+  count?: number;
   checked: boolean;
   onChange: () => void;
 }) {
@@ -289,9 +289,11 @@ export function CheckLine({
         <span className="min-w-0 flex-1 text-body1 text-text-body">
           {label}
         </span>
-        <span className="shrink-0 text-body2 text-text-sub">
-          {count.toLocaleString("ko-KR")}개
-        </span>
+        {count !== undefined && (
+          <span className="shrink-0 text-body2 text-text-sub">
+            {count.toLocaleString("ko-KR")}개
+          </span>
+        )}
       </label>
     </li>
   );

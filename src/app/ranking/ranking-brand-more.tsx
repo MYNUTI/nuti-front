@@ -18,17 +18,24 @@ import { CheckLine } from "./ranking-frame";
  * 아래 「브랜드 n개 적용」. 체크는 시트에서 고르는 값을 바로 바꾸고, 적용 · ‹ 둘 다 고른 채 2-5 브랜드 탭으로 돌아간다
  * (고른 것을 지우는 길은 시트의 「초기화」).
  * 찾기 칸에 글자를 넣으면 목록을 그 글자(초성 포함)로 좁히고 머리는 숨긴다. 고른 브랜드는 목록에서 빠져도 고른 채다.
+ * 목록은 그 종류의 전체 브랜드(`GET /rankings/brands`)를 한 번 받고 찾기는 화면에서 거른다(서버 찾기 `q`는 초성을 못 찾는다).
  */
 export function BrandMore({
   categoryName,
   brands,
+  failed,
+  onRetry,
   selected,
   onToggle,
   onBack,
 }: {
   /** 지금 순위의 종류 이름(중분류, 「전체」면 대분류) */
   categoryName: string;
-  brands: { name: string; count: number }[];
+  /** 아직 받는 중이면 null */
+  brands: { name: string; count: number }[] | null;
+  /** 목록을 받지 못했다 */
+  failed: boolean;
+  onRetry: () => void;
   selected: string[];
   onToggle: (brand: string) => void;
   onBack: () => void;
@@ -41,7 +48,8 @@ export function BrandMore({
   useEffect(() => title.current?.focus(), []);
 
   const q = query.trim();
-  const found = q ? brands.filter((b) => matchRange(b.name, q)) : brands;
+  const all = brands ?? [];
+  const found = q ? all.filter((b) => matchRange(b.name, q)) : all;
 
   return (
     <>
@@ -88,7 +96,19 @@ export function BrandMore({
           : ""}
       </p>
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {found.length === 0 ? (
+        {brands === null ? (
+          // 그린 화면이 없어 2-4와 같은 「불러오는 중」 한 줄, 실패하면 다시 시도(API 플랜 「남은 질문」)
+          <div className="flex flex-col items-center gap-1 px-5 pt-12 text-center">
+            <p role="status" className="text-body2 text-text-sub">
+              {failed ? "브랜드를 불러오지 못했어요" : "불러오는 중"}
+            </p>
+            {failed && (
+              <Button kind="text" size="S" onClick={onRetry}>
+                다시 시도
+              </Button>
+            )}
+          </div>
+        ) : found.length === 0 ? (
           <div className="flex flex-col items-center gap-1 px-5 pt-12 text-center">
             <p className="text-body1-bold text-text-strong">
               {categoryName}에는 {q} 브랜드 제품이 없어요

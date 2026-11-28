@@ -129,7 +129,7 @@ function toRankedProduct(dto: RankedItemDto, goal: RankingGoal): RankedProduct {
     brand: product.brandLine?.trim() || null,
     imageUrl: product.imageUrl || null,
     score: toScore(product, goal),
-    tags: toTags(product.tags, goal),
+    tags: toTags(product.tags),
     sortText: product.sortValue ? toSortText(product.sortValue) : null,
   };
 }
@@ -151,35 +151,13 @@ function toScore(product: ProductCardDto, goal: RankingGoal) {
   return { value: grade.score, band };
 }
 
-const MORE_IS_BETTER = new Set(["단백질", "식이섬유"]);
-
 /**
- * 태그가 좋은 점인지 아쉬운 점인지. 서버는 짧은 말만 주고 구분을 주지 않아(`ProductCard.tags: string[]`),
- * 서버가 말을 만드는 규칙(`NutrientEvaluator.shortText`)을 거꾸로 읽는다.
- *   「○○ 많음」 — 단백질·식이섬유면 좋은 점, 나머지는 아쉬운 점
- *   「○○ 적음」 — 그 반대
- *   「칼로리 충분」 좋은 점 · 「칼로리 높음」 아쉬운 점 · 「칼로리 낮음」은 감량이면 좋은 점, 근육 증가면 아쉬운 점
- * 규칙에 없는 말은 좋은 점(회색)으로 둔다. 서버가 구분을 함께 주면 이 함수는 지운다.
+ * 카드 태그. 서버는 짧은 말만 주고 좋은 점인지 아쉬운 점인지 주지 않아(`ProductCard.tags: string[]`), 검색 · 더 맞는
+ * 제품과 같게 모두 같은 색으로 둔다(API 플랜 결정 기록 12-6). 말을 거꾸로 읽어 칠하면 서버 문구가 바뀔 때 조용히 틀린다.
+ * 서버가 구분을 함께 주면 그때 `warn`을 채운다
  */
-export function tagTone(label: string, goal: RankingGoal): "good" | "bad" {
-  if (label === "칼로리 충분") return "good";
-  if (label === "칼로리 높음") return "bad";
-  if (label === "칼로리 낮음") return goal === "MUSCLE_GAIN" ? "bad" : "good";
-
-  const match = /^(.+) (많음|적음)$/.exec(label);
-  if (!match) return "good";
-  const [, nutrient, amount] = match;
-  const more = amount === "많음";
-  return more === MORE_IS_BETTER.has(nutrient) ? "good" : "bad";
-}
-
-// 디자인 메모: 좋은 점을 앞에, 아쉬운 점(분홍)은 맨 뒤에 둔다. 서버 순서가 달라도 화면 순서는 같게 한다
-function toTags(labels: string[], goal: RankingGoal): RankingTag[] {
-  const tags = labels.map((label) => ({
-    label,
-    warn: tagTone(label, goal) === "bad",
-  }));
-  return [...tags.filter((t) => !t.warn), ...tags.filter((t) => t.warn)];
+function toTags(labels: string[]): RankingTag[] {
+  return labels.map((label) => ({ label, warn: false }));
 }
 
 const NUTRIENT_LABEL: Partial<Record<string, string>> = {
