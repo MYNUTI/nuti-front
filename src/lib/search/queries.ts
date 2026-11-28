@@ -15,12 +15,10 @@ import {
   fetchSearchSuggestions,
 } from "@/lib/search/api";
 import { searchKeys } from "@/lib/search/keys";
+import { SEARCH_PAGE_SIZE } from "@/lib/search/page-size";
 import { mergeSearchPages } from "@/lib/search/mapper";
 import type { ProductCardData } from "@/lib/product/types";
 import type { SearchResult, SearchSort } from "@/lib/search/types";
-
-// 서버 기본값과 같다
-const SEARCH_PAGE_SIZE = 20;
 
 export const searchQueries = {
   /**
@@ -63,6 +61,8 @@ export const searchQueries = {
     queryOptions({
       queryKey: searchKeys.popularKeywords(),
       queryFn: ({ signal }) => fetchPopularKeywords(api, signal),
+      // 서버가 매시 정각에 다시 모은다. 검색칸을 비울 때마다 다시 부르지 않게 잠시 둔다
+      staleTime: 5 * 60 * 1000,
     }),
 };
 

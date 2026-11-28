@@ -1,9 +1,8 @@
-import type { ScoreBand } from "@/components/common/score-ring";
 import { API_GOAL, SCREEN_GOAL } from "@/app/my/goals";
+import { GRADE_BAND, PHOTO_SIZE, toCardInput, toScore } from "@/app/to-card";
 import type {
   Alternative,
   GoalResult,
-  GradeLetter,
   NutrientCode,
   NutrientRow,
   ProductResult as ApiProductResult,
@@ -17,16 +16,7 @@ import type {
   ProductResult,
 } from "./model";
 
-/** 점수 구간은 서버 등급을 그대로 옮긴다(A 매우 높음 … E 매우 낮음). 화면이 점수로 다시 나누면 서버 판정과 어긋날 수 있다 */
-export const GRADE_BAND: Record<GradeLetter, ScoreBand> = {
-  A: 1,
-  B: 2,
-  C: 3,
-  D: 4,
-  E: 5,
-};
-
-export { API_GOAL, SCREEN_GOAL };
+export { API_GOAL, GRADE_BAND, SCREEN_GOAL, toScore };
 
 /**
  * 몸 정보를 쓰지 않으면 서버는 하루 2,000kcal로 감량 점수를 매긴다. 응답에 「내 몸에 맞춤」 여부가 따로 없어
@@ -41,15 +31,7 @@ const MAIN_NUTRIENTS: readonly NutrientCode[] = [
   "SUGAR",
 ];
 
-/** API가 사진 크기를 주지 않는다. 사진 칸이 정사각이라 원본 크기는 비율만 맞으면 된다 */
-const PHOTO_SIZE = 400;
-
 const OTHER_GOAL: Record<Goal, Goal> = { diet: "muscle", muscle: "diet" };
-
-/** 서버 점수는 소수 한 자리(72.4)다. 점수 링(`ScoreRing`)이 반올림해 보여 글자(「72점」)도 같은 정수로 맞춘다 */
-export function toScore(score: number) {
-  return Math.round(score);
-}
 
 export function toGoalView(result: GoalResult): GoalView {
   return {
@@ -111,19 +93,13 @@ export function toBetterItems(
   goal: Goal,
 ): BetterItem[] {
   return alternatives.flatMap(({ product, diffs }) => {
-    const result = product.goals?.[API_GOAL[goal]];
-    if (!result) return [];
+    const { score, band, ...card } = toCardInput(product, API_GOAL[goal]);
+    if (score === null || band === null) return [];
     return [
       {
-        id: product.id,
-        brand: product.brandLine ?? "",
-        name: product.name,
-        image: product.imageUrl,
-        imageSize: PHOTO_SIZE,
-        score: toScore(result.score),
-        band: GRADE_BAND[result.grade],
-        // 카드 태그에 걸리는 성분 표시가 API에 없어 모두 같은 색이다
-        tags: product.tags.map((label) => ({ label })),
+        ...card,
+        score,
+        band,
         diff: diffs
           .slice(0, 2)
           .map((d) => d.text)
