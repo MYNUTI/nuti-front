@@ -7,7 +7,7 @@ import type { InternalAxiosRequestConfig } from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "@/lib/api/client";
 import { IDENTITY_COOKIES } from "@/lib/api/identity";
-import { DEVICE_GOAL_COOKIE } from "@/lib/goal/device";
+import { DEVICE_GOAL_COOKIE } from "@/lib/goal/device-cookie";
 import { goalKeys } from "@/lib/goal/keys";
 import { applyAccountGoal, goalMutations } from "@/lib/goal/queries";
 import { meKeys } from "@/lib/me/keys";

@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  DEVICE_GOAL_COOKIE,
   clearDeviceGoal,
   readDeviceGoal,
   saveDeviceGoal,
 } from "@/lib/goal/device";
+import { DEVICE_GOAL_COOKIE } from "@/lib/goal/device-cookie";
 import { stubDocumentCookie } from "@/test/browser";
 
 describe("기기 목표", () => {

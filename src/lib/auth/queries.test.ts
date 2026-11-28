@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "@/lib/api/client";
 import { IDENTITY_COOKIES } from "@/lib/api/identity";
 import { consentItemKeys } from "@/lib/consent/keys";
-import { DEVICE_GOAL_COOKIE } from "@/lib/goal/device";
+import { DEVICE_GOAL_COOKIE } from "@/lib/goal/device-cookie";
 import { authMutations } from "@/lib/auth/queries";
 import { metaKeys } from "@/lib/me/keys";
 import { onboardingKeys } from "@/lib/onboarding/keys";

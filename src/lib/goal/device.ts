@@ -5,23 +5,18 @@ import {
   readCookie,
   writeCookie,
 } from "@/lib/api/identity";
+import { DEVICE_GOAL_COOKIE, isGoal } from "@/lib/goal/device-cookie";
 import type { Goal } from "@/lib/goal/types";
 
-/**
- * 내 목표는 기기에 둔다(v3 기능명세 ONB_004 · ACCT_002). 서버는 로그인하고 「목표 계정 저장」에 동의한 계정만
- * 목표를 저장하고, 결과는 두 목표 점수를 함께 줘 기기가 이 값으로 고른다. 서버 렌더도 같은 값을 읽도록
- * localStorage가 아니라 쿠키에 둔다
+/*
+ * 내 목표는 기기 쿠키(`device-cookie.ts`)에 둔다. 서버는 로그인하고 「목표 계정 저장」에 동의한 계정만
+ * 목표를 저장하고, 결과는 두 목표 점수를 함께 줘 기기가 이 값으로 고른다
  */
-export const DEVICE_GOAL_COOKIE = "nuti_goal";
 
 // 쿠키를 쓸 수 없는 브라우저에서는 이번 사용 동안만 기억한다(ONB_004 「기기 저장이 막힘」)
 let memoryGoal: Goal | null = null;
 
 const listeners = new Set<() => void>();
-
-export function isGoal(value: unknown): value is Goal {
-  return value === "WEIGHT_LOSS" || value === "MUSCLE_GAIN";
-}
 
 /** 고른 적이 없으면 null. 화면은 다이어트 기준으로 보이고 「내 목표 고르기」를 둔다(ONB_008) */
 export function readDeviceGoal(): Goal | null {
