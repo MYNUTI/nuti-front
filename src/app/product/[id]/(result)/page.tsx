@@ -35,7 +35,7 @@ export default async function ProductPage({
   searchParams,
 }: PageProps<"/product/[id]">) {
   const { id } = await params;
-  const { goal: goalParam, state } = await searchParams;
+  const { state } = await searchParams;
   // 3-2 불러오는 중 확인용. 실제 로딩은 loading.tsx가 같은 화면을 그린다
   if (state === "loading") return <ProductLoading />;
   // 3-2 불러오지 못했을 때 확인용. 실제 실패는 error.tsx가 같은 화면을 그린다
@@ -46,20 +46,10 @@ export default async function ProductPage({
   // 점수가 없는 제품은 3-6 아직 점수가 없는 제품(검색이나 기록에서)이 맡는다(기능명세)
   if (!detail.goals) redirect(`/contribute/product/${encodeURIComponent(id)}`);
 
-  // 3-2 공유 링크·목표 없음: 목표를 고른 적 없는 사람은 다이어트 기준으로 보인다(디자인 메모 · ONB_008).
-  // 내 목표는 기기 쿠키다. 1-5에서 고르고 돌아온 ?goal=은 1-5가 목표를 기기에 저장하기 전(12-3)까지만 쓴다
-  // TODO(API 12-3): 1-5가 기기 목표를 저장하면 ?goal=을 지운다
+  // 3-2 공유 링크·목표 없음: 목표를 고른 적 없는 사람은 다이어트 기준으로 보인다(디자인 메모 · ONB_008). 내 목표는 기기 쿠키다
   const deviceGoal = await readServerDeviceGoal();
-  const urlGoal =
-    deviceGoal === null && (goalParam === "diet" || goalParam === "muscle")
-      ? goalParam
-      : null;
-  const noGoal = state === "no-goal" || (deviceGoal === null && !urlGoal);
-  const goal: Goal = noGoal
-    ? "diet"
-    : deviceGoal
-      ? SCREEN_GOAL[deviceGoal]
-      : urlGoal!;
+  const noGoal = state === "no-goal" || deviceGoal === null;
+  const goal: Goal = noGoal || !deviceGoal ? "diet" : SCREEN_GOAL[deviceGoal];
   // 더 맞는 제품은 내 목표 기준이다. 서버가 있다고 할 때만 목록을 부른다.
   // 보조 구역이라 실패해도 3-2를 깨뜨리지 않고 빈 목록으로 그린다(「아직 찾지 못했어요」) — 다시 시도하면 상세 조회수가 또 오른다
   const alternatives =
@@ -77,7 +67,6 @@ export default async function ProductPage({
         id={id}
         goal={goal}
         noGoal={noGoal}
-        urlGoal={urlGoal}
         previewNoGoal={state === "no-goal"}
         alternatives={alternatives}
         failPreview={state === "report-failed"}

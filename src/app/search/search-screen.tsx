@@ -68,11 +68,7 @@ export function SearchScreen({
       inputRef.current?.blur();
       return;
     }
-    // 5-2에서 바꾼 목표(?goal=)는 새 검색어에도 이어 간다
-    const goal = new URLSearchParams(window.location.search).get("goal");
-    router.push(
-      `/search?q=${encodeURIComponent(w)}${goal ? `&goal=${encodeURIComponent(goal)}` : ""}`,
-    );
+    router.push(`/search?q=${encodeURIComponent(w)}`);
   };
 
   return (

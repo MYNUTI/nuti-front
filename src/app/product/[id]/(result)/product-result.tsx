@@ -102,7 +102,6 @@ export function ProductResultView({
   id,
   goal,
   noGoal,
-  urlGoal,
   previewNoGoal,
   alternatives,
   failPreview,
@@ -112,8 +111,6 @@ export function ProductResultView({
   goal: Goal;
   /** 목표를 고른 적이 없다(공유 링크 · 목표 없음) */
   noGoal: boolean;
-  /** 1-5에서 고르고 돌아온 주소의 목표(12-3 전까지만) */
-  urlGoal: Goal | null;
   /** 확인용 `?state=no-goal` */
   previewNoGoal: boolean;
   /** 더 맞는 제품 첫 페이지(내 목표 기준) */
@@ -133,12 +130,8 @@ export function ProductResultView({
   const mine = views[goal]!;
   const otherGoal = OTHER_GOAL[goal];
   const previewView = previewParam === otherGoal ? views[otherGoal] : undefined;
-  // 미리 보기를 켜고 꺼도 목표 없음·고른 목표 표시는 주소에 남긴다
-  const keep = previewNoGoal
-    ? "state=no-goal"
-    : urlGoal
-      ? `goal=${urlGoal}`
-      : "";
+  // 미리 보기를 켜고 꺼도 목표 없음 확인용 값(?state=no-goal)은 주소에 남긴다
+  const keep = previewNoGoal ? "state=no-goal" : "";
   const productHref = (extra?: string) => {
     const query = [keep, extra].filter(Boolean).join("&");
     return `/product/${product.id}${query ? `?${query}` : ""}`;
@@ -148,8 +141,8 @@ export function ProductResultView({
   const { nutrition } = product;
   // 내 몸에 맞추기는 다이어트 등급에만 쓴다. 지금 보이는 등급이 다이어트 기준일 때만 맞춘 값이다
   const shownGoal = previewView ? otherGoal : goal;
-  // 목표를 고른 적 없는 사람(목표 없음, 1-5에서 막 고르고 돌아온 ?goal=)은 내 몸에 맞추기도 켠 적이 없다
-  const fresh = noGoal || urlGoal !== null;
+  // 목표를 고른 적 없는 사람은 내 몸에 맞추기도 켠 적이 없다
+  const fresh = noGoal;
   const bodyFit =
     !fresh && product.bodyFitKcal !== null && shownGoal === "diet";
 

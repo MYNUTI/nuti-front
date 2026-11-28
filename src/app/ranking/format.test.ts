@@ -10,7 +10,6 @@ import {
 import {
   formatCoverage,
   formatUpdatedDate,
-  parseRankingGoal,
   brandChipLabel,
   brandIndexLetter,
   filterSummary,
@@ -63,12 +62,6 @@ describe("랭킹 화면 글자", () => {
     expect(parseRankingSort(undefined)).toBe("SCORE");
     expect(parseRankingSort(["SUGAR_LOW"])).toBe("SCORE");
   });
-
-  it("주소의 목표 값: muscle만 근육 증가, 그 밖은 다이어트", () => {
-    expect(parseRankingGoal("muscle")).toBe("MUSCLE_GAIN");
-    expect(parseRankingGoal("diet")).toBe("WEIGHT_LOSS");
-    expect(parseRankingGoal(undefined)).toBe("WEIGHT_LOSS");
-  });
 });
 
 describe("랭킹 fixture", () => {
@@ -103,13 +96,11 @@ describe("랭킹 fixture", () => {
     expect(parseRankingShown(undefined)).toBe(12);
   });
 
-  it("순위 주소는 기본 정렬 · 다이어트 목표를 적지 않는다", () => {
-    expect(rankingHref("01S4", { sort: "SCORE", goal: "WEIGHT_LOSS" })).toBe(
-      "/ranking/01S4",
+  it("순위 주소는 기본 정렬을 적지 않고, 목표는 기기에 있어 적지 않는다", () => {
+    expect(rankingHref("01S4", { sort: "SCORE" })).toBe("/ranking/01S4");
+    expect(rankingHref("01", { sort: "PROTEIN_HIGH" })).toBe(
+      "/ranking/01?sort=PROTEIN_HIGH",
     );
-    expect(
-      rankingHref("01", { sort: "PROTEIN_HIGH", goal: "MUSCLE_GAIN" }),
-    ).toBe("/ranking/01?sort=PROTEIN_HIGH&goal=muscle");
   });
 
   it("판매처는 아는 값만 시트 순서로 읽고, 칩 글자는 하나면 이름 · 여럿이면 「외 n」", () => {
@@ -128,7 +119,6 @@ describe("랭킹 fixture", () => {
     expect(
       rankingHref("01S4", {
         sort: "SCORE",
-        goal: "WEIGHT_LOSS",
         filters: { sellers: ["CU", "GS25"], brands: [], nutrients: [] },
       }),
     ).toBe("/ranking/01S4?seller=CU&seller=GS25");
@@ -195,7 +185,6 @@ describe("랭킹 fixture", () => {
     expect(
       rankingHref("01S4", {
         sort: "SCORE",
-        goal: "WEIGHT_LOSS",
         filters: both,
       }),
     ).toBe(
@@ -299,7 +288,6 @@ describe("랭킹 fixture", () => {
     expect(
       rankingHref("01S4", {
         sort: "SCORE",
-        goal: "WEIGHT_LOSS",
         filters: {
           sellers: [],
           brands: [],

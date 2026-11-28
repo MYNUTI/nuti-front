@@ -80,11 +80,6 @@ export function parseRankingSort(value: unknown): RankingSort {
   );
 }
 
-/** 주소의 `?goal=` 값(기존 미리보기 주소 `diet` · `muscle`). 그 밖은 다이어트 */
-export function parseRankingGoal(value: unknown): RankingGoal {
-  return value === "muscle" ? "MUSCLE_GAIN" : "WEIGHT_LOSS";
-}
-
 /** 필터 시트 판매처 탭의 줄(【최종】 2-5b, 홈 「판매처별로 보기」와 같은 순서) */
 export const SELLER_OPTIONS: { value: Seller; label: string }[] = [
   { value: "COUPANG", label: "쿠팡" },
@@ -252,14 +247,12 @@ export function rankingHref(
   code: string,
   {
     sort,
-    goal,
     filters = NO_FILTERS,
-  }: { sort: RankingSort; goal: RankingGoal; filters?: RankingFilters },
+  }: { sort: RankingSort; filters?: RankingFilters },
 ): string {
   const params = new URLSearchParams();
   if (sort !== DEFAULT_RANKING_SORT) params.set("sort", sort);
   writeFilterParams(params, filters);
-  if (goal === "MUSCLE_GAIN") params.set("goal", "muscle");
   const query = params.toString();
   return `/ranking/${encodeURIComponent(code)}${query ? `?${query}` : ""}`;
 }

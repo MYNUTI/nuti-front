@@ -1,5 +1,5 @@
 import type { ScoreBand } from "@/components/common/score-ring";
-import type { Goal as ApiGoal } from "@/lib/goal/types";
+import { API_GOAL, SCREEN_GOAL } from "@/app/my/goals";
 import type {
   Alternative,
   GoalResult,
@@ -26,15 +26,7 @@ export const GRADE_BAND: Record<GradeLetter, ScoreBand> = {
   E: 5,
 };
 
-export const SCREEN_GOAL: Record<ApiGoal, Goal> = {
-  WEIGHT_LOSS: "diet",
-  MUSCLE_GAIN: "muscle",
-};
-
-export const API_GOAL: Record<Goal, ApiGoal> = {
-  diet: "WEIGHT_LOSS",
-  muscle: "MUSCLE_GAIN",
-};
+export { API_GOAL, SCREEN_GOAL };
 
 /**
  * 몸 정보를 쓰지 않으면 서버는 하루 2,000kcal로 감량 점수를 매긴다. 응답에 「내 몸에 맞춤」 여부가 따로 없어

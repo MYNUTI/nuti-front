@@ -84,7 +84,7 @@ export function RankingMajorAll({
     analyzed: groups.reduce((n, g) => n + g.coverage.analyzed, 0),
     updatedAt: groups[0]?.coverage.updatedAt ?? null,
   };
-  const hrefFor = (code: string) => rankingHref(code, { sort, goal, filters });
+  const hrefFor = (code: string) => rankingHref(code, { sort, filters });
 
   return (
     <>

@@ -113,7 +113,7 @@ export function RankingList({
 
   // 【최종】 메모: 정렬 · 고른 필터는 중분류 탭을 옮겨도 유지하고 랭킹을 새로 열면 기본으로
   const hrefFor = (chipCode: string) =>
-    rankingHref(chipCode, { sort, goal, filters });
+    rankingHref(chipCode, { sort, filters });
 
   useEffect(() => {
     const el = sentinel.current;

@@ -102,9 +102,6 @@ export function SearchResults({
     const params = new URLSearchParams({ q: query });
     if (sort !== "score") params.set("sort", sort);
     if (shown > PAGE_SIZE) params.set("n", String(shown));
-    // 5-2 목표 바꾸기에서 돌아온 목표(?goal=)는 이어 둔다(「목표: ○○」가 읽는다)
-    const goal = new URLSearchParams(window.location.search).get("goal");
-    if (goal) params.set("goal", goal);
     window.history.replaceState(null, "", `/search?${params}`);
   }, [query, sort, shown]);
 

@@ -64,6 +64,9 @@ export const goalMutations = {
    */
   change: (queryClient: QueryClient) =>
     mutationOptions({
+      // 5-2에서 바꾼 직후 5-1 「되돌리기」처럼 연달아 저장하면 계정 저장(GET → PUT)이 나란히 돌아 늦게 온 PUT이
+      // 계정에 남는다. 같은 scope는 차례로 돌아 마지막에 고른 값이 남는다
+      scope: { id: "goal-change" },
       mutationFn: async (goal: Goal) => {
         saveDeviceGoal(goal);
         return saveAccountGoal(queryClient, goal);

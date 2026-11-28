@@ -203,7 +203,6 @@ export function RankingHome({
                 // 걸린 필터 그대로 대분류 전체(필터 적용)로
                 moreHref={rankingHref(major.code, {
                   sort: DEFAULT_RANKING_SORT,
-                  goal,
                   filters,
                 })}
               >
@@ -227,7 +226,7 @@ export function RankingHome({
           onOpenChange={(open) => !open && closeCategory()}
           activeCode={null}
           hrefFor={(code) =>
-            rankingHref(code, { sort: DEFAULT_RANKING_SORT, goal, filters })
+            rankingHref(code, { sort: DEFAULT_RANKING_SORT, filters })
           }
         />
       )}

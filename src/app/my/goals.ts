@@ -1,4 +1,17 @@
+import type { Goal as ApiGoal } from "@/lib/goal/types";
+
 import type { Goal } from "./_fixtures";
+
+/** 화면 목표 이름(`diet` · `muscle`)과 API 목표 값. 내 목표는 기기 쿠키(`@/lib/goal/device`)에 API 값으로 둔다 */
+export const API_GOAL: Record<Goal, ApiGoal> = {
+  diet: "WEIGHT_LOSS",
+  muscle: "MUSCLE_GAIN",
+};
+
+export const SCREEN_GOAL: Record<ApiGoal, Goal> = {
+  WEIGHT_LOSS: "diet",
+  MUSCLE_GAIN: "muscle",
+};
 
 export const GOAL_LABEL: Record<Goal, string> = {
   diet: "다이어트",
