@@ -1,6 +1,11 @@
 import axios, { AxiosError } from "axios";
 import { describe, expect, it } from "vitest";
-import { ApiError, toApiError, toErrorMessage } from "@/lib/api/errors";
+import {
+  ApiError,
+  isRejectedByServer,
+  toApiError,
+  toErrorMessage,
+} from "@/lib/api/errors";
 import { failure, mockAdapter, type Reply } from "@/test/http";
 
 async function errorFrom(reply: Reply | (() => never)) {
@@ -100,5 +105,30 @@ describe("toErrorMessage", () => {
     expect(toErrorMessage(new TypeError("internal"))).toBe(
       "알 수 없는 오류가 발생했습니다.",
     );
+  });
+});
+
+describe("isRejectedByServer", () => {
+  it("서버가 거절한 4xx만 true", () => {
+    expect(
+      isRejectedByServer(
+        new ApiError({
+          status: 429,
+          code: "DAILY_LIMIT_EXCEEDED",
+          message: "x",
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      isRejectedByServer(
+        new ApiError({ status: null, code: "NETWORK_ERROR", message: "x" }),
+      ),
+    ).toBe(false);
+    expect(
+      isRejectedByServer(
+        new ApiError({ status: 503, code: "UNKNOWN", message: "x" }),
+      ),
+    ).toBe(false);
+    expect(isRejectedByServer(new Error("x"))).toBe(false);
   });
 });

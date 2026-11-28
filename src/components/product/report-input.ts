@@ -1,4 +1,4 @@
-import { ApiError } from "@/lib/api/errors";
+import { isRejectedByServer } from "@/lib/api/errors";
 import type {
   ReportCreateResult,
   ReportInput,
@@ -69,11 +69,7 @@ const NETWORK_FAILED =
  * 응답이 없거나 서버 오류(5xx)면 다시 보내 볼 수 있어 디자인 문장이다
  */
 export function reportFailMessage(error: unknown) {
-  return error instanceof ApiError &&
-    error.status !== null &&
-    error.status < 500
-    ? error.message
-    : NETWORK_FAILED;
+  return isRejectedByServer(error) ? error.message : NETWORK_FAILED;
 }
 
 /** 고른 항목이 전부 아직 확인 중이면 서버가 새로 만들지 않는다(`duplicate`). 일부만 겹치면 나머지는 접수돼 고맙다고 한다 */

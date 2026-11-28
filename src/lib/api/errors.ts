@@ -168,6 +168,16 @@ export function toErrorMessage(error: unknown): string {
     : CLIENT_ERROR_MESSAGES.UNKNOWN;
 }
 
+/**
+ * 서버가 요청을 거절했는지(4xx). 다시 보내도 결과가 같아, 보내기 화면은 서버 문구(화면용, `toApiError`)로 그 이유를 보인다.
+ * 응답이 없었거나 서버 오류(5xx)면 false라 화면은 「다시 보내 주세요」 쪽 문장을 쓴다
+ */
+export function isRejectedByServer(error: unknown): error is ApiError {
+  return (
+    error instanceof ApiError && error.status !== null && error.status < 500
+  );
+}
+
 /** 다시 보내면 성공할 수 있는 실패인지. 응답이 없었거나(취소 제외) 서버 오류(5xx)일 때만이다 */
 export function isRetryable(error: unknown): boolean {
   if (!(error instanceof ApiError)) return false;
