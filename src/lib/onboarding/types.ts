@@ -1,88 +1,39 @@
 /**
- * 온보딩·동의 API의 DTO(서버 필드 그대로)와 화면 모델.
- * 기준: 백엔드 커밋 c164ec0의 `BootstrapResponse`, `ConsentRequest`·`ConsentResponse`, `HealthConsentResponse`,
- * `SamplePickerResponse`, `OnboardingComplete*`. 날짜는 타임존 없는 ISO 문자열(`yyyy-MM-ddTHH:mm:ss`)이다.
+ * 앱 진입 초기화(bootstrap) API의 DTO(서버 필드 그대로)와 화면 모델.
+ * 기준: 배포 Swagger(2026-11-21)와 백엔드 `main` `1ddb9b4`의 `BootstrapResponse`.
+ * v3에서 개인정보·건강정보 동의, 샘플, 온보딩 완료 API는 없어졌다. 첫 실행 여부와 온보딩 완료는 기기가
+ * 기억한다(`storage.ts`, v3 기능명세 ONB_001). 동의는 가입·동의 관리(`/auth/signup`, `/me/consents`)로 옮겨 갔다
  */
 import type { Goal } from "@/lib/goal/types";
-import type { GradeLetter } from "@/lib/product/types";
-
-// 서버 설정 기본값(`app.consent.required-items`). 팀 확정 사항이라 바뀔 수 있다(API 작업 플랜 「진행 가정」)
-export const PRIVACY_CONSENT_ITEMS = ["PERSONAL_INFO", "AGE_OVER_14"] as const;
 
 // ── DTO ──────────────────────────────────────────────────────────────────────
 
-/** `GET /app/bootstrap` */
+/**
+ * `GET /app/bootstrap`. 동의 값은 로그인한 계정의 선택 동의 상태다(기기 ID만 있으면 false).
+ * `kcalBand`·`currentPolicyVersion`은 `@JsonInclude(NON_NULL)`이라 없으면 키가 빠진다
+ */
 export type BootstrapDto = {
   isLoggedIn: boolean;
-  consentAgreed: boolean;
-  healthConsented: boolean;
-  onboardingCompleted: boolean;
-  /** 미설정·동의 전은 GENERAL */
+  /** 「목표 계정 저장」 */
+  goalAccountConsented: boolean;
+  /** 「몸 정보 수집·이용」 */
+  bodyProfileConsented: boolean;
+  /** 「광고성 정보 수신」 */
+  marketingConsented: boolean;
+  /** 몸 정보에 동의하고 저장한 계정의 칼로리 구간. 없으면 서버는 2000으로 계산한다 */
+  kcalBand?: number;
+  /** 계정에 저장한 목표(미설정·기기 ID 없음은 WEIGHT_LOSS). 화면의 내 목표는 기기 목표다 */
   goal: Goal;
-  clipboardLinkDetection: boolean;
-  /** 현재 개인정보 처리방침 버전. 정책이 아직 없으면 없다 */
+  /** 현재 약관·처리방침 판. 재동의를 유도할 때 동의 기록 판과 비교한다. 정책이 아직 없으면 없다 */
   currentPolicyVersion?: string;
-};
-
-/** `POST /onboarding/consent`·`POST /me/health-consent` 요청 */
-export type ConsentRequestDto = {
-  policyVersion: string;
-  agreedItems?: string[];
-};
-
-/** `POST /onboarding/consent` */
-export type PrivacyConsentDto = {
-  /** 로그인 상태에서 동의하면 새로 발급하지 않아 요청 헤더 값 그대로다(없으면 null) */
-  anonymousId: string | null;
-  agreedAt: string;
-};
-
-/** `/me/health-consent` 조회·동의·철회 공통. 미동의는 오류가 아니라 false */
-export type HealthConsentDto = {
-  healthConsented: boolean;
-  /** 동의 상태일 때만 온다 */
-  agreedAt?: string;
-};
-
-/** `GET /onboarding/samples`. 분석 완료 제품만, 등급은 일반 기준 */
-export type SamplePickerDto = {
-  items: {
-    productId: number;
-    name: string;
-    imageUrl: string | null;
-    grade: GradeLetter;
-  }[];
-};
-
-/** `POST /onboarding/complete` 요청 */
-export type OnboardingCompleteRequestDto = {
-  /** 참고용. 단계 기록은 온보딩 단계 로그가 맡는다 */
-  skippedSteps?: string[];
-};
-
-/** `POST /onboarding/complete` */
-export type OnboardingCompleteDto = {
-  onboardingCompleted: boolean;
-  completedAt: string;
-  /** 동의 전이라 저장할 ID가 없으면 false. 이때는 클라이언트가 완료를 기억한다 */
-  persisted: boolean;
 };
 
 // ── 화면 모델 ────────────────────────────────────────────────────────────────
 
-export type Bootstrap = Omit<BootstrapDto, "currentPolicyVersion"> & {
+export type Bootstrap = Omit<
+  BootstrapDto,
+  "kcalBand" | "currentPolicyVersion"
+> & {
+  kcalBand: number | null;
   currentPolicyVersion: string | null;
-};
-
-export type HealthConsent = {
-  healthConsented: boolean;
-  agreedAt: string | null;
-};
-
-export type SampleProduct = {
-  /** 상세 경로와 맞춰 문자열 */
-  id: string;
-  name: string;
-  imageUrl: string | null;
-  grade: GradeLetter;
 };

@@ -1,47 +1,38 @@
 import { describe, expect, it } from "vitest";
-import {
-  toBootstrap,
-  toHealthConsent,
-  toSampleProducts,
-} from "@/lib/onboarding/mapper";
-import type { BootstrapDto } from "@/lib/onboarding/types";
-
-const bootstrap: BootstrapDto = {
-  isLoggedIn: false,
-  consentAgreed: true,
-  healthConsented: false,
-  onboardingCompleted: true,
-  goal: "GENERAL",
-  clipboardLinkDetection: true,
-  currentPolicyVersion: "2026-10",
-};
+import { toBootstrap } from "@/lib/onboarding/mapper";
 
 describe("onboarding mapper", () => {
-  it("정책이 없어 버전이 빠지면 null이다", () => {
-    expect(toBootstrap(bootstrap).currentPolicyVersion).toBe("2026-10");
-    const { currentPolicyVersion: _, ...withoutVersion } = bootstrap;
-    void _;
-    expect(toBootstrap(withoutVersion).currentPolicyVersion).toBeNull();
-  });
-
-  it("미동의면 agreedAt이 null이다", () => {
-    expect(toHealthConsent({ healthConsented: false })).toEqual({
-      healthConsented: false,
-      agreedAt: null,
+  it("정책이 없어 버전이 빠지거나 몸 정보가 없어 칼로리 구간이 빠지면 null이다", () => {
+    expect(
+      toBootstrap({
+        isLoggedIn: false,
+        goalAccountConsented: false,
+        bodyProfileConsented: false,
+        marketingConsented: false,
+        goal: "WEIGHT_LOSS",
+      }),
+    ).toEqual({
+      isLoggedIn: false,
+      goalAccountConsented: false,
+      bodyProfileConsented: false,
+      marketingConsented: false,
+      goal: "WEIGHT_LOSS",
+      kcalBand: null,
+      currentPolicyVersion: null,
     });
-    expect(
-      toHealthConsent({
-        healthConsented: true,
-        agreedAt: "2026-11-03T10:00:00",
-      }),
-    ).toEqual({ healthConsented: true, agreedAt: "2026-11-03T10:00:00" });
   });
 
-  it("샘플 상품 ID를 문자열로 바꾼다", () => {
+  it("동의한 계정의 칼로리 구간과 현재 정책 판을 담는다", () => {
     expect(
-      toSampleProducts({
-        items: [{ productId: 3, name: "두유", imageUrl: null, grade: "A" }],
+      toBootstrap({
+        isLoggedIn: true,
+        goalAccountConsented: true,
+        bodyProfileConsented: true,
+        marketingConsented: false,
+        kcalBand: 2500,
+        goal: "MUSCLE_GAIN",
+        currentPolicyVersion: "2026-11",
       }),
-    ).toEqual([{ id: "3", name: "두유", imageUrl: null, grade: "A" }]);
+    ).toMatchObject({ kcalBand: 2500, currentPolicyVersion: "2026-11" });
   });
 });

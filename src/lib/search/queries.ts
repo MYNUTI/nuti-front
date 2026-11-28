@@ -15,33 +15,31 @@ import {
   fetchSearchSuggestions,
 } from "@/lib/search/api";
 import { searchKeys } from "@/lib/search/keys";
+import { SEARCH_PAGE_SIZE } from "@/lib/search/page-size";
 import { mergeSearchPages } from "@/lib/search/mapper";
-import type { SearchItem, SearchResult } from "@/lib/search/types";
-
-// 서버 기본값과 같다
-const SEARCH_PAGE_SIZE = 20;
+import type { ProductCardData } from "@/lib/product/types";
+import type { SearchResult, SearchSort } from "@/lib/search/types";
 
 export const searchQueries = {
-  /** 서버가 trim해 검색하므로 키와 요청도 trim한 값을 쓴다. 빈 검색어는 서버가 400으로 답해 보내지 않는다 */
-  result: (rawQuery: string, goal?: Goal) => {
+  /**
+   * 서버가 trim해 검색하므로 키와 요청도 trim한 값을 쓴다. 빈 검색어는 서버가 400으로 답해 보내지 않는다.
+   * `goal`은 화면의 내 목표(`useDeviceGoal`, 없으면 WEIGHT_LOSS)를 넘긴다
+   */
+  result: (rawQuery: string, goal: Goal, sort: SearchSort = "SCORE") => {
     const q = rawQuery.trim();
     return infiniteQueryOptions({
-      queryKey: searchKeys.result(q, goal),
+      queryKey: searchKeys.result(q, goal, sort),
       queryFn: q
         ? ({ pageParam, signal }) =>
             fetchSearch(
               api,
-              { q, goal, page: pageParam, size: SEARCH_PAGE_SIZE },
+              { q, goal, sort, page: pageParam, size: SEARCH_PAGE_SIZE },
               signal,
             )
         : skipToken,
       initialPageParam: 0,
-      // 두 섹션이 같은 page로 넘어가 어느 한쪽이라도 남았으면 다음 페이지가 있다
       getNextPageParam: (lastPage, _pages, lastPageParam) =>
-        (lastPageParam + 1) * SEARCH_PAGE_SIZE <
-        Math.max(lastPage.exactMatches.total, lastPage.similarProducts.total)
-          ? lastPageParam + 1
-          : undefined,
+        lastPage.hasNext ? lastPageParam + 1 : undefined,
       select: (data) => mergeSearchPages(data.pages),
     });
   },
@@ -63,11 +61,13 @@ export const searchQueries = {
     queryOptions({
       queryKey: searchKeys.popularKeywords(),
       queryFn: ({ signal }) => fetchPopularKeywords(api, signal),
+      // 서버가 매시 정각에 다시 모은다. 검색칸을 비울 때마다 다시 부르지 않게 잠시 둔다
+      staleTime: 5 * 60 * 1000,
     }),
 };
 
-export function useSearch(q: string, goal?: Goal) {
-  return useInfiniteQuery(searchQueries.result(q, goal));
+export function useSearch(q: string, goal: Goal, sort?: SearchSort) {
+  return useInfiniteQuery(searchQueries.result(q, goal, sort));
 }
 
 export function useSearchSuggestions(q: string) {
@@ -87,18 +87,12 @@ export function setSearchItemSaved(
   productId: string,
   saved: boolean,
 ) {
-  const mark = (item: SearchItem) =>
-    item.id === productId ? { ...item, saved } : item;
+  const mark = (card: ProductCardData) =>
+    card.id === productId ? { ...card, saved } : card;
   const markPage = (page: SearchResult): SearchResult => ({
     ...page,
-    exactMatches: {
-      ...page.exactMatches,
-      items: page.exactMatches.items.map(mark),
-    },
-    similarProducts: {
-      ...page.similarProducts,
-      items: page.similarProducts.items.map(mark),
-    },
+    pinned: page.pinned && mark(page.pinned),
+    items: page.items.map(mark),
     sameCategoryTop: page.sameCategoryTop.map(mark),
   });
   queryClient.setQueriesData<InfiniteData<SearchResult, number>>(

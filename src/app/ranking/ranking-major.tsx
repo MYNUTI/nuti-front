@@ -1,20 +1,16 @@
 "use client";
 
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/common/button";
 import { EmptyState, ErrorState } from "@/components/common/empty-state";
 import { TabBar } from "@/components/common/tab-bar";
+import { useDeviceGoal } from "@/lib/goal/device";
+import { rankingQueries } from "@/lib/ranking/queries";
 
-import {
-  fixtureBrandList,
-  fixtureFilterSheet,
-  fixtureOverview,
-  type RankingGoal,
-  type RankingMajor,
-  type RankingSort,
-} from "./_fixtures";
+import type { RankingGoal, RankingMajor, RankingSort } from "./model";
 import {
   filterSummary,
   formatCoverage,
@@ -34,7 +30,7 @@ import {
 import { RankRow } from "./ranking-items";
 import { useRankingFilters } from "./use-ranking-filters";
 
-// 【최종】 메모: 묶음마다 실제 제품 상위 3개(다이어트 점수 순)
+// 【최종】 메모: 묶음마다 실제 제품 상위 3개(다이어트 점수 순). 서버(`GET /rankings/overview`)도 칩마다 3개를 준다
 const ROWS_PER_GROUP = 3;
 
 /*
@@ -46,11 +42,14 @@ const ROWS_PER_GROUP = 3;
  * 묶음의 「전체 보기」 · 중분류 탭은 같은 필터를 건 채 그 중분류 순위로 간다.
  */
 export function RankingMajorAll({
+  majors,
   major,
-  goal,
+  goal: serverGoal,
   sort,
   failed,
 }: {
+  /** 분류 목록(종류 고르기 시트) */
+  majors: readonly RankingMajor[];
   major: RankingMajor;
   goal: RankingGoal;
   /** 이 화면에는 정렬이 없지만 중분류 탭으로 옮길 때 고른 정렬을 잇는다 */
@@ -59,6 +58,8 @@ export function RankingMajorAll({
   failed: boolean;
 }) {
   const router = useRouter();
+  // 서버가 쿠키로 읽은 목표. 브라우저에서는 기기 목표를 따른다(뒤로 가기는 이전 서버 그림을 다시 쓰고, 쿠키가 막히면 서버가 모른다)
+  const goal = useDeviceGoal() ?? serverGoal;
   const filter = useRankingFilters();
   const [categoryOpen, setCategoryOpen] = useState(false);
   const closeCategory = () => setCategoryOpen(false);
@@ -76,7 +77,16 @@ export function RankingMajorAll({
     );
   }, [filters]);
 
-  const groups = fixtureOverview(major, ROWS_PER_GROUP, filters);
+  const overview = useQuery({
+    ...rankingQueries.overview({ major: major.code, goal, filters }),
+    // 필터를 바꾸면 새 묶음이 올 때까지 앞 묶음을 둔다
+    placeholderData: keepPreviousData,
+  });
+  const groups = (overview.data?.groups ?? []).map((group) => ({
+    chip: group.category,
+    coverage: group.coverage,
+    items: group.items.slice(0, ROWS_PER_GROUP),
+  }));
   const summary = filterSummary(filters);
   // API(`GET /rankings/overview`)는 칩마다 개수만 준다. 대분류 개수는 임시로 칩 합 + 첫 묶음 날짜(남은 질문 31)
   const coverage = {
@@ -84,7 +94,7 @@ export function RankingMajorAll({
     analyzed: groups.reduce((n, g) => n + g.coverage.analyzed, 0),
     updatedAt: groups[0]?.coverage.updatedAt ?? null,
   };
-  const hrefFor = (code: string) => rankingHref(code, { sort, goal, filters });
+  const hrefFor = (code: string) => rankingHref(code, { sort, filters });
 
   return (
     <>
@@ -115,13 +125,23 @@ export function RankingMajorAll({
         />
 
         <div className="flex flex-1 flex-col gap-2.5 bg-bg-band px-4 pt-1 pb-4">
-          {failed ? (
+          {failed || (overview.isError && !overview.data) ? (
             <ErrorState
               title="순위를 불러오지 못했어요"
-              onRetry={() => router.refresh()}
+              onRetry={() =>
+                failed ? router.refresh() : void overview.refetch()
+              }
               retryKind="secondary"
               className="rounded-md bg-white"
             />
+          ) : !overview.data ? (
+            // 그린 화면이 없어 「더 불러오는 중」과 같은 모양의 한 줄로 둔다(2-4와 같다)
+            <p
+              role="status"
+              className="py-3 text-center text-[13px] leading-4 text-text-sub"
+            >
+              불러오는 중
+            </p>
           ) : groups.length === 0 && summary && major.chips.length > 0 ? (
             <EmptyState
               // 필터에 맞는 묶음이 하나도 없을 때는 그림이 없어 중분류 순위의 필터 0건과 같게 둔다(남은 질문 33)
@@ -167,6 +187,7 @@ export function RankingMajorAll({
         <RankingCategorySheet
           open
           onOpenChange={(open) => !open && closeCategory()}
+          majors={majors}
           activeCode={major.code}
           hrefFor={hrefFor}
         />
@@ -176,10 +197,9 @@ export function RankingMajorAll({
           open
           onOpenChange={(open) => !open && filter.close()}
           tab={filter.tab}
+          category={major.code}
           categoryName={major.name}
           applied={filters}
-          sheetFor={(draft) => fixtureFilterSheet(major.code, draft)}
-          brandList={fixtureBrandList(major.code)}
           onApply={filter.apply}
         />
       )}

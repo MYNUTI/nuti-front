@@ -6,10 +6,12 @@ import {
   subscribeTokens,
 } from "@/lib/api/identity";
 import { onSessionExpired } from "@/lib/api/refresh";
+import { consentKeys } from "@/lib/consent/keys";
 import { goalKeys } from "@/lib/goal/keys";
 import { meKeys } from "@/lib/me/keys";
 import { onboardingKeys } from "@/lib/onboarding/keys";
 import { productKeys } from "@/lib/product/keys";
+import { rankingKeys } from "@/lib/ranking/keys";
 import { savedKeys } from "@/lib/saved/keys";
 import { searchKeys } from "@/lib/search/keys";
 
@@ -17,12 +19,16 @@ import { searchKeys } from "@/lib/search/keys";
 // 무관해 빼고, 사용자에 따라 달라지는 조회를 새로 만들면 여기에 넣는다
 const USER_QUERY_KEYS: QueryKey[] = [
   onboardingKeys.bootstrap(),
-  onboardingKeys.healthConsent(),
+  consentKeys.all,
   goalKeys.all,
   meKeys.all,
   savedKeys.all,
   productKeys.all,
   searchKeys.results(),
+  // 랭킹 카드는 몸 정보 칼로리 구간 · 즐겨찾기 여부가 계정마다 다르다. 분류 · 필터 시트 · 브랜드는 사용자와 무관하다
+  rankingKeys.lists(),
+  rankingKeys.overviews(),
+  rankingKeys.leadersAll(),
 ];
 
 /** 로그인 뒤. 익명 기록이 계정으로 옮겨져 이전 값을 보이다가 다시 불러와도 된다 */
@@ -36,7 +42,7 @@ export function invalidateUserQueries(queryClient: QueryClient) {
 
 /**
  * 로그아웃·탈퇴·세션 만료 뒤. 이전 계정의 저장 목록 같은 개인 정보가 다시 불러오기 전까지 화면에 남지
- * 않게 캐시를 비운다. 열려 있는 상세는 다시 불러와 조회수가 1 오른다(목표 변경과 같이 감수)
+ * 않게 캐시를 비운다. 열려 있는 상세는 다시 불러와 조회수가 1 오른다(감수)
  */
 export function resetUserQueries(queryClient: QueryClient) {
   return Promise.all(

@@ -1,8 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/lib/api/errors";
 import { serverApi } from "@/lib/api/server";
-import { getProductDetail } from "@/lib/product/server";
+import {
+  getAlternativesFirstPage,
+  getProductDetail,
+} from "@/lib/product/server";
 import { failure, mockAdapter, success, type Reply } from "@/test/http";
+import { productCardDto, productResultDto } from "@/test/product";
 
 vi.mock("next/headers", () => ({
   cookies: async () => ({ get: () => undefined }),
@@ -56,24 +60,57 @@ describe("getProductDetail", () => {
   });
 
   it("찾으면 화면 모델로 돌려준다", async () => {
-    useAdapter(() =>
-      success({
-        status: "INSUFFICIENT",
-        product: {
-          productId: 7,
-          name: "두유",
-          brandName: null,
-          imageUrl: null,
-          servingSize: null,
-        },
-        appliedGoal: "GENERAL",
-        saved: true,
-      }),
-    );
+    useAdapter(() => success(productResultDto({ saved: true })));
     await expect(getProductDetail("7")).resolves.toMatchObject({
-      status: "INSUFFICIENT",
-      product: { id: "7" },
+      id: "7",
       saved: true,
     });
+  });
+});
+
+describe("getAlternativesFirstPage", () => {
+  afterEach(() => {
+    serverApi.defaults.adapter = originalAdapter;
+  });
+
+  it("숫자 ID가 아니면 서버에 보내지 않고 null이다", async () => {
+    const { requests } = useAdapter(() => success());
+    await expect(
+      getAlternativesFirstPage("abc", "WEIGHT_LOSS"),
+    ).resolves.toBeNull();
+    expect(requests).toHaveLength(0);
+  });
+
+  it("목표와 첫 페이지(0부터, 20개)를 보낸다", async () => {
+    const { requests } = useAdapter(() =>
+      success({
+        current: productCardDto(),
+        goal: "MUSCLE_GAIN",
+        kcalBand: 2000,
+        total: 0,
+        page: 0,
+        size: 20,
+        hasNext: false,
+        items: [],
+      }),
+    );
+    await expect(
+      getAlternativesFirstPage("7", "MUSCLE_GAIN"),
+    ).resolves.toMatchObject({ current: { id: "7" }, items: [] });
+    expect(requests[0]).toMatchObject({
+      url: "/products/7/alternatives",
+      params: { goal: "MUSCLE_GAIN", page: 0, size: 20 },
+    });
+  });
+
+  it("없거나 비활성인 상품(404)은 null, 그 밖의 실패는 reject한다", async () => {
+    useAdapter(() => failure(404, "PRODUCT_NOT_FOUND"));
+    await expect(
+      getAlternativesFirstPage("7", "WEIGHT_LOSS"),
+    ).resolves.toBeNull();
+    useAdapter(() => failure(500, "INTERNAL_SERVER_ERROR"));
+    await expect(
+      getAlternativesFirstPage("8", "WEIGHT_LOSS"),
+    ).rejects.toBeInstanceOf(ApiError);
   });
 });

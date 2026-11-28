@@ -4,112 +4,98 @@ import {
   toSearchResult,
   toSearchSuggestion,
 } from "@/lib/search/mapper";
-import type { SearchDto, SearchItemDto } from "@/lib/search/types";
-
-const analyzed: SearchItemDto = {
-  productId: 7,
-  name: "두유",
-  brandName: "누티",
-  imageUrl: null,
-  status: "ANALYZED",
-  grade: "C",
-  gradeLabel: "보통이에요",
-  highlight: "당류 21g — 체중 감량 기준 초과",
-  isSaved: true,
-};
-
-const insufficient: SearchItemDto = {
-  productId: 8,
-  name: "과자",
-  brandName: null,
-  imageUrl: null,
-  status: "INSUFFICIENT",
-  isSaved: false,
-};
+import type { SearchDto } from "@/lib/search/types";
+import { productCardDto } from "@/test/product";
 
 const dto = (over: Partial<SearchDto> = {}): SearchDto => ({
   query: "두유",
-  appliedGoal: "WEIGHT_LOSS",
-  exactMatches: { total: 2, items: [analyzed, insufficient] },
-  similarProducts: { total: 0, items: [] },
+  goal: "WEIGHT_LOSS",
+  kcalBand: 2000,
+  sort: "SCORE",
+  sortLabel: "점수 높은 순",
+  total: 1,
+  page: 0,
+  size: 20,
+  hasNext: false,
+  items: [productCardDto()],
   sameCategoryTop: [],
-  analysisRequest: { available: false },
+  analysisRequestAvailable: false,
   ...over,
 });
 
 describe("toSearchResult", () => {
-  it("항목의 등급 유무를 status로 나누고 isSaved를 saved로 바꾼다", () => {
-    expect(toSearchResult(dto()).exactMatches.items).toEqual([
-      {
-        id: "7",
-        name: "두유",
-        brandName: "누티",
-        imageUrl: null,
-        saved: true,
-        status: "ANALYZED",
-        grade: "C",
-        label: "보통이에요",
-        highlight: "당류 21g — 체중 감량 기준 초과",
-      },
-      {
-        id: "8",
-        name: "과자",
-        brandName: null,
-        imageUrl: null,
-        saved: false,
-        status: "INSUFFICIENT",
-      },
-    ]);
-  });
-
-  it("감점이 없어 highlight가 빠지면 null이다", () => {
-    const { highlight: _, ...noHighlight } = analyzed;
-    void _;
-    const item = toSearchResult(
-      dto({ exactMatches: { total: 1, items: [noHighlight] } }),
-    ).exactMatches.items[0];
-    expect(item).toMatchObject({ status: "ANALYZED", highlight: null });
-  });
-
-  it("0건이면 폴백을 담고, 교정어가 없으면 null이다", () => {
-    const result = toSearchResult(
-      dto({
-        exactMatches: { total: 0, items: [] },
-        sameCategoryTop: [analyzed],
-        analysisRequest: { available: true },
-      }),
-    );
-    expect(result).toMatchObject({
+  it("한 목록의 카드를 바꾸고, 빠진 pinned·category·didYouMean은 null이다", () => {
+    expect(toSearchResult(dto())).toMatchObject({
+      query: "두유",
+      goal: "WEIGHT_LOSS",
+      sort: "SCORE",
+      total: 1,
+      hasNext: false,
+      pinned: null,
+      category: null,
+      items: [{ id: "7" }],
       didYouMean: null,
+      sameCategoryTop: [],
+      canRequestAnalysis: false,
+    });
+  });
+
+  it("이름이 같은 제품(pinned)과 종류 순위 링크를 담는다", () => {
+    expect(
+      toSearchResult(
+        dto({
+          pinned: productCardDto({ productId: 9 }),
+          category: { code: "0101", name: "두유" },
+        }),
+      ),
+    ).toMatchObject({
+      pinned: { id: "9" },
+      category: { code: "0101", name: "두유" },
+    });
+  });
+
+  it("0건이면 교정어·같은 종류 상위·분석 요청을 담는다", () => {
+    expect(
+      toSearchResult(
+        dto({
+          total: 0,
+          items: [],
+          didYouMean: "두유",
+          sameCategoryTop: [productCardDto({ productId: 8 })],
+          analysisRequestAvailable: true,
+        }),
+      ),
+    ).toMatchObject({
+      didYouMean: "두유",
+      sameCategoryTop: [{ id: "8" }],
       canRequestAnalysis: true,
     });
-    expect(result.sameCategoryTop[0].id).toBe("7");
   });
 });
 
 describe("mergeSearchPages", () => {
-  it("섹션 항목은 이어 붙이고 나머지는 첫 페이지 것을 쓴다", () => {
+  it("항목은 이어 붙이고 pinned·질의 정보는 첫 페이지, 다음 페이지 여부는 마지막 페이지 것을 쓴다", () => {
     const first = toSearchResult(
       dto({
-        exactMatches: { total: 3, items: [analyzed] },
-        similarProducts: { total: 2, items: [insufficient] },
-        didYouMean: "두유",
+        total: 3,
+        hasNext: true,
+        pinned: productCardDto({ productId: 9 }),
       }),
     );
     const second = toSearchResult(
       dto({
-        exactMatches: { total: 3, items: [{ ...analyzed, productId: 9 }] },
-        similarProducts: { total: 2, items: [] },
+        total: 3,
+        page: 1,
+        hasNext: false,
+        items: [productCardDto({ productId: 8 })],
       }),
     );
-    const merged = mergeSearchPages([first, second]);
-    expect(merged.exactMatches.items.map((item) => item.id)).toEqual([
-      "7",
-      "9",
-    ]);
-    expect(merged.similarProducts.items.map((item) => item.id)).toEqual(["8"]);
-    expect(merged.exactMatches.total).toBe(3);
-    expect(merged.didYouMean).toBe("두유");
+    expect(mergeSearchPages([first, second])).toMatchObject({
+      total: 3,
+      hasNext: false,
+      pinned: { id: "9" },
+      items: [{ id: "7" }, { id: "8" }],
+    });
   });
 });
 

@@ -1,6 +1,6 @@
 import axios from "axios";
 import { toApiError } from "@/lib/api/errors";
-import { readIdentity, touchSessionId } from "@/lib/api/identity";
+import { ensureAnonymousId, touchSessionId } from "@/lib/api/identity";
 import { getFreshAccessToken } from "@/lib/api/refresh";
 
 function createInstance() {
@@ -23,14 +23,13 @@ export const api = createInstance();
 // 자기 자신을 기다린다
 const refreshApi = createInstance();
 
-// 토큰과 익명 ID가 둘 다 있어도 함께 보낸다. 서버는 계정을 우선하고, 로그인(`POST /auth/oauth`)은
-// 익명 ID로 로그인 전 익명 기록(저장·목표·기여)을 계정에 합친다
+// 토큰과 익명 ID를 함께 보낸다. 서버는 계정을 우선하고, 로그인(`POST /auth/oauth`)은 익명 ID로
+// 로그인 전 기기 기록(저장·최근 본 제품·목표·기여)을 계정에 합친다. 익명 ID가 없으면 여기서 만든다
 api.interceptors.request.use(async (config) => {
   const accessToken = await getFreshAccessToken(refreshApi);
-  const { anonymousId } = readIdentity();
   if (accessToken) config.headers.set("Authorization", `Bearer ${accessToken}`);
-  if (anonymousId) config.headers.set("X-Anonymous-Id", anonymousId);
-  // 세션 ID는 동의 전에도 보낸다. 방문 집계와 동의 전 사용자의 하루 한도(문의·제보·검색어 분석 요청)에 쓰인다
+  config.headers.set("X-Anonymous-Id", ensureAnonymousId());
+  // 세션 ID는 방문 집계에 쓰인다
   config.headers.set("X-Session-Id", touchSessionId());
   return config;
 });

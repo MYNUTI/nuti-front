@@ -6,6 +6,7 @@ import { IDENTITY_COOKIES, subscribeTokens } from "@/lib/api/identity";
 import { getFreshAccessToken } from "@/lib/api/refresh";
 import { connectSession } from "@/lib/auth/session";
 import { metaKeys } from "@/lib/me/keys";
+import { rankingKeys } from "@/lib/ranking/keys";
 import { savedKeys } from "@/lib/saved/keys";
 import {
   stubBroadcastChannel,
@@ -23,8 +24,13 @@ describe("connectSession", () => {
     stubWebLocks();
     channel = stubBroadcastChannel();
     queryClient = new QueryClient();
-    queryClient.setQueryData(savedKeys.list(), { pages: [], pageParams: [] });
+    queryClient.setQueryData(savedKeys.list("WEIGHT_LOSS"), {
+      pages: [],
+      pageParams: [],
+    });
     queryClient.setQueryData(metaKeys.policies(), { privacy: null });
+    queryClient.setQueryData(rankingKeys.leaders({ goal: "WEIGHT_LOSS" }), {});
+    queryClient.setQueryData(rankingKeys.categories(), { majors: [] });
     disconnect = connectSession(queryClient);
   });
   afterEach(() => {
@@ -38,9 +44,18 @@ describe("connectSession", () => {
 
     channel.fromOtherTab("nuti-session", "logout");
 
-    expect(queryClient.getQueryData(savedKeys.list())).toBeUndefined();
+    expect(
+      queryClient.getQueryData(savedKeys.list("WEIGHT_LOSS")),
+    ).toBeUndefined();
     expect(queryClient.getQueryData(metaKeys.policies())).toEqual({
       privacy: null,
+    });
+    // 랭킹 카드는 계정마다 다르고, 분류는 사용자와 무관해 남긴다
+    expect(
+      queryClient.getQueryData(rankingKeys.leaders({ goal: "WEIGHT_LOSS" })),
+    ).toBeUndefined();
+    expect(queryClient.getQueryData(rankingKeys.categories())).toEqual({
+      majors: [],
     });
     expect(listener).toHaveBeenCalledOnce();
     release();
@@ -48,9 +63,9 @@ describe("connectSession", () => {
 
   it("다른 탭이 로그인하면 사용자 조회를 다시 부른다", () => {
     channel.fromOtherTab("nuti-session", "login");
-    expect(queryClient.getQueryState(savedKeys.list())?.isInvalidated).toBe(
-      true,
-    );
+    expect(
+      queryClient.getQueryState(savedKeys.list("WEIGHT_LOSS"))?.isInvalidated,
+    ).toBe(true);
   });
 
   it("이 탭의 세션이 만료되면 캐시를 비우고 다른 탭에 알린다", async () => {
@@ -64,14 +79,18 @@ describe("connectSession", () => {
 
     await getFreshAccessToken(http);
 
-    expect(queryClient.getQueryData(savedKeys.list())).toBeUndefined();
+    expect(
+      queryClient.getQueryData(savedKeys.list("WEIGHT_LOSS")),
+    ).toBeUndefined();
     expect(channel.posted).toEqual([{ name: "nuti-session", data: "logout" }]);
   });
 
   it("해제하면 더 받지 않는다", () => {
     disconnect();
     channel.fromOtherTab("nuti-session", "logout");
-    expect(queryClient.getQueryData(savedKeys.list())).toBeDefined();
+    expect(
+      queryClient.getQueryData(savedKeys.list("WEIGHT_LOSS")),
+    ).toBeDefined();
     disconnect = () => {};
   });
 });

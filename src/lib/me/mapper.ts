@@ -26,7 +26,6 @@ export function toUser(dto: UserDto): User {
 
 export function toMeSettings(dto: MeSettingsDto): MeSettings {
   return {
-    clipboardLinkDetection: dto.clipboardLinkDetection,
     goal: { goal: dto.goal.code, label: dto.goal.label },
     privacyUrl: dto.policies.privacyUrl ?? null,
     termsUrl: dto.policies.termsUrl ?? null,

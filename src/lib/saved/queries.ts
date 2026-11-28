@@ -7,9 +7,10 @@ import {
   type QueryClient,
 } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
+import type { Goal } from "@/lib/goal/types";
 import { meKeys } from "@/lib/me/keys";
 import { productKeys } from "@/lib/product/keys";
-import type { ProductDetail } from "@/lib/product/types";
+import type { ProductResult } from "@/lib/product/types";
 import {
   deleteSavedProduct,
   fetchSavedProducts,
@@ -19,17 +20,17 @@ import { savedKeys } from "@/lib/saved/keys";
 import { setSearchItemSaved } from "@/lib/search/queries";
 
 // 서버 기본값과 같다
-const SAVED_PAGE_SIZE = 10;
+const SAVED_PAGE_SIZE = 20;
 
 export const savedQueries = {
-  /** 토큰·익명 ID가 모두 없으면 403이다. `bootstrap.isLoggedIn`이거나 `consentAgreed`일 때만 부른다 */
-  list: () =>
+  /** 4-4 즐겨찾기. `goal`은 화면의 내 목표(`useDeviceGoal`, 없으면 WEIGHT_LOSS)를 넘긴다 */
+  list: (goal: Goal) =>
     infiniteQueryOptions({
-      queryKey: savedKeys.list(),
+      queryKey: savedKeys.list(goal),
       queryFn: ({ pageParam, signal }) =>
         fetchSavedProducts(
           api,
-          { page: pageParam, size: SAVED_PAGE_SIZE },
+          { goal, page: pageParam, size: SAVED_PAGE_SIZE },
           signal,
         ),
       initialPageParam: 1,
@@ -38,8 +39,8 @@ export const savedQueries = {
     }),
 };
 
-export function useSavedProducts({ enabled = true } = {}) {
-  return useInfiniteQuery({ ...savedQueries.list(), enabled });
+export function useSavedProducts(goal: Goal) {
+  return useInfiniteQuery(savedQueries.list(goal));
 }
 
 // 성공 후 다시 불러올 조회는 API 작업 플랜 「기능 → 엔드포인트 매핑」을 따른다(09단계 확정).
@@ -51,7 +52,7 @@ function setDetailSaved(
   productId: string,
   saved: boolean,
 ) {
-  queryClient.setQueryData<ProductDetail>(
+  queryClient.setQueryData<ProductResult>(
     productKeys.detail(productId),
     (detail) => detail && { ...detail, saved },
   );

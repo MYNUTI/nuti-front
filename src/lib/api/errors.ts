@@ -3,20 +3,26 @@ import type { ApiErrorDetail, ApiFailure } from "@/lib/api/types";
 
 // 서버 `ErrorCode`의 이름과 기본 문구. 서버는 메시지 없이 던진 예외에 message를 null로 보내므로
 // 이 문구로 대신한다. 서버에 코드가 추가·변경되면 함께 바꾼다.
-// 기준: 백엔드 `common/exception/ErrorCode.java`, 커밋 c164ec0
+// 기준: 백엔드 `common/exception/ErrorCode.java`, `main` `1ddb9b4`(v3)
 const SERVER_ERROR_MESSAGES = {
   BAD_REQUEST: "잘못된 요청입니다.",
   VALIDATION_FAILED: "입력값 유효성 검사에 실패했습니다.",
   INVALID_QUERY_PARAM: "유효하지 않은 쿼리 파라미터입니다.",
   BARCODE_CHECKSUM_INVALID: "바코드 체크섬이 일치하지 않습니다.",
+  REQUIRED_CONSENT_MISSING:
+    "필수 동의 항목에 모두 동의해야 가입할 수 있습니다.",
+  // 기기가 익명 ID를 늘 만들어 보내 실제로는 거의 나지 않는다
+  ANONYMOUS_ID_REQUIRED: "X-Anonymous-Id 헤더(기기 UUID)가 필요합니다.",
   UNAUTHORIZED: "인증이 필요합니다.",
   TOKEN_EXPIRED: "토큰이 만료되었습니다.",
   INVALID_TOKEN: "유효하지 않은 토큰입니다.",
+  SIGNUP_TOKEN_INVALID:
+    "가입 시간이 지났거나 올바르지 않습니다. 다시 로그인해 주세요.",
   // 서버 기본 문구는 「아이디 또는 비밀번호가 일치하지 않습니다.」인데 소셜 로그인뿐이라 바꿔 쓴다
   LOGIN_FAILED: "로그인에 실패했어요. 다시 시도해 주세요.",
   FORBIDDEN: "접근 권한이 없습니다.",
-  CONSENT_REQUIRED: "개인정보 수집·이용 동의가 필요합니다.",
-  HEALTH_CONSENT_REQUIRED: "건강정보 수집·이용 동의가 필요합니다.",
+  GOAL_CONSENT_REQUIRED: "목표 계정 저장 동의가 필요합니다.",
+  BODY_CONSENT_REQUIRED: "몸 정보 수집·이용 동의가 필요합니다.",
   RESOURCE_NOT_FOUND: "요청한 리소스를 찾을 수 없습니다.",
   USER_NOT_FOUND: "해당 사용자를 찾을 수 없습니다.",
   PRODUCT_NOT_FOUND: "제품을 찾을 수 없습니다.",
@@ -162,22 +168,19 @@ export function toErrorMessage(error: unknown): string {
     : CLIENT_ERROR_MESSAGES.UNKNOWN;
 }
 
+/**
+ * 서버가 요청을 거절했는지(4xx). 다시 보내도 결과가 같아, 보내기 화면은 서버 문구(화면용, `toApiError`)로 그 이유를 보인다.
+ * 응답이 없었거나 서버 오류(5xx)면 false라 화면은 「다시 보내 주세요」 쪽 문장을 쓴다
+ */
+export function isRejectedByServer(error: unknown): error is ApiError {
+  return (
+    error instanceof ApiError && error.status !== null && error.status < 500
+  );
+}
+
 /** 다시 보내면 성공할 수 있는 실패인지. 응답이 없었거나(취소 제외) 서버 오류(5xx)일 때만이다 */
 export function isRetryable(error: unknown): boolean {
   if (!(error instanceof ApiError)) return false;
   if (error.status === null) return error.code !== "CANCELED";
   return error.status >= 500;
-}
-
-export type ConsentCode = "CONSENT_REQUIRED" | "HEALTH_CONSENT_REQUIRED";
-
-/** 동의가 없어 거절된 요청인지. 개인정보 동의 전 개인 귀속 변경, 건강정보 동의 없이 감량·근육증가 목표 */
-export function isConsentRequired(
-  error: unknown,
-): error is ApiError & { code: ConsentCode } {
-  return (
-    error instanceof ApiError &&
-    (error.code === "CONSENT_REQUIRED" ||
-      error.code === "HEALTH_CONSENT_REQUIRED")
-  );
 }

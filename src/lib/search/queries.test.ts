@@ -1,23 +1,24 @@
 import { QueryClient, skipToken } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
+import { toProductCard } from "@/lib/product/mapper";
 import { searchKeys } from "@/lib/search/keys";
 import { searchQueries, setSearchItemSaved } from "@/lib/search/queries";
-import type { SearchItem, SearchResult } from "@/lib/search/types";
+import type { SearchResult } from "@/lib/search/types";
+import { productCardDto } from "@/test/product";
 
-const item = (id: string, saved = false): SearchItem => ({
-  id,
-  name: id,
-  brandName: null,
-  imageUrl: null,
-  saved,
-  status: "INSUFFICIENT",
-});
+const card = (productId: number, saved = false) =>
+  toProductCard(productCardDto({ productId, saved }));
 
 const page = (over: Partial<SearchResult> = {}): SearchResult => ({
   query: "두유",
-  appliedGoal: "GENERAL",
-  exactMatches: { total: 0, items: [] },
-  similarProducts: { total: 0, items: [] },
+  goal: "WEIGHT_LOSS",
+  sort: "SCORE",
+  sortLabel: "점수 높은 순",
+  total: 0,
+  hasNext: false,
+  pinned: null,
+  category: null,
+  items: [],
   didYouMean: null,
   sameCategoryTop: [],
   canRequestAnalysis: false,
@@ -26,27 +27,34 @@ const page = (over: Partial<SearchResult> = {}): SearchResult => ({
 
 describe("searchQueries.result", () => {
   it("빈 검색어는 보내지 않는다", () => {
-    expect(searchQueries.result("  ").queryFn).toBe(skipToken);
-    expect(searchQueries.result("두유").queryFn).not.toBe(skipToken);
-  });
-
-  it("앞뒤 공백만 다른 검색어는 같은 키를 쓴다", () => {
-    expect(searchQueries.result(" 두유 ").queryKey).toEqual(
-      searchKeys.result("두유"),
+    expect(searchQueries.result("  ", "WEIGHT_LOSS").queryFn).toBe(skipToken);
+    expect(searchQueries.result("두유", "WEIGHT_LOSS").queryFn).not.toBe(
+      skipToken,
     );
   });
 
-  it("두 섹션 중 하나라도 남았으면 다음 페이지가 있다", () => {
-    const { getNextPageParam } = searchQueries.result("두유");
-    const totals = (exact: number, similar: number) =>
-      page({
-        exactMatches: { total: exact, items: [] },
-        similarProducts: { total: similar, items: [] },
-      });
-    expect(getNextPageParam(totals(20, 21), [], 0, [0])).toBe(1);
-    expect(getNextPageParam(totals(40, 5), [], 0, [0])).toBe(1);
-    expect(getNextPageParam(totals(20, 20), [], 0, [0])).toBeUndefined();
-    expect(getNextPageParam(totals(40, 0), [], 1, [0, 1])).toBeUndefined();
+  it("앞뒤 공백만 다른 검색어는 같은 키를 쓰고, 목표·정렬마다 키가 다르다", () => {
+    expect(searchQueries.result(" 두유 ", "WEIGHT_LOSS").queryKey).toEqual(
+      searchKeys.result("두유", "WEIGHT_LOSS", "SCORE"),
+    );
+    expect(searchKeys.result("두유", "WEIGHT_LOSS")).not.toEqual(
+      searchKeys.result("두유", "MUSCLE_GAIN"),
+    );
+    expect(searchKeys.result("두유", "WEIGHT_LOSS")).not.toEqual(
+      searchKeys.result("두유", "WEIGHT_LOSS", "SUGAR_LOW"),
+    );
+  });
+
+  it("0쪽부터 hasNext가 있을 때만 다음 페이지를 부른다", () => {
+    const { getNextPageParam, initialPageParam } = searchQueries.result(
+      "두유",
+      "WEIGHT_LOSS",
+    );
+    expect(initialPageParam).toBe(0);
+    expect(getNextPageParam(page({ hasNext: true }), [], 0, [0])).toBe(1);
+    expect(
+      getNextPageParam(page({ hasNext: false }), [], 1, [0, 1]),
+    ).toBeUndefined();
   });
 });
 
@@ -65,33 +73,36 @@ describe("searchQueries.suggestions", () => {
 });
 
 describe("setSearchItemSaved", () => {
-  it("캐시된 모든 검색 결과에서 그 상품의 저장 표시만 바꾼다", () => {
+  it("목표·정렬이 다른 검색까지 pinned·목록·같은 종류 상위의 그 제품만 표시를 바꾼다", () => {
     const queryClient = new QueryClient();
     const keys = [
-      searchKeys.result("두유"),
-      searchKeys.result("우유", "WEIGHT_LOSS"),
+      searchKeys.result("두유", "WEIGHT_LOSS"),
+      searchKeys.result("두유", "MUSCLE_GAIN", "PROTEIN_HIGH"),
     ];
     for (const key of keys)
       queryClient.setQueryData(key, {
         pages: [
-          page({ exactMatches: { total: 2, items: [item("7"), item("8")] } }),
-          page({ similarProducts: { total: 1, items: [item("7")] } }),
-          page({ sameCategoryTop: [item("7")] }),
+          page({
+            pinned: card(7),
+            items: [card(7), card(8)],
+            sameCategoryTop: [card(7)],
+          }),
         ],
-        pageParams: [0, 1, 2],
+        pageParams: [0],
       });
 
     setSearchItemSaved(queryClient, "7", true);
 
     for (const key of keys) {
-      const data = queryClient.getQueryData<{ pages: SearchResult[] }>(key)!;
-      expect(data.pages[0].exactMatches.items.map((i) => i.saved)).toEqual([
-        true,
-        false,
+      const [first] = queryClient.getQueryData<{ pages: SearchResult[] }>(
+        key,
+      )!.pages;
+      expect(first.pinned?.saved).toBe(true);
+      expect(first.items.map((c) => [c.id, c.saved])).toEqual([
+        ["7", true],
+        ["8", false],
       ]);
-      expect(data.pages[1].similarProducts.items[0].saved).toBe(true);
-      expect(data.pages[2].sameCategoryTop[0].saved).toBe(true);
-      expect(queryClient.getQueryState(key)?.isInvalidated).toBe(false);
+      expect(first.sameCategoryTop[0].saved).toBe(true);
     }
   });
 });

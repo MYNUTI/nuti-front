@@ -2,7 +2,7 @@ import axios, { AxiosError } from "axios";
 import { describe, expect, it } from "vitest";
 import {
   ApiError,
-  isConsentRequired,
+  isRejectedByServer,
   toApiError,
   toErrorMessage,
 } from "@/lib/api/errors";
@@ -108,14 +108,27 @@ describe("toErrorMessage", () => {
   });
 });
 
-describe("isConsentRequired", () => {
-  it("개인정보·건강정보 동의 필요만 참이다", () => {
-    const of = (
-      code: "CONSENT_REQUIRED" | "HEALTH_CONSENT_REQUIRED" | "FORBIDDEN",
-    ) => isConsentRequired(new ApiError({ status: 403, code, message: "" }));
-    expect(of("CONSENT_REQUIRED")).toBe(true);
-    expect(of("HEALTH_CONSENT_REQUIRED")).toBe(true);
-    expect(of("FORBIDDEN")).toBe(false);
-    expect(isConsentRequired(new Error("CONSENT_REQUIRED"))).toBe(false);
+describe("isRejectedByServer", () => {
+  it("서버가 거절한 4xx만 true", () => {
+    expect(
+      isRejectedByServer(
+        new ApiError({
+          status: 429,
+          code: "DAILY_LIMIT_EXCEEDED",
+          message: "x",
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      isRejectedByServer(
+        new ApiError({ status: null, code: "NETWORK_ERROR", message: "x" }),
+      ),
+    ).toBe(false);
+    expect(
+      isRejectedByServer(
+        new ApiError({ status: 503, code: "UNKNOWN", message: "x" }),
+      ),
+    ).toBe(false);
+    expect(isRejectedByServer(new Error("x"))).toBe(false);
   });
 });

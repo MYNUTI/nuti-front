@@ -17,8 +17,8 @@ const SESSION_MAX_AGE_SECONDS = 30 * 60;
 // 쿠키 만료가 아니라 JWT `exp`로 판단한다. 세션 쿠키로 두면 PWA를 다시 열 때 로그인이 풀린다
 export const TOKEN_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 
-// 브라우저가 허용하는 쿠키 만료 상한(Chrome 400일). 익명 ID가 사라지면 동의 전 익명 기록과 연결이 끊긴다
-const ANONYMOUS_ID_MAX_AGE_SECONDS = 400 * 24 * 60 * 60;
+// 브라우저가 허용하는 쿠키 만료 상한(Chrome 400일). 익명 ID가 사라지면 이 기기의 기록(저장·최근 본 제품 등)과 연결이 끊긴다
+export const ANONYMOUS_ID_MAX_AGE_SECONDS = 400 * 24 * 60 * 60;
 
 // 외부 링크로 상세에 들어와도 첫 요청에 쿠키가 실려 서버 렌더가 개인 기준이 되도록 Strict가 아닌 Lax다.
 // 백엔드는 쿠키가 아니라 헤더로 인증해 CSRF 부담은 없다
@@ -27,7 +27,7 @@ export const COOKIE_SAME_SITE = "lax";
 export type Identity = {
   accessToken: string | null;
   refreshToken: string | null;
-  /** 개인정보 동의 전에는 서버가 발급하지 않아 null */
+  /** 기기가 만든 UUID(v3, 서버는 발급하지 않는다). 첫 요청 전에는 아직 없어 null */
   anonymousId: string | null;
 };
 
@@ -88,8 +88,25 @@ export function saveAnonymousId(anonymousId: string) {
   );
 }
 
-export function clearAnonymousId() {
-  deleteCookie(IDENTITY_COOKIES.anonymousId);
+/**
+ * 이 기기의 익명 ID를 돌려준다. 없으면 UUID로 만들어 저장한다(v3: 기기가 첫 실행 때 만들고 동의 없이 쓴다).
+ * 서버는 UUID 모양이 아닌 값을 없는 것으로 본다
+ */
+export function ensureAnonymousId(): string {
+  const existing = readCookie(IDENTITY_COOKIES.anonymousId);
+  if (existing) return existing;
+  const anonymousId = crypto.randomUUID();
+  saveAnonymousId(anonymousId);
+  return anonymousId;
+}
+
+/**
+ * 익명 ID를 새로 만든다. 로그아웃·탈퇴·세션 만료 뒤에 쓴다. 공용 기기에서 다음 사람이 이전 기록을
+ * 이어받지 않게 한다(서버 추천, 탈퇴는 필수). 로그인 때는 바꾸지 않는다 — 서버가 기록 병합에 실패하면
+ * 다음 로그인 때 같은 ID로 다시 옮긴다(API 작업 플랜 결정 기록 2026-11-21)
+ */
+export function rotateAnonymousId() {
+  saveAnonymousId(crypto.randomUUID());
 }
 
 /**
@@ -106,7 +123,7 @@ export function touchSessionId(): string {
 // 값은 Next `cookies()`와 같은 방식으로 인코딩한다(쓸 때 encodeURIComponent, 읽을 때 decodeURIComponent).
 // 같은 도메인의 다른 쿠키는 형식이 깨져 있을 수 있어 우리 쿠키만 디코딩한다.
 // 디코딩에 실패하면 Next `cookies()`처럼 없는 쿠키로 본다.
-function readCookie(name: string): string | null {
+export function readCookie(name: string): string | null {
   for (const pair of document.cookie.split(";")) {
     const separator = pair.indexOf("=");
     if (separator === -1 || pair.slice(0, separator).trim() !== name) continue;
@@ -119,13 +136,17 @@ function readCookie(name: string): string | null {
   return null;
 }
 
-// 속성은 `identity.server.ts`의 `nextWithTokens`와 같아야 한다. Secure는 HTTPS에서만 붙여
+// 속성은 `identity.server.ts`의 `nextWithIdentity`와 같아야 한다. Secure는 HTTPS에서만 붙여
 // http://localhost 개발에서도 쿠키가 저장되게 한다
-function writeCookie(name: string, value: string, maxAgeSeconds: number) {
+export function writeCookie(
+  name: string,
+  value: string,
+  maxAgeSeconds: number,
+) {
   const secure = location.protocol === "https:" ? "; Secure" : "";
   document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=${COOKIE_SAME_SITE}${secure}`;
 }
 
-function deleteCookie(name: string) {
+export function deleteCookie(name: string) {
   document.cookie = `${name}=; Path=/; Max-Age=0`;
 }

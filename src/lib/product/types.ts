@@ -1,148 +1,365 @@
 /**
- * 상품·등급 API의 DTO(서버 필드 그대로)와 화면 모델.
- * 기준: 백엔드 커밋 c164ec0의 `BarcodeScanResponse`, `ProductDetailResponse`, `GradeReasonResponse`.
- * 상세 응답의 1차 웹 호환 필드(`id`, `name`, `pns`, `nutrients` 등)는 제거 예정이라 넣지 않는다.
+ * 상품 API의 DTO(서버 필드 그대로)와 화면 모델.
+ * 기준: 배포 Swagger(2026-11-21)와 백엔드 `main` `1ddb9b4`의 `ProductResultResponse`, `ScanResultResponse`,
+ * `PurchaseLinkResponse`. 바코드 조회와 상세가 같은 결과 모양(`ProductResultResponse`)을 쓴다.
  */
 
 import type { Goal } from "@/lib/goal/types";
 
+/**
+ * v3 전 상태 값. 저장·검색 DTO가 아직 쓴다(API v3 동기화 13-3에서 그 도메인을 고칠 때 지운다).
+ * @deprecated 상품 결과는 `ProductState`를 쓴다
+ */
 export type ProductStatus = "ANALYZED" | "INSUFFICIENT";
 
 export type GradeLetter = "A" | "B" | "C" | "D" | "E";
 
+/**
+ * 점수 제외 · 점수 없음 · 분석 완료 · 생산 중단 · 재고 판매 중 · 단종.
+ * 점수 제외(술 · 영유아식 · 환자용 등 점수를 매기지 않는 종류)는 백엔드 `1ddb9b4` 뒤에 생겼다(12-5 확인)
+ */
+export type ProductState =
+  | "SCORE_EXCLUDED"
+  | "NO_SCORE"
+  | "ANALYZED"
+  | "PRODUCTION_STOPPED"
+  | "STOCK_REMAINING"
+  | "DISCONTINUED";
+
+/** 성분표 한 줄의 성분. 화면 순서는 서버가 준 순서다 */
 export type NutrientCode =
   | "CALORIES"
-  | "PROTEIN"
-  | "DIETARY_FIBER"
+  | "CARBOHYDRATE"
   | "SUGAR"
+  | "DIETARY_FIBER"
+  | "PROTEIN"
+  | "FAT"
   | "SATURATED_FAT"
   | "TRANS_FAT"
   | "CHOLESTEROL"
   | "SODIUM";
 
-// ── DTO ──────────────────────────────────────────────────────────────────────
-// 서버는 `@JsonInclude(NON_NULL)`이 붙은 필드만 null일 때 키를 뺀다. 그 필드는 선택 속성으로 두고,
-// 나머지 중 서버 소스에서 null이 될 수 있는 필드는 `| null`이다
+/** 100g(음료 100mL)당 값의 단계. 적은 편 · 보통 · 많은 편 */
+export type NutrientLevel = "LOW" | "MEDIUM" | "HIGH";
 
-export type ProductSummaryDto = {
-  productId: number;
-  name: string;
-  brandName: string | null;
-  imageUrl: string | null;
-  /** 영양정보 행이 없으면 null */
-  servingSize: string | null;
-  /** 출처 문구. 스캔·상세 모두 오고, 서버 DB 문구가 없으면 키가 빠진다(노션 명세는 상세에만 적음) */
-  sourceNote?: string;
+/** 목표에서 이 성분이 좋은지 나쁜지. 등급에 쓰는 8종에만 온다 */
+export type NutrientTone = "GOOD" | "BAD" | "NEUTRAL";
+
+/** 더 맞는 제품: 이미 A·B / 같은 중분류에 더 높은 점수 `count`개 / C~E인데 후보 없음 */
+export type BetterChoiceStatus = "TOP" | "AVAILABLE" | "NONE";
+
+/**
+ * 구매 줄 문구를 정한다. EXACT 같은 용량(판매가), OTHER_SIZE 다른 용량(묶음이면 1개당 값, 판매가 없음),
+ * NAME_SEARCH 용량을 확인하지 못한 예전 연결(검색 결과, 「구매하기」 금지), NONE 링크 없음.
+ * OTHER_SIZE는 백엔드 `1ddb9b4` 뒤에 생겼다(12-5 확인, 배포 Swagger 2026-11-28)
+ */
+export type PurchaseMatchType = "EXACT" | "OTHER_SIZE" | "NAME_SEARCH" | "NONE";
+
+/** 판매 중 · 판매 상태를 확인하지 못함(가격을 숨기고 링크는 그 제품 이름의 쿠팡 검색 결과) */
+export type SaleStatus = "ON_SALE" | "UNKNOWN";
+
+/** 상세 조회의 `source` query. 서버가 최근 본 제품에 들어온 경로로 남긴다 */
+export type ProductViewSource =
+  | "SEARCH"
+  | "RANKING"
+  | "HOME"
+  | "HISTORY"
+  | "SAVED"
+  | "ALTERNATIVE"
+  | "COMPARE"
+  | "OTHER";
+
+// ── DTO ──────────────────────────────────────────────────────────────────────
+// `ProductResultResponse`는 null 필드도 키를 보낸다(`@JsonInclude` 없음). `PurchaseLinkResponse`는
+// `@JsonInclude(NON_NULL)` 필드만 null일 때 키를 빼 선택 속성으로 둔다
+
+export type AmountDto = {
+  /** 값이 없으면 null(0과 구분) */
+  value: number | null;
+  /** 1일 기준치 %. 기준치가 없는 성분(트랜스지방 등)은 null */
+  dvPercent: number | null;
+  level: NutrientLevel | null;
+  levelLabel: string | null;
 };
 
-export type GradeBadgeDto = {
+export type NutrientRowDto = {
+  nutrient: NutrientCode;
+  label: string;
+  unit: string;
+  per100g: AmountDto;
+  /** 1회 제공량 값이 없으면 null */
+  perServing: AmountDto | null;
+  /** 100g 값이 없음 → 화면은 「표시 없음」 */
+  missing: boolean;
+  /** 목표별 좋고 나쁨. 등급에 쓰는 8종만, 점수가 없으면 null */
+  tones: Partial<Record<Goal, NutrientTone>> | null;
+};
+
+export type PointDto = {
+  nutrient: string;
+  text: string;
+  missing: boolean;
+  note: string | null;
+};
+
+export type BetterChoiceDto = { status: BetterChoiceStatus; count: number };
+
+export type GoalResultDto = {
+  goal: Goal;
+  goalLabel: string;
   /** 0~100 */
   score: number;
   grade: GradeLetter;
-  /** DB 문구가 없으면 서버가 기본 문구로 채운다(`CalibrationService.label`) */
+  /** 잘 맞음 · 맞는 편 · 보통 · 안 맞는 편 · 안 맞음 */
   label: string;
-  /** 서버 DB 문구라 없으면 null이다 */
-  badgeText: string | null;
-  /** 식이섬유 값이 있었는지. 없으면 0으로 계산했다 */
-  fiberIncluded: boolean;
+  /** 한 줄 해석 */
+  summary: string;
+  goods: PointDto[];
+  bads: PointDto[];
+  /** 아쉬운 점이 없을 때만 「이 목표에서 아쉬운 점이 없어요」 */
+  badsEmptyText: string | null;
+  better: BetterChoiceDto;
 };
 
-/** 1회 제공량 기준 값. 판정 7종 중 빠진 값이 있으면 INSUFFICIENT라 어느 값이든 null일 수 있다 */
-export type NutritionDto = {
-  calories: number | null;
-  protein: number | null;
-  sugar: number | null;
-  saturatedFat: number | null;
-  transFat: number | null;
-  cholesterol: number | null;
-  sodium: number | null;
-  dietaryFiber: number | null;
+export type PurchaseLinkDto = {
+  /** 링크가 있을 때 COUPANG */
+  vendor?: string;
+  url?: string;
+  matchType: PurchaseMatchType;
+  /** 링크가 있을 때 */
+  saleStatus?: SaleStatus;
+  /** EXACT일 때 판매가 */
+  price?: number;
+  /** EXACT일 때 100g(mL)당 값. 쿠팡 상품명에 1개 용량 · 개수가 다 적혔을 때만 */
+  per100Price?: number;
+  /** `per100Price`의 단위(g · mL) */
+  per100Unit?: string;
+  /** OTHER_SIZE일 때 쿠팡 상품명에서 읽은 묶음 수 */
+  bundleCount?: number;
+  /** 1개당 값(판매가 ÷ 개수). EXACT · OTHER_SIZE에서 개수가 적혔을 때만 */
+  unitPrice?: number;
+  /** price나 unitPrice가 있을 때 — 「○월 ○일 기준」 */
+  priceCheckedAt?: string;
+  /** priceCheckedAt이 있을 때 — 조회한 지 24시간이 지났으면 true */
+  priceStale?: boolean;
+  isAd: boolean;
+  /** 구매 버튼 바로 옆에 둘 광고 고지(링크가 있을 때) */
+  adNotice?: string;
 };
 
-/** `GET /products/barcode/{barcode}` */
-export type BarcodeScanDto = {
-  status: ProductStatus;
-  product: ProductSummaryDto;
-  /** INSUFFICIENT면 없다 */
-  grade?: GradeBadgeDto;
-  /** INSUFFICIENT이거나 감점 요인이 없으면 없다 */
-  topReason?: string;
-  appliedGoal: Goal;
-};
-
-/** `GET /products/{productId}` */
-export type ProductDetailDto = BarcodeScanDto & {
-  /** 영양정보 행이 없으면 없다 */
-  nutrition?: NutritionDto;
-  /** 소유자(로그인·익명) 기준 */
-  saved: boolean;
-};
-
-/** `GET /products/{productId}/grade-reason`. INSUFFICIENT 상품은 409 `GRADE_NOT_AVAILABLE` */
-export type GradeReasonDto = {
-  appliedGoal: Goal;
-  /** 감점이 큰 순. 감점이 없으면 빈 배열 */
-  factors: GradeFactorDto[];
-  /** 식이섬유 값이 없어 0으로 계산했을 때만 온다 */
-  fiberNotice?: string;
-  methodology: { steps: string[]; note: string | null };
-};
-
-export type GradeFactorDto = {
-  nutrient: NutrientCode;
-  label: string;
-  /** 100g 기준 */
-  value: number;
-  unit: string;
-  /** 감점 시작 기준값 */
-  threshold: number | null;
-  sentence: string | null;
-};
-
-// ── 화면 모델 ────────────────────────────────────────────────────────────────
-
-export type ProductSummary = {
-  /** 상세 경로(`/product/[id]`)와 스캔 결과(`ScanResult.id`)가 문자열이라 문자열로 바꾼다 */
-  id: string;
+/** `GET /products/{productId}`, 바코드 조회의 `result` */
+export type ProductResultDto = {
+  productId: number;
   name: string;
-  brandName: string | null;
+  /** 브랜드, 없으면 「제조 ○○」 */
+  brandLine: string | null;
   imageUrl: string | null;
-  servingSize: string | null;
+  state: ProductState;
+  stateLabel: string;
+  /** 분류가 없으면 null */
+  category: { code: string; name: string } | null;
+  /** 마시는 환자용 균형영양식이면 「환자용 식품이에요」 */
+  patientFoodNote: string | null;
+  /**
+   * 1회 제공량이 없으면 null. text는 성분표에 적힌 그대로(「1개(40g)」), 거기서 양을 못 읽으면 amount·unit이 null이다
+   * (백엔드 `ServingSize.parse`)
+   */
+  serving: { text: string; amount: number | null; unit: string | null } | null;
+  basis: "100g" | "100mL";
+  /** 감량 점수에 쓴 하루 칼로리 구간 */
+  kcalBand: number;
+  /** 점수가 없으면 null */
+  gradeVersion: string | null;
+  /** 두 목표. 점수가 없으면 빈 배열 */
+  goals: GoalResultDto[];
+  nutrients: NutrientRowDto[];
+  purchase: PurchaseLinkDto;
+  saved: boolean;
   sourceNote: string | null;
 };
 
-export type GradeBadge = GradeBadgeDto;
-
-/**
- * 등급 유무를 status로 나눈다. 등급은 status를 ANALYZED로 좁혀야 꺼낼 수 있어, 등급 없음 처리를
- * 빠뜨리거나 「분석 완료인데 등급 없음」 같은 조합을 만들 수 없다.
- */
-export type Grading =
-  | {
-      status: "ANALYZED";
-      grade: GradeBadge;
-      /** 감점 요인이 없으면 null */
-      topReason: string | null;
-    }
-  | { status: "INSUFFICIENT" };
-
-export type ScannedProduct = Grading & {
-  product: ProductSummary;
-  appliedGoal: Goal;
+export type ProductCandidateDto = {
+  productId: number;
+  name: string;
+  brandLine: string | null;
+  imageUrl: string | null;
+  state: ProductState;
+  stateLabel: string;
 };
 
-export type Nutrition = NutritionDto;
+/** 목록 카드의 목표별 점수·등급 */
+export type GoalGradeDto = {
+  goal: Goal;
+  /** 0~100 */
+  score: number;
+  grade: GradeLetter;
+  label: string;
+};
 
-export type ProductDetail = ScannedProduct & {
-  nutrition: Nutrition | null;
+/** 영양소 정렬일 때만 온다. 카드 태그 한 줄을 「단백질 21g · 100g당」으로 바꾼다 */
+export type SortValueDto = {
+  nutrient: string;
+  value: number | null;
+  unit: string;
+  basis: string;
+  text: string;
+};
+
+/**
+ * 목록 카드 한 장. 검색·랭킹·최근 본 제품·즐겨찾기·더 맞는 제품이 같은 모양을 쓴다.
+ * `sortValue`·`better`는 `@JsonInclude(NON_NULL)`이라 없으면 키가 빠진다
+ */
+export type ProductCardDto = {
+  productId: number;
+  name: string;
+  brandLine: string | null;
+  imageUrl: string | null;
+  state: ProductState;
+  stateLabel: string;
+  /** 두 목표의 점수·등급. 점수가 없으면 빈 배열 */
+  goals: GoalGradeDto[];
+  /**
+   * 요청 목표 기준 「이 점수인 이유」 짧은 말 최대 두 개. 좋은 점 1 + 아쉬운 점 1을 먼저 넣고, 한쪽이
+   * 없으면 다른 쪽으로 채운다(좋은 점만 2개·아쉬운 점만 2개도 온다). 좋은지 나쁜지 표시는 없다
+   * (백엔드 `NutrientEvaluator.tags`)
+   */
+  tags: string[];
+  sortValue?: SortValueDto;
+  /** 최근 본 제품·즐겨찾기·결과에서만 온다 */
+  better?: BetterChoiceDto;
   saved: boolean;
 };
 
-export type GradeFactor = GradeFactorDto;
-
-export type GradeReason = {
-  appliedGoal: Goal;
-  factors: GradeFactor[];
-  fiberNotice: string | null;
-  methodology: { steps: string[]; note: string | null };
+/** 후보 − 지금 제품, 100g(음료 100mL)당. 예 「칼로리 −29kcal」 */
+export type AlternativeDiffDto = {
+  nutrient: string;
+  label: string;
+  unit: string;
+  diff: number;
+  text: string;
 };
+
+/**
+ * `GET /products/{productId}/alternatives`. 같은 중분류에서 요청 목표 점수가 더 높은 제품(분석 완료·생산 중),
+ * 점수 높은 순. 지금 제품에 점수나 중분류가 없으면 `items`가 빈 배열. `page`는 0부터
+ */
+export type AlternativesDto = {
+  current: ProductCardDto;
+  goal: Goal;
+  kcalBand: number;
+  total: number;
+  page: number;
+  size: number;
+  hasNext: boolean;
+  items: { product: ProductCardDto; diffs: AlternativeDiffDto[] }[];
+};
+
+/**
+ * `GET /products/barcode/{barcode}`. 미등록도 200(`NOT_FOUND`)이다. 체크섬이 틀리면 400
+ * `BARCODE_CHECKSUM_INVALID`. `barcode`는 서버가 13자리로 정규화한 값이다
+ */
+export type ScanResultDto =
+  | {
+      /** RESULT: 점수 있는 제품 하나. NO_SCORE: 성분 7가지 중 빠진 것이 있어 `goals`가 빈 배열 */
+      outcome: "RESULT" | "NO_SCORE";
+      barcode: string;
+      result: ProductResultDto;
+      candidates: null;
+    }
+  | {
+      /** 바코드에 제품이 둘 이상. 고른 뒤 상세를 조회한다 */
+      outcome: "MULTIPLE";
+      barcode: string;
+      result: null;
+      candidates: ProductCandidateDto[];
+    }
+  | { outcome: "NOT_FOUND"; barcode: string; result: null; candidates: null };
+
+// ── 화면 모델 ────────────────────────────────────────────────────────────────
+
+export type Amount = AmountDto;
+export type NutrientRow = NutrientRowDto;
+export type Point = PointDto;
+export type GoalResult = GoalResultDto;
+
+export type PurchaseLink = {
+  matchType: PurchaseMatchType;
+  url: string | null;
+  /** 링크가 없으면 null */
+  saleStatus: SaleStatus | null;
+  price: number | null;
+  per100Price: number | null;
+  per100Unit: string | null;
+  bundleCount: number | null;
+  unitPrice: number | null;
+  priceCheckedAt: string | null;
+  priceStale: boolean;
+  isAd: boolean;
+  adNotice: string | null;
+};
+
+export type ProductResult = {
+  /** 상세 경로(`/product/[id]`)가 문자열이라 문자열로 바꾼다 */
+  id: string;
+  name: string;
+  brandLine: string | null;
+  imageUrl: string | null;
+  state: ProductState;
+  stateLabel: string;
+  category: { code: string; name: string } | null;
+  patientFoodNote: string | null;
+  serving: { text: string; amount: number | null; unit: string | null } | null;
+  basis: "100g" | "100mL";
+  kcalBand: number;
+  /** 목표별 결과. 점수가 없는 제품은 null이라, 점수를 꺼내려면 null 처리를 거쳐야 한다 */
+  goals: Record<Goal, GoalResult> | null;
+  nutrients: NutrientRow[];
+  purchase: PurchaseLink;
+  saved: boolean;
+  sourceNote: string | null;
+};
+
+export type ProductCandidate = Omit<ProductCandidateDto, "productId"> & {
+  id: string;
+};
+
+export type GoalGrade = GoalGradeDto;
+export type SortValue = SortValueDto;
+export type BetterChoice = BetterChoiceDto;
+export type AlternativeDiff = AlternativeDiffDto;
+
+/** 목록 카드. UI 부품 `ProductCard`와 이름이 겹치지 않게 `Data`를 붙인다 */
+export type ProductCardData = {
+  id: string;
+  name: string;
+  brandLine: string | null;
+  imageUrl: string | null;
+  state: ProductState;
+  stateLabel: string;
+  /** 목표별 점수·등급. 점수가 없는 제품은 null */
+  goals: Record<Goal, GoalGrade> | null;
+  tags: string[];
+  sortValue: SortValue | null;
+  better: BetterChoice | null;
+  saved: boolean;
+};
+
+export type Alternative = {
+  product: ProductCardData;
+  diffs: AlternativeDiff[];
+};
+
+/** 더 맞는 제품 한 페이지 */
+export type AlternativesPage = {
+  current: ProductCardData;
+  goal: Goal;
+  kcalBand: number;
+  total: number;
+  hasNext: boolean;
+  items: Alternative[];
+};
+
+export type BarcodeScan =
+  | { outcome: "RESULT" | "NO_SCORE"; barcode: string; product: ProductResult }
+  | { outcome: "MULTIPLE"; barcode: string; candidates: ProductCandidate[] }
+  | { outcome: "NOT_FOUND"; barcode: string };

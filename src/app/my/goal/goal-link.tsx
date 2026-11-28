@@ -3,31 +3,32 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
+import { useDeviceGoal } from "@/lib/goal/device";
+
 import type { Goal } from "../_fixtures";
-import { GOAL_LABEL } from "../goals";
+import { GOAL_LABEL, SCREEN_GOAL } from "../goals";
 import { goalPickerHref } from "./next-path";
 
 /*
  * 홈 · 검색 결과 · 랭킹의 「목표: ○○ ›」(→ 5-2 목표 바꾸기). 【최종】 5-2 메모대로 바꾼 뒤 이 화면으로 돌아오게
- * 지금 주소를 `next`로 넘긴다. 목표는 기기 저장소 · API가 생기기 전까지 주소 `?goal=`이 정하고, 없으면 그 화면의 기본값
+ * 지금 주소를 `next`로 넘긴다. 목표는 기기 목표(`useDeviceGoal`)다. 서버 렌더에서는 쿠키를 읽지 않아 `fallback`으로 그린다
  */
 export function GoalLink({
   fallback,
   className,
 }: {
-  /** 주소에 목표가 없을 때(fixture) */
+  /** 서버 렌더 · 고른 적이 없을 때 보일 목표. 서버가 쿠키로 읽은 목표를 넘기면 그려진 뒤 바뀌지 않는다 */
   fallback: Goal;
   className?: string;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const fromUrl = searchParams.get("goal");
-  const goal: Goal =
-    fromUrl === "diet" || fromUrl === "muscle" ? fromUrl : fallback;
+  const deviceGoal = useDeviceGoal();
+  const goal: Goal = deviceGoal ? SCREEN_GOAL[deviceGoal] : fallback;
   const query = searchParams.toString();
   return (
     <Link
-      href={goalPickerHref(goal, `${pathname}${query ? `?${query}` : ""}`)}
+      href={goalPickerHref(`${pathname}${query ? `?${query}` : ""}`)}
       className={className}
     >
       목표: {GOAL_LABEL[goal]} <span aria-hidden>›</span>

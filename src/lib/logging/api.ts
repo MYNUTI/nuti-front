@@ -2,9 +2,9 @@ import type { AxiosInstance, AxiosRequestConfig } from "axios";
 import { unwrap } from "@/lib/api/response";
 import type { ApiSuccess } from "@/lib/api/types";
 import type {
+  EventBatchDto,
+  EventBatchResultDto,
   FilterLogDto,
-  ImpressionLogDto,
-  OnboardingStepLogDto,
   ProductLogDto,
   ScanEventLogDto,
   SearchLogDto,
@@ -42,15 +42,18 @@ export const postSearchLog = (http: AxiosInstance, body: SearchLogDto) =>
 export const postFilterLog = (http: AxiosInstance, body: FilterLogDto) =>
   post(http, "/logging/filter", body);
 
-export const postImpressionLog = (
-  http: AxiosInstance,
-  body: ImpressionLogDto,
-) => post(http, "/logging/impression", body);
-
 export const postScanEventLog = (http: AxiosInstance, body: ScanEventLogDto) =>
   post(http, "/logging/scan-event", body);
 
-export const postOnboardingStepLog = (
-  http: AxiosInstance,
-  body: OnboardingStepLogDto,
-) => post(http, "/logging/onboarding-step", body);
+/**
+ * v3 앱 이벤트 묶음. 화면을 떠나는 순간(세션 끝, 구매 버튼 등)에 보내는 이벤트도 있어 CTA처럼 fetch keepalive로
+ * 보낸다. keepalive 본문은 진행 중인 요청을 합쳐 64KB까지라(넘으면 실패해 버려진다) 지금은 `logEvent`가 한 개씩
+ * 보낸다. 묶어 보내게 되면 서버 상한 100개보다 64KB가 먼저 걸린다
+ */
+export const postEvents = (http: AxiosInstance, body: EventBatchDto) =>
+  http
+    .post<ApiSuccess<EventBatchResultDto>>("/events", body, {
+      adapter: "fetch",
+      fetchOptions: { keepalive: true },
+    })
+    .then(unwrap);

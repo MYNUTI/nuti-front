@@ -1,5 +1,6 @@
 "use client";
 
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -7,16 +8,10 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/common/button";
 import { EmptyState, ErrorState } from "@/components/common/empty-state";
 import { TabBar } from "@/components/common/tab-bar";
+import { useDeviceGoal } from "@/lib/goal/device";
+import { rankingQueries } from "@/lib/ranking/queries";
 
-import {
-  FIXTURE_MAJORS,
-  FIXTURE_UPDATED_AT,
-  fixtureBrandList,
-  fixtureFilterSheet,
-  fixtureOverview,
-  NO_FILTERS,
-  type RankingGoal,
-} from "./_fixtures";
+import type { RankingGoal, RankingMajor } from "./model";
 import {
   DEFAULT_RANKING_SORT,
   filterSummary,
@@ -37,9 +32,6 @@ import { RankingFilterSheet } from "./ranking-filter-sheet";
 import { TopRow } from "./ranking-items";
 import { useRankingFilters } from "./use-ranking-filters";
 
-// 묶음마다 그 대분류의 중분류 앞 3개에서 1위를 하나씩 보인다
-const ROWS_PER_GROUP = 3;
-
 const noSubscribe = () => () => {};
 
 /*
@@ -48,20 +40,26 @@ const noSubscribe = () => () => {};
  * 【최종】 메모: 탭을 다시 누르면 마지막에 본 중분류(2-2 점수 순위)로 간다.
  * 필터 적용(【최종】 「판매처 쿠팡」 9722:19856 — 홈 「판매처별로 보기」 · 「쿠팡에서 살 수 있는 제품 전체」에서 온다):
  * 대분류마다 필터에 맞는 제품이 있는 중분류 앞 3개에서 1위, 그런 중분류가 없는 묶음은 뺀다. 기준 줄 앞에 「쿠팡 제품만,」.
- * `review/v3-rankings`의 `ranking-home.tsx`를 옮기고 데이터를 fixture로 바꿨다.
+ * `review/v3-rankings`의 `ranking-home.tsx`를 옮겼다. 데이터는 `GET /rankings/leaders`(대분류마다 순위가 열린 중분류 앞 3개의 1위,
+ * 1위가 하나도 없는 묶음은 서버가 뺀다). 순위가 열린 종류가 있는지는 서버가 넘긴 분류로 정한다.
  */
 export function RankingHome({
-  goal,
+  majors,
+  goal: serverGoal,
   failed,
   noneOpen,
 }: {
+  /** 분류 목록(종류 고르기 시트 · 마지막에 본 칩 확인) */
+  majors: readonly RankingMajor[];
   goal: RankingGoal;
   /** 미리 보기 `?state=error` */
   failed: boolean;
-  /** 미리 보기 `?state=empty` — 순위가 열린 종류가 하나도 없을 때 */
+  /** 순위가 열린 종류가 하나도 없을 때(미리 보기 `?state=empty` 포함) */
   noneOpen: boolean;
 }) {
   const router = useRouter();
+  // 서버가 쿠키로 읽은 목표. 브라우저에서는 기기 목표를 따른다(뒤로 가기는 이전 서버 그림을 다시 쓰고, 쿠키가 막히면 서버가 모른다)
+  const goal = useDeviceGoal() ?? serverGoal;
   // 표시는 라우터의 현재 주소에서 읽는다. 서버가 넘긴 값은 뒤로 와서 다시 붙을 때 처음 받아 둔 것이 오고,
   // window.location은 화면을 옮기는 중에는 아직 이전 주소다
   const searchParams = useSearchParams();
@@ -91,7 +89,7 @@ export function RankingHome({
   // 서버 그림에는 저장소가 없어 null. 브라우저에서 바로 열 때는 처음부터 읽어 목록이 잠깐 보이지 않게 한다
   const last = useSyncExternalStore(
     noSubscribe,
-    () => (fromTab ? readLastChip() : null),
+    () => (fromTab ? readLastChip(majors) : null),
     () => null,
   );
 
@@ -126,6 +124,13 @@ export function RankingHome({
     );
   }, [last, filters]);
 
+  const leaders = useQuery({
+    ...rankingQueries.leaders({ goal, filters }),
+    enabled: !last && !noneOpen,
+    // 필터를 바꾸면 새 묶음이 올 때까지 앞 묶음을 둔다
+    placeholderData: keepPreviousData,
+  });
+
   if (last)
     return (
       <>
@@ -134,21 +139,15 @@ export function RankingHome({
       </>
     );
 
-  // 중분류에 (필터에 맞는) 점수 있는 제품이 없으면 그 줄을 빼고, 줄이 하나도 없는 묶음은 뺀다
-  const groupsFor = (f: typeof filters) =>
-    noneOpen
-      ? []
-      : FIXTURE_MAJORS.map((major) => ({
-          major,
-          rows: fixtureOverview(major, 1, f).slice(0, ROWS_PER_GROUP),
-        })).filter((g) => g.rows.length > 0);
-  const groups = groupsFor(filters);
-  const summary = filterSummary(filters);
-  const updated = formatUpdatedDate(FIXTURE_UPDATED_AT);
-
   // 순위가 열린 종류가 하나도 없을 때(필터 때문에 비면 아래 필터 0건)
-  if (!failed && (summary ? groupsFor(NO_FILTERS) : groups).length === 0)
+  if (!failed && noneOpen) return <NoneOpen />;
+
+  const groups = leaders.data?.groups ?? [];
+  const summary = filterSummary(filters);
+  // 분류에 열린 칩이 있어도 합산 칩뿐이면 첫 화면 묶음이 빈다(서버가 합산 칩을 뺀다). 필터 없이 비면 「열린 종류가 없을 때」
+  if (!failed && leaders.data && groups.length === 0 && !summary)
     return <NoneOpen />;
+  const updated = formatUpdatedDate(leaders.data?.updatedAt ?? null);
 
   return (
     <>
@@ -174,14 +173,24 @@ export function RankingHome({
         />
 
         <div className="flex flex-1 flex-col gap-2.5 bg-bg-band px-4 pt-1 pb-4">
-          {failed ? (
+          {failed || (leaders.isError && !leaders.data) ? (
             <ErrorState
               // 랭킹의 오류 제목은 【최종】 2-2 메모(「순위를 불러오지 못했어요」)
               title="순위를 불러오지 못했어요"
-              onRetry={() => router.refresh()}
+              onRetry={() =>
+                failed ? router.refresh() : void leaders.refetch()
+              }
               retryKind="secondary"
               className="rounded-md bg-white"
             />
+          ) : !leaders.data ? (
+            // 그린 화면이 없어 「더 불러오는 중」과 같은 모양의 한 줄로 둔다(2-4와 같다)
+            <p
+              role="status"
+              className="py-3 text-center text-[13px] leading-4 text-text-sub"
+            >
+              불러오는 중
+            </p>
           ) : groups.length === 0 ? (
             <EmptyState
               // 필터에 맞는 묶음이 없을 때는 그림이 없어 중분류 순위의 필터 0건과 같게 둔다(남은 질문 33)
@@ -195,23 +204,22 @@ export function RankingHome({
               }
             />
           ) : (
-            groups.map(({ major, rows }) => (
+            groups.map(({ majorCode, majorName, items }) => (
               <GroupCard
-                key={major.code}
-                id={`major-${major.code}`}
-                title={major.name}
+                key={majorCode}
+                id={`major-${majorCode}`}
+                title={majorName}
                 // 걸린 필터 그대로 대분류 전체(필터 적용)로
-                moreHref={rankingHref(major.code, {
+                moreHref={rankingHref(majorCode, {
                   sort: DEFAULT_RANKING_SORT,
-                  goal,
                   filters,
                 })}
               >
-                {rows.map(({ chip, items }) => (
+                {items.map(({ category, product }) => (
                   <TopRow
-                    key={chip.code}
-                    chipName={chip.name}
-                    product={items[0]}
+                    key={category.code}
+                    chipName={category.name}
+                    product={product}
                   />
                 ))}
               </GroupCard>
@@ -225,9 +233,10 @@ export function RankingHome({
         <RankingCategorySheet
           open
           onOpenChange={(open) => !open && closeCategory()}
+          majors={majors}
           activeCode={null}
           hrefFor={(code) =>
-            rankingHref(code, { sort: DEFAULT_RANKING_SORT, goal, filters })
+            rankingHref(code, { sort: DEFAULT_RANKING_SORT, filters })
           }
         />
       )}
@@ -236,11 +245,10 @@ export function RankingHome({
           open
           onOpenChange={(open) => !open && filter.close()}
           tab={filter.tab}
-          // 종류를 고르지 않아 2-5e 「○○ 브랜드, 가나다순」의 ○○는 「모든 종류」(그림 없음, 남은 질문 38)
+          // 종류를 고르지 않아 서버가 수를 세지 못한다(category 필수, 남은 질문 38). 시트가 수 없는 모양으로 그린다
+          category={null}
           categoryName="모든 종류"
           applied={filters}
-          sheetFor={(draft) => fixtureFilterSheet(null, draft)}
-          brandList={fixtureBrandList(null)}
           onApply={filter.apply}
         />
       )}

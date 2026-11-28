@@ -1,7 +1,8 @@
 /*
- * 2-2 점수 순위의 글자 · 주소 값 다루기. `review/v3-rankings`의 `src/lib/ranking/format.ts`를 옮겼다
- * (API 연결 때 그 파일로 바꾼다).
+ * 2-2 점수 순위의 글자 · 주소 값 다루기. `review/v3-rankings`의 `src/lib/ranking/format.ts`를 옮겼다.
  */
+import { RANKING_PAGE_SIZE } from "@/lib/ranking/page-size";
+
 import { toChosung } from "../search/hangul";
 
 import {
@@ -13,7 +14,7 @@ import {
   type RankingGoal,
   type RankingSort,
   type Seller,
-} from "./_fixtures";
+} from "./model";
 
 /** 화면에서 부르는 목표 이름. 서버 문구는 「체중 감량」이라 화면 이름을 따로 둔다 */
 export const RANKING_GOAL_LABEL: Record<RankingGoal, string> = {
@@ -62,13 +63,17 @@ export const MAJOR_ICON: Record<string, string> = {
 export const DEFAULT_RANKING_SORT: RankingSort = "SCORE";
 
 /** 【최종】 메모: 목록 끝에 닿을 때마다 다음 12개 */
-export const RANKING_PAGE_SIZE = 12;
+export { RANKING_PAGE_SIZE };
 
-/** 주소의 `?n=`(불러온 개수)을 읽는다. 12의 배수로 올리고, 틀렸거나 12 이하면 12 */
+/** 주소로 되살릴 때 이어 부르는 페이지 수 상한. `?n=`이 커도 요청이 끝없이 나가지 않게 한다(2-4와 같다) */
+export const MAX_RESTORE_PAGES = 10;
+
+/** 주소의 `?n=`(불러온 개수)을 읽는다. 12의 배수로 올리고(상한 10페이지), 틀렸거나 12 이하면 12 */
 export function parseRankingShown(value: unknown): number {
   const n = Number(value);
   return Number.isInteger(n) && n > RANKING_PAGE_SIZE
-    ? Math.ceil(n / RANKING_PAGE_SIZE) * RANKING_PAGE_SIZE
+    ? Math.min(Math.ceil(n / RANKING_PAGE_SIZE), MAX_RESTORE_PAGES) *
+        RANKING_PAGE_SIZE
     : RANKING_PAGE_SIZE;
 }
 
@@ -78,11 +83,6 @@ export function parseRankingSort(value: unknown): RankingSort {
     RANKING_SORT_OPTIONS.find((option) => option.value === value)?.value ??
     DEFAULT_RANKING_SORT
   );
-}
-
-/** 주소의 `?goal=` 값(기존 미리보기 주소 `diet` · `muscle`). 그 밖은 다이어트 */
-export function parseRankingGoal(value: unknown): RankingGoal {
-  return value === "muscle" ? "MUSCLE_GAIN" : "WEIGHT_LOSS";
 }
 
 /** 필터 시트 판매처 탭의 줄(【최종】 2-5b, 홈 「판매처별로 보기」와 같은 순서) */
@@ -252,14 +252,12 @@ export function rankingHref(
   code: string,
   {
     sort,
-    goal,
     filters = NO_FILTERS,
-  }: { sort: RankingSort; goal: RankingGoal; filters?: RankingFilters },
+  }: { sort: RankingSort; filters?: RankingFilters },
 ): string {
   const params = new URLSearchParams();
   if (sort !== DEFAULT_RANKING_SORT) params.set("sort", sort);
   writeFilterParams(params, filters);
-  if (goal === "MUSCLE_GAIN") params.set("goal", "muscle");
   const query = params.toString();
   return `/ranking/${encodeURIComponent(code)}${query ? `?${query}` : ""}`;
 }

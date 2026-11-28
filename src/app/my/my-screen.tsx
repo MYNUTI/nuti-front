@@ -11,7 +11,10 @@ import { TopBar, TopBarButton } from "@/components/common/top-bar";
 import { IconChevronRight, IconSearch, IconSettings } from "@/components/icons";
 
 import type { Goal, MyAccount, MyInfo } from "./_fixtures";
-import { GOAL_LABEL } from "./goals";
+import { useDeviceGoal } from "@/lib/goal/device";
+
+import { usePickGoal } from "./goal/use-pick-goal";
+import { GOAL_LABEL, SCREEN_GOAL } from "./goals";
 import { PROVIDER_LABEL } from "./providers";
 
 /** 들어올 때 띄울 알림 띠. body = 5-7b에서 맞춘 뒤, goal = 5-2에서 목표를 바꾼 뒤(previous로 되돌린다) */
@@ -43,7 +46,10 @@ export function MyScreen({
   inquiryUrl: string;
 }) {
   const router = useRouter();
-  const [goal, setGoal] = useState(info.goal);
+  // 뒤로 가기로 캐시된 5-1이 다시 보여도 지금 기기 목표를 보인다(서버 값은 그린 때의 쿠키)
+  const deviceGoal = useDeviceGoal();
+  const goal = deviceGoal ? SCREEN_GOAL[deviceGoal] : info.goal;
+  const pickGoal = usePickGoal("5-1");
   const [toast, setToast] = useState<ToastState | null>(() => {
     if (notice?.kind === "body")
       return { id: 0, message: "내 몸에 맞춰 점수를 다시 계산했어요" };
@@ -60,14 +66,14 @@ export function MyScreen({
     toast?.action === "undo" && notice?.kind === "goal"
       ? {
           label: "되돌리기",
-          // 【최종】 메모: 옛 목표로 다시 저장하고 5-1 내 정보. 저장은 API 연결 때 붙인다
+          // 【최종】 메모: 옛 목표로 다시 저장하고 5-1 내 정보
           onClick: () => {
-            setGoal(notice.previous);
+            pickGoal(notice.previous, "5-1");
             setToast(null);
             const params = new URLSearchParams(window.location.search);
-            params.set("goal", notice.previous);
             params.delete("from");
-            router.replace(`/my?${params}`, { scroll: false });
+            const query = params.toString();
+            router.replace(`/my${query ? `?${query}` : ""}`, { scroll: false });
           },
         }
       : toast?.action === "login"
@@ -132,7 +138,7 @@ export function MyScreen({
 
         <Band />
         <ValueLinkRow
-          href={`/my/goal?goal=${goal}`}
+          href="/my/goal"
           title="내 목표"
           value={GOAL_LABEL[goal]}
           action="바꾸기"

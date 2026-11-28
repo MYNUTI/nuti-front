@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 
-import { cn } from "@/lib/utils";
+import { cn, isRemoteImage } from "@/lib/utils";
 
 /**
  * 제품 카드의 정사각 사진. 사진이 없거나 주소가 깨지면 같은 크기의 회색 칸에 「사진 없음」 그림(글자 없음,
@@ -38,6 +38,7 @@ export function ProductCardPhoto({
   return (
     <Image
       src={src}
+      unoptimized={isRemoteImage(src)}
       width={size}
       height={size}
       sizes={fluid ? "120px" : "114px"}

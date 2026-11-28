@@ -13,28 +13,39 @@ function client(data: unknown) {
 }
 
 describe("검색 API", () => {
-  it("검색은 q·page·size를 보내고 goal은 줄 때만 보낸다", async () => {
-    const empty = { total: 0, items: [] };
+  it("검색은 q·goal·page·size를 보내고 sort는 줄 때만 보낸다", async () => {
     const { http, requests } = client({
       query: "두유",
-      appliedGoal: "GENERAL",
-      exactMatches: empty,
-      similarProducts: empty,
+      goal: "WEIGHT_LOSS",
+      kcalBand: 2000,
+      sort: "SCORE",
+      sortLabel: "점수 높은 순",
+      total: 0,
+      page: 0,
+      size: 20,
+      hasNext: false,
+      items: [],
       sameCategoryTop: [],
-      analysisRequest: { available: true },
+      analysisRequestAvailable: true,
     });
-    await fetchSearch(http, { q: "두유", page: 0, size: 20 });
     await fetchSearch(http, {
       q: "두유",
       goal: "WEIGHT_LOSS",
+      page: 0,
+      size: 20,
+    });
+    await fetchSearch(http, {
+      q: "두유",
+      goal: "MUSCLE_GAIN",
+      sort: "PROTEIN_HIGH",
       page: 1,
       size: 20,
     });
     expect(http.getUri(requests[0])).toBe(
-      "/search?q=%EB%91%90%EC%9C%A0&page=0&size=20",
+      "/search?q=%EB%91%90%EC%9C%A0&goal=WEIGHT_LOSS&page=0&size=20",
     );
     expect(http.getUri(requests[1])).toBe(
-      "/search?q=%EB%91%90%EC%9C%A0&goal=WEIGHT_LOSS&page=1&size=20",
+      "/search?q=%EB%91%90%EC%9C%A0&goal=MUSCLE_GAIN&sort=PROTEIN_HIGH&page=1&size=20",
     );
   });
 
@@ -43,10 +54,14 @@ describe("검색 API", () => {
     await fetchSearchSuggestions(http, "두");
     expect(http.getUri(requests[0])).toBe("/search/suggestions?q=%EB%91%90");
 
-    const popular = client([{ rank: 1, keyword: "두유" }]);
-    await expect(fetchPopularKeywords(popular.http)).resolves.toEqual([
-      { rank: 1, keyword: "두유" },
-    ]);
+    const popular = client({
+      basedAt: "2026-11-23T10:00:00",
+      keywords: [{ rank: 1, keyword: "두유" }],
+    });
+    await expect(fetchPopularKeywords(popular.http)).resolves.toEqual({
+      basedAt: "2026-11-23T10:00:00",
+      keywords: [{ rank: 1, keyword: "두유" }],
+    });
     expect(popular.requests[0].url).toBe("/search/keywords/popular");
   });
 });

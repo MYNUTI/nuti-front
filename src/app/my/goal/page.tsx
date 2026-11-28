@@ -3,8 +3,9 @@ import type { Metadata } from "next";
 import { BackButton } from "@/components/common/back-button";
 import { TopBar } from "@/components/common/top-bar";
 
-import { FIXTURE_GOAL } from "../_fixtures";
-import { toGoal } from "../to-goal";
+import { readServerDeviceGoal } from "@/lib/goal/device.server";
+
+import { SCREEN_GOAL } from "../goals";
 import { GoalPicker } from "./goal-picker";
 import { toGoalNextPath } from "./next-path";
 
@@ -17,12 +18,12 @@ export const metadata: Metadata = { title: "목표 바꾸기" };
 export default async function Page({ searchParams }: PageProps<"/my/goal">) {
   /*
    * 주소 값
-   *   ?goal=diet|muscle — 지금 목표. 기기 저장소가 생기기 전까지 들어온 화면이 넘긴다(없으면 fixture)
    *   ?next= — 바꾼 뒤 돌아갈 홈 · 검색 결과 · 랭킹 주소. 없으면 5-1
    * 미리보기: ?state=synced — 로그인하고 「목표 계정 저장」에 동의한 사람(아래 글이 「이 기기와 계정에」)
    */
-  const { goal: goalParam, next, state } = await searchParams;
-  const goal = toGoal(goalParam) ?? FIXTURE_GOAL;
+  const { next, state } = await searchParams;
+  // 지금 목표는 기기 목표. 고른 적이 없으면 다이어트(ONB_008)
+  const goal = SCREEN_GOAL[(await readServerDeviceGoal()) ?? "WEIGHT_LOSS"];
 
   return (
     <div className="flex min-h-dvh flex-col bg-bg-page pt-safe pb-safe">

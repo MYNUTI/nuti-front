@@ -6,14 +6,14 @@ describe("me mapper", () => {
     expect(
       toMeSummary({
         isLoggedIn: false,
-        goal: { code: "GENERAL", label: "일반" },
+        goal: { code: "WEIGHT_LOSS", label: "체중 감량" },
         recordCount: 3,
         contribution: { requestCount: 1, publishedCount: 0 },
       }),
     ).toEqual({
       isLoggedIn: false,
       profile: null,
-      goal: { goal: "GENERAL", label: "일반" },
+      goal: { goal: "WEIGHT_LOSS", label: "체중 감량" },
       recordCount: 3,
       contribution: { requestCount: 1, publishedCount: 0 },
       footerNotice: null,
@@ -36,13 +36,11 @@ describe("me mapper", () => {
   it("설정의 정책·고객센터 URL이 빠지면 null이다", () => {
     expect(
       toMeSettings({
-        clipboardLinkDetection: true,
         goal: { code: "WEIGHT_LOSS", label: "체중 감량" },
         policies: { privacyUrl: "https://nuti.example/privacy" },
         appVersion: "2.0.0-web",
       }),
     ).toEqual({
-      clipboardLinkDetection: true,
       goal: { goal: "WEIGHT_LOSS", label: "체중 감량" },
       privacyUrl: "https://nuti.example/privacy",
       termsUrl: null,

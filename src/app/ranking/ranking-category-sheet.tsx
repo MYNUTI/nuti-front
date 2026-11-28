@@ -8,8 +8,8 @@ import { BottomSheet } from "@/components/common/sheet";
 import { IconChevronDown } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
-import { FIXTURE_MAJORS } from "./_fixtures";
 import { MAJOR_ICON } from "./format";
+import type { RankingMajor } from "./model";
 
 /*
  * 2-5f 식품 분류(【최종】 ⑥ 지금 종류 9306:17998 · 다른 종류를 펼쳤을 때 18181) — 「종류 고르기」 바닥 시트.
@@ -20,10 +20,13 @@ import { MAJOR_ICON } from "./format";
 export function RankingCategorySheet({
   open,
   onOpenChange,
+  majors,
   activeCode,
   hrefFor,
 }: {
   open: boolean;
+  /** 대분류 15개와 순위가 열린 칩(`GET /rankings/categories`) */
+  majors: readonly RankingMajor[];
   onOpenChange: (open: boolean) => void;
   /** 지금 보는 칩이나 대분류 코드. 종류를 고르지 않았으면 null(모두 접힌 채) */
   activeCode: string | null;
@@ -31,7 +34,7 @@ export function RankingCategorySheet({
   hrefFor: (code: string) => string;
 }) {
   const activeMajor =
-    FIXTURE_MAJORS.find(
+    majors.find(
       (m) =>
         m.code === activeCode || m.chips.some((c) => c.code === activeCode),
     )?.code ?? null;
@@ -41,7 +44,7 @@ export function RankingCategorySheet({
     <BottomSheet open={open} onOpenChange={onOpenChange} title="종류 고르기">
       {/* 공통 시트의 내용 칸 여백(좌우 20 · 위 8 · 아래 16)을 그림(줄이 시트 폭 가득 · 목록 끝 24)에 맞춘다 */}
       <ul className="-mx-5 -mt-2 pb-2">
-        {FIXTURE_MAJORS.map((major) => {
+        {majors.map((major) => {
           const isOpen = expanded === major.code;
           const panelId = `category-${major.code}`;
           return (

@@ -1,6 +1,6 @@
 import axios from "axios";
 import { describe, expect, it } from "vitest";
-import { postAnalysisRequest, postInquiry } from "@/lib/contribution/api";
+import { postAnalysisRequest, postProductReport } from "@/lib/contribution/api";
 import { mockAdapter, success } from "@/test/http";
 
 function client(data: unknown) {
@@ -10,13 +10,20 @@ function client(data: unknown) {
 
 const body = (data: unknown) => JSON.parse(data as string);
 
-describe("기여·문의 API", () => {
+const accepted = {
+  requestCount: 1,
+  status: "ANALYZING",
+  statusLabel: "분석 중",
+  alreadyRequested: false,
+  message: "분석을 요청했어요",
+};
+
+describe("분석 요청·오류 제보 API", () => {
   it("분석 요청은 유형에 맞춘 본문을 보낸다", async () => {
     const { http, requests } = client({
       requestId: 3,
       type: "NUTRITION_FILL",
-      requestCount: 1,
-      status: "WAITING",
+      ...accepted,
     });
     await expect(
       postAnalysisRequest(http, { type: "NUTRITION_FILL", productId: "7" }),
@@ -35,8 +42,7 @@ describe("기여·문의 API", () => {
     const { http, requests } = client({
       requestId: 4,
       type: "NEW_PRODUCT",
-      requestCount: 1,
-      status: "WAITING",
+      ...accepted,
     });
     await expect(
       postAnalysisRequest(http, { type: "NEW_PRODUCT", keyword: "두유" }),
@@ -47,15 +53,49 @@ describe("기여·문의 API", () => {
     });
   });
 
-  it("문의는 받은 본문을 그대로 보낸다", async () => {
-    const { http, requests } = client({ inquiryId: 9 });
+  it("제품명 요청은 type과 제품명·어디서 왔는지를 보낸다", async () => {
+    const { http, requests } = client({
+      requestId: 5,
+      type: "NEW_PRODUCT",
+      ...accepted,
+    });
+    await postAnalysisRequest(http, {
+      type: "NEW_PRODUCT",
+      productName: "고소한 두유",
+      brandName: "정식품",
+      originBarcode: "8801062633029",
+    });
+    expect(body(requests[0].data)).toEqual({
+      type: "NEW_PRODUCT",
+      productName: "고소한 두유",
+      brandName: "정식품",
+      originBarcode: "8801062633029",
+    });
+  });
+
+  it("오류 제보는 path에 인코딩한 상품 ID를 넣고 고른 항목·내용을 보낸다", async () => {
+    const { http, requests } = client({
+      reportIds: [11, 12],
+      duplicateTypes: [],
+      duplicate: false,
+      status: "RECEIVED",
+      statusLabel: "확인 중",
+      message: "보내 주셔서 고마워요",
+    });
     await expect(
-      postInquiry(http, { content: "등급이 이상해요" }),
-    ).resolves.toEqual({ inquiryId: 9 });
+      postProductReport(http, {
+        productId: "7/x",
+        reportTypes: ["NUTRITION", "OTHER"],
+        content: "당류가 포장과 달라요",
+      }),
+    ).resolves.toMatchObject({ reportIds: ["11", "12"], duplicate: false });
     expect(requests[0]).toMatchObject({
       method: "post",
-      url: "/support/inquiries",
+      url: "/products/7%2Fx/reports",
     });
-    expect(body(requests[0].data)).toEqual({ content: "등급이 이상해요" });
+    expect(body(requests[0].data)).toEqual({
+      reportTypes: ["NUTRITION", "OTHER"],
+      content: "당류가 포장과 달라요",
+    });
   });
 });

@@ -72,10 +72,31 @@ describe("proxy", () => {
       requestWith({
         [IDENTITY_COOKIES.accessToken]: jwtExpiringIn(600_000),
         [IDENTITY_COOKIES.refreshToken]: "refresh-1",
+        [IDENTITY_COOKIES.anonymousId]: "anon-1",
       }),
     );
     expect(mockedRefresh).not.toHaveBeenCalled();
     expect(response.headers.has("set-cookie")).toBe(false);
+  });
+
+  it("익명 ID가 없는 첫 방문이면 만들어 응답 Set-Cookie와 렌더로 넘기는 요청 쿠키 양쪽에 넣는다", async () => {
+    const response = await proxy(requestWith({}));
+
+    expect(mockedRefresh).not.toHaveBeenCalled();
+    const created = response.cookies.get(IDENTITY_COOKIES.anonymousId);
+    expect(created).toMatchObject({
+      path: "/",
+      maxAge: 400 * 24 * 60 * 60,
+      sameSite: "lax",
+      secure: true,
+    });
+    expect(created?.value).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+    );
+    expect(forwardedCookie(response)).toContain(
+      `${IDENTITY_COOKIES.anonymousId}=${created?.value}`,
+    );
+    expect(response.cookies.get(IDENTITY_COOKIES.accessToken)).toBeUndefined();
   });
 
   it("비로그인이면 갱신하지 않는다", async () => {
@@ -145,6 +166,7 @@ describe("proxy", () => {
       requestWith({
         [IDENTITY_COOKIES.accessToken]: jwtExpiringIn(-1_000),
         [IDENTITY_COOKIES.refreshToken]: "refresh-1",
+        [IDENTITY_COOKIES.anonymousId]: "anon-1",
       }),
     );
 

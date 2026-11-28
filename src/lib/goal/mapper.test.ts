@@ -4,11 +4,15 @@ import { toGoalUpdate, toMyGoal } from "@/lib/goal/mapper";
 describe("goal mapper", () => {
   it("미설정이라 appliedAt이 빠지면 null이다", () => {
     expect(
-      toMyGoal({ goal: "GENERAL", label: "일반", healthConsented: false }),
+      toMyGoal({
+        goal: "WEIGHT_LOSS",
+        label: "체중 감량",
+        goalAccountConsented: false,
+      }),
     ).toEqual({
-      goal: "GENERAL",
-      label: "일반",
-      healthConsented: false,
+      goal: "WEIGHT_LOSS",
+      label: "체중 감량",
+      goalAccountConsented: false,
       appliedAt: null,
     });
   });

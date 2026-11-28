@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { goalPickerHref, toGoalNextPath, withGoal } from "./next-path";
+import { goalPickerFrom, goalPickerHref, toGoalNextPath } from "./next-path";
 
 describe("toGoalNextPath", () => {
   it("홈 · 검색 결과 · 랭킹 주소는 받는다", () => {
@@ -24,48 +24,38 @@ describe("toGoalNextPath", () => {
     expect(toGoalNextPath("/search/%2e%2e//evil.example")).toBeUndefined();
     expect(toGoalNextPath("/home/../my")).toBeUndefined();
   });
-
-  it("목표를 붙여도 같은 사이트 주소로 남는다", () => {
-    // 정규화해도 받는 주소(빈 세그먼트 포함)가 `//다른 사이트`로 바뀌지 않는다
-    for (const value of ["/home", "/search?q=a", "/home//x"]) {
-      expect(withGoal(toGoalNextPath(value)!, "diet")).toMatch(/^\/(?!\/)/);
-    }
-  });
-});
-
-describe("withGoal", () => {
-  it("목표를 붙이고 다른 값은 둔다", () => {
-    expect(withGoal("/home", "muscle")).toBe("/home?goal=muscle");
-    expect(withGoal("/search?q=a&sort=kcal", "diet")).toBe(
-      "/search?q=a&sort=kcal&goal=diet",
-    );
-  });
-
-  it("이미 있던 목표는 바꾼다", () => {
-    expect(withGoal("/home?goal=diet", "muscle")).toBe("/home?goal=muscle");
-  });
 });
 
 describe("goalPickerHref", () => {
-  it("지금 목표와 돌아올 주소를 넘긴다", () => {
-    expect(goalPickerHref("diet", "/search?q=바")).toBe(
-      "/my/goal?goal=diet&next=%2Fsearch%3Fq%3D%25EB%25B0%2594",
+  it("돌아올 주소만 넘긴다(목표는 기기에 있다)", () => {
+    expect(goalPickerHref("/search?q=바")).toBe(
+      "/my/goal?next=%2Fsearch%3Fq%3D%25EB%25B0%2594",
     );
-    expect(goalPickerHref("muscle", "/ranking/01S4?goal=muscle")).toBe(
-      "/my/goal?goal=muscle&next=%2Franking%2F01S4%3Fgoal%3Dmuscle",
+    expect(goalPickerHref("/ranking/01S4?sort=PROTEIN")).toBe(
+      "/my/goal?next=%2Franking%2F01S4%3Fsort%3DPROTEIN",
     );
   });
 
   it("한 번만 띄우는 계정 삭제 알림 값은 돌아올 주소에서 뺀다", () => {
-    expect(goalPickerHref("diet", "/home?state=deleted&seller=CU")).toBe(
-      "/my/goal?goal=diet&next=%2Fhome%3Fseller%3DCU",
+    expect(goalPickerHref("/home?state=deleted&seller=CU")).toBe(
+      "/my/goal?next=%2Fhome%3Fseller%3DCU",
     );
-    expect(goalPickerHref("diet", "/home?state=deleted")).toBe(
-      "/my/goal?goal=diet&next=%2Fhome",
-    );
+    expect(goalPickerHref("/home?state=deleted")).toBe("/my/goal?next=%2Fhome");
   });
 
   it("받는 화면이 아니면 돌아올 주소를 빼고 연다", () => {
-    expect(goalPickerHref("diet", "/product/4")).toBe("/my/goal?goal=diet");
+    expect(goalPickerHref("/product/4")).toBe("/my/goal");
+  });
+});
+
+describe("goalPickerFrom", () => {
+  it("돌아갈 주소로 들어온 화면 코드를 정한다", () => {
+    expect(goalPickerFrom("/home")).toBe("2-1");
+    expect(goalPickerFrom("/search?q=a")).toBe("2-4");
+    expect(goalPickerFrom("/ranking/01S4")).toBe("2-2");
+  });
+
+  it("돌아갈 주소가 없으면 5-1에서 왔다", () => {
+    expect(goalPickerFrom(undefined)).toBe("5-1");
   });
 });

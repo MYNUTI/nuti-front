@@ -5,8 +5,6 @@ import { useState } from "react";
 
 import { Coachmark } from "@/components/common/coachmark";
 
-import type { Goal } from "./_fixtures";
-
 /*
  * 2-1g 홈 가이드 1/2·2/2. 1-5 목표 선택 바로 뒤 홈 위에 띄운다.
  * 디자인 메모: 1/2는 스캔 버튼, 2/2는 검색칸만 밝힌다.
@@ -15,10 +13,10 @@ import type { Goal } from "./_fixtures";
  * 【최종】 메모: 말풍선 밖(막)을 누르면 1/2는 2/2로 넘어가고, 2/2는 가이드를 닫는다.
  * 단계마다 key를 달리해 2/2로 넘어갈 때 초점을 새 말풍선으로 다시 옮긴다.
  */
-export function HomeGuide({ goal }: { goal: Goal }) {
+export function HomeGuide() {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2>(1);
-  const close = () => router.replace(`/home?goal=${goal}`, { scroll: false });
+  const close = () => router.replace("/home", { scroll: false });
 
   const linkClass = "text-body2-bold text-brand-link";
 

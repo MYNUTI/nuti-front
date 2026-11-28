@@ -7,22 +7,16 @@ import { SectionHeader } from "@/components/common/section-header";
 import { IconChevronDown } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
-import type { NutrientValue, ProductResult } from "./_fixtures";
+import type { NutrientValue, ProductResult } from "./model";
 
 /*
  * 3-2 영양성분. 처음에는 주요 성분만, 「영양성분 자세히 보기」로 펼친다(3-2 영양성분 펼침).
  * 펼치면 기준 전환 칩 [100g당] [1회 제공량]이 보이고 표의 숫자·평가 말·막대가 그 기준으로 바뀐다.
  * 디자인 메모: 기본은 늘 100g당, 접으면 100g당으로 돌아온다. 위 이유 칩·점수는 전환과 상관없이 100g 기준.
+ * 값 · 1일 기준치 % · 적은 편/보통/많은 편은 기준마다 서버가 계산해 준 값을 그대로 쓴다.
  */
 
-// 1일 기준치 %가 5 이하면 적은 편, 20 이상이면 많은 편. 디자인 3-2의 값(3%·13%·18%·21%·69%)과 맞는 기준이다
-function level(percent: number) {
-  if (percent <= 5) return "적은 편";
-  if (percent >= 20) return "많은 편";
-  return "보통";
-}
-
-function format(value: number, unit: NutrientValue["unit"]) {
+function format(value: number, unit: string) {
   // kcal·mg은 정수, g은 소수 첫째 자리(0이면 뗀다), 천 단위 쉼표(⑩ 공통 규칙 「숫자」)
   const rounded =
     unit === "g" ? Math.round(value * 10) / 10 : Math.round(value);
@@ -45,15 +39,14 @@ export function NutritionSection({
   const { unit, serving } = nutrition;
   const per100Label = `100${unit}당`;
 
-  // 1회 제공량 기준이면 100g당 값에 제공량/100을 곱한다
-  const factor = basis === "serving" && serving ? serving.amount / 100 : 1;
+  const shown = basis === "serving" && serving ? "serving" : "per100";
   const calories = [...nutrition.main, ...nutrition.more].find(
-    (n) => n.key === "calories",
-  )?.per100;
+    (n) => n.key === "CALORIES",
+  )?.perServing?.value;
   // 【최종】 메모: 한 개 용량이 100g(100mL)과 다를 때만 붙인다
   const servingNote =
     serving && serving.amount !== 100 && calories != null
-      ? `${serving.label}(${serving.amount}${unit})는 ${format((calories * serving.amount) / 100, "kcal")}`
+      ? `${serving.label}(${serving.amount}${unit})는 ${format(calories, "kcal")}`
       : null;
 
   return (
@@ -84,13 +77,13 @@ export function NutritionSection({
         </div>
       )}
       {nutrition.main.map((n) => (
-        <Nutrient key={n.key} nutrient={n} factor={factor} />
+        <Nutrient key={n.key} nutrient={n} basis={shown} />
       ))}
       <div id={moreId}>
         {open && (
           <>
             {nutrition.more.map((n) => (
-              <Nutrient key={n.key} nutrient={n} factor={factor} />
+              <Nutrient key={n.key} nutrient={n} basis={shown} />
             ))}
             {/* 디자인 메모(11-04): 기준치 설명은 펼친 영양성분 안에만 */}
             <p className="px-5 pt-1 pb-4 text-caption break-keep text-text-sub">
@@ -136,27 +129,27 @@ export function NutritionSection({
 
 function Nutrient({
   nutrient,
-  factor,
+  basis,
 }: {
   nutrient: NutrientValue;
-  factor: number;
+  basis: Basis;
 }) {
-  const { key, label, unit, per100, dailyValue } = nutrient;
-  const value = per100 === null ? null : per100 * factor;
-  const percent =
-    value === null || dailyValue === null
-      ? null
-      : Math.round((value / dailyValue) * 100);
+  const { key, label, unit } = nutrient;
+  const amount = basis === "serving" ? nutrient.perServing : nutrient.per100;
+  const value = amount?.value ?? null;
+  const percent = value === null ? null : (amount?.dvPercent ?? null);
 
   const note =
     value === null
       ? // 표시가 없으면 0으로 계산하는 성분은 식이섬유뿐이다. 다른 성분의 문구는 디자인에 없어 임시(UI 플랜 「남은 질문」 9)
-        key === "dietaryFiber"
+        key === "DIETARY_FIBER"
         ? "표시가 없어 0으로 계산했어요"
         : "표시가 없는 성분이에요"
       : percent === null
         ? "1일 기준치가 없는 성분이에요"
-        : `${level(percent)} (1일 기준치의 ${percent}%)`;
+        : amount?.levelLabel
+          ? `${amount.levelLabel} (1일 기준치의 ${percent}%)`
+          : `1일 기준치의 ${percent}%`;
 
   return (
     <div className="flex flex-col gap-1.5 px-5 py-2">

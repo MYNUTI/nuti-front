@@ -9,25 +9,23 @@ import { savedKeys } from "@/lib/saved/keys";
 import { searchKeys } from "@/lib/search/keys";
 
 describe("invalidateGoalDependents", () => {
-  it("목표 기준 등급과 목표를 보여 주는 조회만 다시 부른다", async () => {
+  it("계정 목표를 보여 주는 조회만 다시 부른다", async () => {
     const queryClient = new QueryClient();
     const dependents = [
       goalKeys.mine(),
       meKeys.summary(),
       meKeys.settings(),
       onboardingKeys.bootstrap(),
+    ];
+    // 계정 목표와 상관없는 조회. 상품 결과는 두 목표 점수를 함께 주고, 목록은 기기 목표를 실어 보낸다
+    const unrelated = [
+      searchKeys.result("두유", "WEIGHT_LOSS"),
+      savedKeys.list("WEIGHT_LOSS"),
       productKeys.detail("7"),
       productKeys.barcode("08801062633029"),
-      productKeys.gradeReason("7"),
-      searchKeys.result("두유"),
-      savedKeys.list(),
-    ];
-    // 목표와 상관없는 조회
-    const unrelated = [
+      productKeys.alternatives("7", "WEIGHT_LOSS"),
       meKeys.user(),
       metaKeys.policies(),
-      onboardingKeys.healthConsent(),
-      onboardingKeys.samples(),
       searchKeys.suggestions("두유"),
       searchKeys.popularKeywords(),
     ];

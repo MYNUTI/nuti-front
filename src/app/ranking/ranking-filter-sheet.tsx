@@ -1,5 +1,6 @@
 "use client";
 
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Dialog, Tabs } from "radix-ui";
 import { useEffect, useRef, useState } from "react";
 
@@ -7,15 +8,15 @@ import { BottomCta } from "@/components/common/bottom-cta";
 import { Button } from "@/components/common/button";
 import { Chip } from "@/components/common/chip";
 import { IconClose } from "@/components/icons";
+import { rankingQueries } from "@/lib/ranking/queries";
 
 import {
-  type fixtureFilterSheet,
   NO_FILTERS,
   NUTRIENT_CHIPS,
   type NutrientFilter,
   type RankingFilters,
   type Seller,
-} from "./_fixtures";
+} from "./model";
 import {
   FILTER_TAB_LABEL,
   type FilterTab,
@@ -31,37 +32,36 @@ const TABS = (Object.keys(FILTER_TAB_LABEL) as FilterTab[]).map((value) => ({
   label: FILTER_TAB_LABEL[value],
 }));
 
-type FilterSheetData = ReturnType<typeof fixtureFilterSheet>;
-
 /*
  * 2-5 · 2-5b 필터(【최종】 ⑥ 2-5b 9306:17693 · 18378 · 9311:32240, 2-5 브랜드 17879 · 18414) — 화면을 덮는 전체 시트.
  * 위 「필터」 + ✕, 탭 3칸, 탭 내용, 아래 고른 조건 칩 + 「초기화」 · 「n개 제품 보기」.
  * 고르는 동안은 시트 안에서만 바뀌고 「n개 제품 보기」를 눌러야 순위에 걸린다. ✕ · 뒤로는 고른 것을 버리고 닫는다.
  * 「초기화」는 시트 안의 고른 것을 모두(탭 셋) 지우고(메모에 없어 임시로 정함, 남은 질문 34), 조건 칩 ✕는 그 값만 뺀다.
  * 결과가 0개여도 버튼은 누를 수 있다(【최종】 메모).
+ * 수는 고른 조건으로 서버가 센다(`GET /rankings/filters`, 고를 때마다 다시 부르고 새 수가 올 때까지 앞 수를 둔다).
+ * 첫 화면(종류를 고르지 않았을 때)은 서버가 종류(`category`)를 꼭 받아 수를 셀 수 없다(UI 남은 질문 38). 그래서 판매처 ·
+ * 영양성분은 정해진 목록에서 수 없이 고르고, 브랜드 탭은 안내만 두고, 버튼은 「적용하기」다(그림 없음, API 플랜 「남은 질문」).
+ * 수를 아직 못 받았을 때(불러오는 중 · 실패)도 같은 모양이다.
  */
 export function RankingFilterSheet({
   open,
   onOpenChange,
   tab: initialTab,
+  category,
   categoryName,
   applied,
-  sheetFor,
-  brandList,
   onApply,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** 연 칩의 탭 */
   tab: FilterTab;
+  /** 지금 순위의 칩 · 대분류 코드. 첫 화면(종류를 고르지 않았을 때)은 null */
+  category: string | null;
   /** 지금 순위의 종류 이름(2-5e 「○○ 브랜드, 가나다순」) */
   categoryName: string;
   /** 지금 순위에 걸린 필터. 열 때마다 여기서 시작한다 */
   applied: RankingFilters;
-  /** 시트에서 고른 조건으로 센 탭마다의 수 · 「n개 제품 보기」 수(`GET /rankings/filters`) */
-  sheetFor: (filters: RankingFilters) => FilterSheetData;
-  /** 2-5e 목록: 그 종류의 전체 브랜드와 수(`GET /rankings/brands`, 다른 필터와 상관없다) */
-  brandList: { name: string; count: number }[];
   onApply: (filters: RankingFilters) => void;
 }) {
   const [tab, setTab] = useState(initialTab);
@@ -79,7 +79,18 @@ export function RankingFilterSheet({
     moreButton.current?.focus();
   }, [brandMore]);
 
-  const sheet = sheetFor(draft);
+  const sheetQuery = useQuery({
+    ...rankingQueries.filters(category ?? "", draft),
+    enabled: category !== null,
+    placeholderData: keepPreviousData,
+  });
+  const sheet = sheetQuery.data ?? null;
+  // 2-5e 목록: 그 종류의 전체 브랜드와 수(다른 필터와 상관없다). 브랜드 더 보기를 열 때 부른다
+  const brandQuery = useQuery({
+    ...rankingQueries.brands(category ?? ""),
+    enabled: category !== null && brandMore,
+  });
+  const brandList = brandQuery.data?.items ?? null;
 
   const toggleSeller = (seller: Seller) =>
     setDraft((d) => ({
@@ -104,11 +115,16 @@ export function RankingFilterSheet({
   };
 
   // 2-5 메모: 2-5e에서 고르고 돌아오면 고른 브랜드가 체크된 채 — 위 8개에 없는 고른 브랜드는 그 뒤에 잇는다
+  const topBrands = sheet?.brands.top ?? [];
   const brandRows = [
-    ...sheet.brands.top,
+    ...topBrands,
+    // 위 8개 밖 브랜드의 수는 시트 응답에 없어 2-5e 목록(그 종류 전체 수)에서 읽고, 아직 없으면 수 없이 둔다
     ...keptBrands
-      .filter((name) => !sheet.brands.top.some((b) => b.name === name))
-      .map((name) => ({ name, count: sheet.brands.counts[name] ?? 0 })),
+      .filter((name) => !topBrands.some((b) => b.name === name))
+      .map((name) => ({
+        name,
+        count: brandList?.find((b) => b.name === name)?.count,
+      })),
   ];
 
   const toggleNutrient = (nutrient: NutrientFilter) =>
@@ -167,13 +183,17 @@ export function RankingFilterSheet({
           {brandMore ? (
             <BrandMore
               categoryName={categoryName}
-              brands={[
-                ...brandList,
-                // 그 종류에 없는 브랜드가 주소로 들어와 골라져 있어도 보이고 풀 수 있게 0개 줄로 둔다
-                ...draft.brands
-                  .filter((name) => !brandList.some((b) => b.name === name))
-                  .map((name) => ({ name, count: 0 })),
-              ]}
+              brands={
+                brandList && [
+                  ...brandList,
+                  // 그 종류에 없는 브랜드가 주소로 들어와 골라져 있어도 보이고 풀 수 있게 0개 줄로 둔다
+                  ...draft.brands
+                    .filter((name) => !brandList.some((b) => b.name === name))
+                    .map((name) => ({ name, count: 0 })),
+                ]
+              }
+              failed={brandQuery.isError}
+              onRetry={() => void brandQuery.refetch()}
               selected={draft.brands}
               onToggle={toggleBrand}
               onBack={() => {
@@ -224,7 +244,10 @@ export function RankingFilterSheet({
                       <CheckLine
                         key={value}
                         label={label}
-                        count={sheet.sellers[value] ?? 0}
+                        count={
+                          sheet?.sellers.find((seller) => seller.code === value)
+                            ?.count
+                        }
                         checked={draft.sellers.includes(value)}
                         onChange={() => toggleSeller(value)}
                       />
@@ -236,6 +259,30 @@ export function RankingFilterSheet({
                   value="brand"
                   className="min-h-0 flex-1 overflow-y-auto outline-none"
                 >
+                  {category === null && (
+                    <p className="px-5 pt-4 text-body2 text-text-sub">
+                      종류를 고르면 브랜드로 거를 수 있어요
+                    </p>
+                  )}
+                  {category !== null && !sheet && (
+                    // 실패 문장 · 다시 시도는 그림이 없다(API 플랜 「남은 질문」)
+                    <div className="flex items-center gap-1 px-5 pt-4">
+                      <p role="status" className="text-body2 text-text-sub">
+                        {sheetQuery.isError
+                          ? "브랜드를 불러오지 못했어요"
+                          : "불러오는 중"}
+                      </p>
+                      {sheetQuery.isError && (
+                        <Button
+                          kind="text"
+                          size="S"
+                          onClick={() => void sheetQuery.refetch()}
+                        >
+                          다시 시도
+                        </Button>
+                      )}
+                    </div>
+                  )}
                   <ul className="pt-3 pb-1">
                     {brandRows.map(({ name, count }) => (
                       <CheckLine
@@ -249,7 +296,7 @@ export function RankingFilterSheet({
                   </ul>
                   {/* 「전체 n개」 · 버튼은 2-5e가 보일 목록(그 종류 전체)으로 센다. 판매처로 거른 수로 세면
                       판매처를 고른 뒤 버튼이 사라져 2-5e에 못 들어간다(남은 질문 35) */}
-                  {brandList.length > sheet.brands.top.length && (
+                  {sheet && sheet.brands.totalBrands > topBrands.length && (
                     <button
                       ref={moreButton}
                       type="button"
@@ -257,7 +304,7 @@ export function RankingFilterSheet({
                       className="w-full px-5 py-3 text-left text-body2-medium text-brand-link"
                     >
                       브랜드 더 보기 (전체{" "}
-                      {brandList.length.toLocaleString("ko-KR")}개){" "}
+                      {sheet.brands.totalBrands.toLocaleString("ko-KR")}개){" "}
                       <span aria-hidden>›</span>
                     </button>
                   )}
@@ -270,12 +317,13 @@ export function RankingFilterSheet({
                   <div className="flex flex-col gap-3 px-5 pt-4 pb-2">
                     {/* 그 종류에서 해당 제품이 너무 적거나 많은 칩은 서버가 숨긴다(hidden) */}
                     <div className="flex flex-wrap gap-2">
-                      {sheet.nutrients
+                      {(sheet?.nutrients ?? NUTRIENT_CHIPS)
+                        // 수를 모르면(첫 화면 · 불러오는 중) 숨길지 몰라 칩을 다 보인다.
                         // 열 때 이미 걸려 있던 칩(다른 종류에서 이어 옴 · 주소로 들어옴)은 이 종류에서 숨김이어도
                         // 보이고 풀 수 있게 둔다. 시트를 연 동안은 풀어도 남아 포커스를 잃지 않는다
                         .filter(
                           (chip) =>
-                            !chip.hidden ||
+                            !("hidden" in chip && chip.hidden) ||
                             applied.nutrients.includes(chip.code),
                         )
                         .map((chip) => (
@@ -292,9 +340,9 @@ export function RankingFilterSheet({
                     {draft.nutrients.length > 0 && (
                       <div className="rounded-md bg-bg-field px-3.5 py-3 text-body2 text-text-body">
                         {draft.nutrients.map((code) => {
-                          const chip = sheet.nutrients.find(
-                            (c) => c.code === code,
-                          )!;
+                          const chip = (
+                            sheet?.nutrients ?? NUTRIENT_CHIPS
+                          ).find((c) => c.code === code)!;
                           return (
                             <p key={code}>
                               {chip.label}: {chip.rule}
@@ -341,7 +389,9 @@ export function RankingFilterSheet({
                     onOpenChange(false);
                   }}
                 >
-                  {sheet.count.toLocaleString("ko-KR")}개 제품 보기
+                  {sheet
+                    ? `${sheet.count.toLocaleString("ko-KR")}개 제품 보기`
+                    : "적용하기"}
                 </Button>
               </BottomCta>
             </>

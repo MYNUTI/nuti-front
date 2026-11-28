@@ -1,7 +1,10 @@
 /**
  * 마이·설정·내 정보·약관 API의 DTO(서버 필드 그대로)와 화면 모델.
- * 기준: 백엔드 커밋 c164ec0의 `MeSummaryResponse`, `MeSettingsResponse`·`MeSettingsUpdateRequest`,
+ * 기준: 배포 Swagger(2026-11-21)와 백엔드 `main` `1ddb9b4`의 `MeSummaryResponse`, `MeSettingsResponse`,
  * `UserResponse`, `PoliciesResponse`. 날짜는 타임존 없는 ISO 문자열이다.
+ *
+ * 응답의 `goal`은 계정에 저장한 목표다(비로그인·「목표 계정 저장」 미동의면 저장한 값이 없어 대개 WEIGHT_LOSS. v3 전 익명 기록에 목표가 있으면 그 값). 화면의 내
+ * 목표는 기기 목표(`useDeviceGoal`)를 쓴다(v3 기능명세 ACCT_002)
  */
 import type { LoginProvider } from "@/lib/auth/types";
 import type { Goal } from "@/lib/goal/types";
@@ -42,9 +45,8 @@ export type UserDto = {
   createdAt: string;
 };
 
-/** `GET`·`PATCH /me/settings` */
+/** `GET /me/settings` */
 export type MeSettingsDto = {
-  clipboardLinkDetection: boolean;
   goal: GoalLabelDto;
   /** 정책 URL이 아직 없으면 키가 빠진다 */
   policies: { privacyUrl?: string; termsUrl?: string };
@@ -52,12 +54,6 @@ export type MeSettingsDto = {
   supportUrl?: string;
   /** 플랫폼 표기 포함(예: 2.0.0-web) */
   appVersion: string;
-};
-
-/** `PATCH /me/settings` 요청. 둘 다 없으면 400 */
-export type MeSettingsUpdateRequestDto = {
-  clipboardLinkDetection?: boolean;
-  goal?: Goal;
 };
 
 /** `GET /meta/policies`. 정책이 아직 없으면 키가 빠진다 */
@@ -89,7 +85,6 @@ export type MeSummary = {
 export type User = Omit<UserDto, "id"> & { id: string };
 
 export type MeSettings = {
-  clipboardLinkDetection: boolean;
   goal: GoalLabel;
   privacyUrl: string | null;
   termsUrl: string | null;

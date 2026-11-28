@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { keepPreviousData, useInfiniteQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -10,19 +11,19 @@ import { ErrorState } from "@/components/common/empty-state";
 import { ProductCard } from "@/components/common/product-card";
 import { SortSheet } from "@/components/common/sort-sheet";
 import { IconChevronDown } from "@/components/icons";
+import { toCardInput } from "@/app/to-card";
+import { SCREEN_GOAL } from "@/app/my/goals";
+import { useDeviceGoal } from "@/lib/goal/device";
+import type { Goal } from "@/lib/goal/types";
+import { logSearch } from "@/lib/logging/track";
+import type { ProductCardData } from "@/lib/product/types";
+import { searchQueries } from "@/lib/search/queries";
 import { cn } from "@/lib/utils";
 
 import { particleWa } from "./hangul";
-import { PAGE_SIZE, readResultParams } from "./result-params";
-import {
-  FIXTURE_SEARCH_GOAL,
-  fixtureAlternatives,
-  fixtureSearch,
-  fixtureSimilarTop,
-  SEARCH_SORTS,
-  type SearchResultItem,
-  type SearchSort,
-} from "./_fixtures";
+import { isSearchable, PAGE_SIZE, readResultParams } from "./result-params";
+import { settleSearchLog, shouldLogSearch } from "./search-log";
+import { API_SORT, SEARCH_SORTS, type SearchSort } from "./sorts";
 
 /*
  * 2-4 검색 결과(【최종】 ⑥ 9306:17425 · 사진이 없는 제품이 섞일 때 17730 · 내려 볼 때 19410).
@@ -31,16 +32,18 @@ import {
  * 검색어가 제품 이름 전체와 같으면 그 제품을 맨 위 한 칸에 따로 둔다.
  * 「찾는 제품이 없나요?」 바는 아래로 내리면 올라오고 위로 올리면 숨는다.
  * 오른쪽 세로 스크롤 표시는 브라우저 기본(내리는 동안 보임)을 쓴다(【최종】 메모: 늘 보이게 할지는 개발에서 정함).
+ * 데이터는 `GET /search`(무한 조회, 12개씩). 이름이 같은 제품은 `pinned`, 순위 링크는 서버가 준 `category`(검색어가
+ * 중분류 이름과 같을 때만)로 그린다. 검색 로그는 `search-log.ts`가 정한 때(검색해 왔거나 페이지를 처음 열었을 때)
+ * 첫 결과를 받으면 한 번 보낸다(인기 검색어가 이 로그로 모인다). 글자 · 숫자가 없는 말은 서버가 거절해 부르지 않고 0건으로 보인다.
+ * 다음 페이지를 못 불러오면 불러 둔 목록은 두고 끝 줄에 「더 불러오지 못했어요 · 다시 시도」(그린 화면 없음, API 플랜 「남은 질문」).
  */
-// fixture는 바로 오지만 「더 불러오는 중」 상태를 보이려고 잠깐 기다린다(API 연결 때 지운다)
-const FIXTURE_LOAD_MS = 400;
-
 export function SearchResults({
   query,
   initialSort,
   initialShown,
   active,
   failed,
+  goal: serverGoal,
   onSearch,
 }: {
   query: string;
@@ -51,6 +54,8 @@ export function SearchResults({
   active: boolean;
   /** 미리 보기 `?state=error` — 공통 「불러오지 못했어요」 */
   failed: boolean;
+  /** 서버가 기기 쿠키로 읽은 내 목표. 브라우저에서는 기기 목표(`useDeviceGoal`)를 따른다 */
+  goal: Goal;
   /** 2-4b 「이렇게 찾아볼까요?」 칩으로 다시 찾는다(최근 검색어에도 남긴다) */
   onSearch: (word: string) => void;
 }) {
@@ -66,66 +71,129 @@ export function SearchResults({
   );
   const [sort, setSort] = useState<SearchSort>(restored.sort);
   const [sortOpen, setSortOpen] = useState(false);
-  const [shown, setShown] = useState(restored.shown);
+  // 상세에서 뒤로 왔는데 캐시가 없으면 주소의 개수(?n=)만큼 다시 불러온다
+  const [restoreTo, setRestoreTo] = useState(restored.shown);
   const headingRef = useRef<HTMLHeadingElement>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
   const barVisible = useBarVisible();
   const sentinel = useRef<HTMLDivElement>(null);
 
-  const result = fixtureSearch(query, sort);
-  const hasMore = shown < result.items.length;
+  const goal = useDeviceGoal() ?? serverGoal;
+  const searchable = isSearchable(query);
+  const search = useInfiniteQuery({
+    // 빈 검색어는 부르지 않는다(skipToken)
+    ...searchQueries.result(searchable ? query : "", goal, API_SORT[sort]),
+    // 정렬 · 목표를 바꾸면 새 결과가 올 때까지 앞 결과를 둔다(머리 · 정렬 버튼이 사라지지 않게)
+    placeholderData: keepPreviousData,
+  });
+  const result = search.data;
+  const loaded = result?.items.length ?? 0;
+  const {
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    isPlaceholderData,
+    fetchNextPage,
+  } = search;
+  // 실패한 다음 페이지는 「다시 시도」로만 다시 부른다. 그러지 않으면 실패할 때마다 바로 다시 불러 끝없이 반복된다
+  const canFetchMore =
+    hasNextPage && !isFetchingNextPage && !isFetchNextPageError;
 
   // 끝 표시가 보이면 더 불러온다
   useEffect(() => {
     const el = sentinel.current;
-    if (!el || !hasMore || loadingMore) return;
+    if (!el || !canFetchMore) return;
     const observer = new IntersectionObserver(([entry]) => {
       if (!entry.isIntersecting) return;
       observer.disconnect();
-      setLoadingMore(true);
+      void fetchNextPage();
     });
     observer.observe(el);
     return () => observer.disconnect();
-  }, [hasMore, loadingMore]);
+  }, [canFetchMore, fetchNextPage]);
 
   useEffect(() => {
-    if (!loadingMore) return;
-    const timer = setTimeout(() => {
-      setShown((n) => n + PAGE_SIZE);
-      setLoadingMore(false);
-    }, FIXTURE_LOAD_MS);
-    return () => clearTimeout(timer);
-  }, [loadingMore]);
+    if (result && !isPlaceholderData && loaded < restoreTo && canFetchMore)
+      void fetchNextPage();
+  }, [
+    result,
+    isPlaceholderData,
+    loaded,
+    restoreTo,
+    canFetchMore,
+    fetchNextPage,
+  ]);
+
+  // 붙을 때 한 번 정한다(이 부품은 검색어마다 새로 붙는다). 정렬을 바꿔도 다시 보내지 않는다
+  const [logWanted] = useState(() => searchable && shouldLogSearch(query));
+  useEffect(() => settleSearchLog(query), [query]);
+  const logged = useRef(false);
+  const total = isPlaceholderData ? undefined : result?.total;
+  useEffect(() => {
+    if (!logWanted || total === undefined || logged.current) return;
+    logged.current = true;
+    logSearch({ keyword: query, resultCount: total });
+  }, [logWanted, query, total]);
 
   // 정렬 · 불러온 개수를 주소에 남긴다. 기록은 쌓지 않고 서버도 다시 부르지 않는다
   useEffect(() => {
     const params = new URLSearchParams({ q: query });
     if (sort !== "score") params.set("sort", sort);
-    if (shown > PAGE_SIZE) params.set("n", String(shown));
-    // 5-2 목표 바꾸기에서 돌아온 목표(?goal=)는 이어 둔다(「목표: ○○」가 읽는다)
-    const goal = new URLSearchParams(window.location.search).get("goal");
-    if (goal) params.set("goal", goal);
+    if (loaded > PAGE_SIZE) params.set("n", String(loaded));
     window.history.replaceState(null, "", `/search?${params}`);
-  }, [query, sort, shown]);
+  }, [query, sort, loaded]);
 
   // 검색하면 검색칸이 새로 붙어 포커스가 사라진다. 결과 개수 제목으로 옮겨 읽게 한다
   useEffect(() => {
     if (active && !failed) headingRef.current?.focus();
   }, [active, failed]);
 
-  if (failed) {
+  if (!searchable) {
+    return (
+      <NoResults
+        query={query}
+        goal={goal}
+        didYouMean={null}
+        similar={[]}
+        canRequest={false}
+        headingRef={headingRef}
+        onSearch={onSearch}
+      />
+    );
+  }
+
+  // 다음 페이지만 실패했으면 불러 둔 목록을 두고 끝 줄에서 다시 시도한다
+  if (failed || (search.isError && !result)) {
     return (
       <ErrorState
         title="검색 결과를 불러오지 못했어요"
-        onRetry={() => router.refresh()}
+        onRetry={() => (failed ? router.refresh() : void search.refetch())}
         className="flex-1"
       />
     );
   }
 
+  if (!result) {
+    // 그린 화면이 없어 「더 불러오는 중」과 같은 모양의 한 줄로 둔다
+    return (
+      <div className="flex h-12 items-center justify-center pt-5">
+        <p role="status" className="text-body2 text-text-sub">
+          불러오는 중
+        </p>
+      </div>
+    );
+  }
+
   if (result.total === 0) {
     return (
-      <NoResults query={query} headingRef={headingRef} onSearch={onSearch} />
+      <NoResults
+        query={query}
+        goal={goal}
+        didYouMean={result.didYouMean}
+        similar={result.sameCategoryTop}
+        canRequest={result.canRequestAnalysis}
+        headingRef={headingRef}
+        onSearch={onSearch}
+      />
     );
   }
 
@@ -153,7 +221,7 @@ export function SearchResults({
       </div>
       <div className="flex h-11 items-center justify-between px-5">
         <GoalLink
-          fallback={FIXTURE_SEARCH_GOAL}
+          fallback={SCREEN_GOAL[serverGoal]}
           className="text-[12px] leading-5 font-medium text-brand-link"
         />
         {/* v3/SortButton: 글자 14 · 꺾쇠 16 · 누르는 높이 44, 테두리 · 바탕 없음 */}
@@ -169,15 +237,29 @@ export function SearchResults({
         </button>
       </div>
 
-      {result.exact && <ResultGrid items={[result.exact]} className="pb-2" />}
-      <ResultGrid items={result.items.slice(0, shown)} />
+      {result.pinned && (
+        <ResultGrid items={[result.pinned]} goal={goal} className="pb-2" />
+      )}
+      <ResultGrid items={result.items} goal={goal} />
 
-      {hasMore && (
-        <div ref={sentinel} className="flex h-12 items-center justify-center">
+      {hasNextPage && (
+        <div
+          ref={sentinel}
+          className="flex h-12 items-center justify-center gap-1"
+        >
           {/* 영역이 먼저 있어야 읽으므로 늘 두고 글자만 바꾼다 */}
           <p role="status" className="text-body2 text-text-sub">
-            {loadingMore ? "더 불러오는 중" : ""}
+            {isFetchingNextPage
+              ? "더 불러오는 중"
+              : isFetchNextPageError
+                ? "더 불러오지 못했어요"
+                : ""}
           </p>
+          {isFetchNextPageError && !isFetchingNextPage && (
+            <Button kind="text" size="S" onClick={() => void fetchNextPage()}>
+              다시 시도
+            </Button>
+          )}
         </div>
       )}
       {/* 아래 「찾는 제품이 없나요?」 바에 마지막 줄이 가리지 않게 */}
@@ -206,7 +288,7 @@ export function SearchResults({
         value={sort}
         onSelect={(next) => {
           setSort(next);
-          setShown(PAGE_SIZE);
+          setRestoreTo(PAGE_SIZE);
         }}
       />
     </>
@@ -215,9 +297,12 @@ export function SearchResults({
 
 function ResultGrid({
   items,
+  goal,
   className,
 }: {
-  items: SearchResultItem[];
+  items: ProductCardData[];
+  /** 카드 점수는 내 목표 기준 */
+  goal: Goal;
   className?: string;
 }) {
   return (
@@ -229,7 +314,7 @@ function ResultGrid({
     >
       {items.map((item) => (
         <li key={item.id} className="min-w-0">
-          <ProductCard product={item} href={item.href} fluid />
+          <ProductCard product={toCardInput(item, goal)} fluid />
         </li>
       ))}
     </ul>
@@ -265,15 +350,28 @@ function requestHref(query: string) {
  */
 function NoResults({
   query,
+  goal,
+  didYouMean,
+  similar,
+  canRequest,
   headingRef,
   onSearch,
 }: {
   query: string;
+  goal: Goal;
+  /** 서버가 추정한 검색어. 없으면 「이렇게 찾아볼까요?」를 숨긴다 */
+  didYouMean: string | null;
+  /** 추정한 종류의 점수 상위(`sameCategoryTop`) */
+  similar: ProductCardData[];
+  /**
+   * 「제품 이름만 알려 줘도 돼요」를 보일지(서버 `analysisRequestAvailable`). 지금 서버는 0건이면 늘 true다.
+   * 서버를 부르지 않은 검색어(글자 · 숫자 없음)는 이름으로 요청할 말이 아니라 false
+   */
+  canRequest: boolean;
   headingRef: React.RefObject<HTMLHeadingElement | null>;
   onSearch: (word: string) => void;
 }) {
-  const alternatives = fixtureAlternatives(query);
-  const similar = fixtureSimilarTop();
+  const alternatives = didYouMean && didYouMean !== query ? [didYouMean] : [];
   return (
     <>
       <h2
@@ -325,34 +423,43 @@ function NoResults({
           <Link href="/contribute/label">영양성분표 찍고 점수 보기</Link>
         </Button>
       </section>
-      <div aria-hidden className="h-2 bg-bg-band" />
-      <section aria-labelledby="similar-title">
-        <div className="flex flex-col gap-0.5 px-5 pt-4 pb-2">
-          <h3 id="similar-title" className="text-section text-text-strong">
-            점수가 높은 비슷한 제품
-          </h3>
-          <GoalLink
-            fallback={FIXTURE_SEARCH_GOAL}
-            className="self-start text-[12px] leading-5 font-medium text-brand-link"
-          />
-        </div>
-        <ResultGrid items={similar} className="pb-3" />
-      </section>
-      <div aria-hidden className="h-2 bg-bg-band" />
-      {/* 홈 「찾는 제품이 없나요?」와 같은 연한 민트 바탕(디자인 변수 없이 직접 넣은 색) */}
-      <section className="flex items-center gap-2 bg-[#f3fcfb] py-4 pr-3 pl-5">
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <h3 className="text-body1-bold text-text-strong">
-            제품 이름만 알려 줘도 돼요
-          </h3>
-          <p className="text-body2 text-text-sub">
-            이름을 알려 주면 점수를 매길 순서에 넣어요.
-          </p>
-        </div>
-        <Button kind="text" size="M" asChild>
-          <Link href={requestHref(query)}>제품 요청하기</Link>
-        </Button>
-      </section>
+      {/* 추정한 종류가 없으면(빈 목록) 이 구역째 없다 */}
+      {similar.length > 0 && (
+        <>
+          <div aria-hidden className="h-2 bg-bg-band" />
+          <section aria-labelledby="similar-title">
+            <div className="flex flex-col gap-0.5 px-5 pt-4 pb-2">
+              <h3 id="similar-title" className="text-section text-text-strong">
+                점수가 높은 비슷한 제품
+              </h3>
+              <GoalLink
+                fallback={SCREEN_GOAL[goal]}
+                className="self-start text-[12px] leading-5 font-medium text-brand-link"
+              />
+            </div>
+            <ResultGrid items={similar} goal={goal} className="pb-3" />
+          </section>
+        </>
+      )}
+      {canRequest && (
+        <>
+          <div aria-hidden className="h-2 bg-bg-band" />
+          {/* 홈 「찾는 제품이 없나요?」와 같은 연한 민트 바탕(디자인 변수 없이 직접 넣은 색) */}
+          <section className="flex items-center gap-2 bg-[#f3fcfb] py-4 pr-3 pl-5">
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <h3 className="text-body1-bold text-text-strong">
+                제품 이름만 알려 줘도 돼요
+              </h3>
+              <p className="text-body2 text-text-sub">
+                이름을 알려 주면 점수를 매길 순서에 넣어요.
+              </p>
+            </div>
+            <Button kind="text" size="M" asChild>
+              <Link href={requestHref(query)}>제품 요청하기</Link>
+            </Button>
+          </section>
+        </>
+      )}
     </>
   );
 }

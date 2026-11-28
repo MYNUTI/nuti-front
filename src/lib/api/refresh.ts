@@ -1,8 +1,8 @@
 import type { AxiosInstance } from "axios";
 import { ApiError } from "@/lib/api/errors";
 import {
-  clearAnonymousId,
   clearTokens,
+  rotateAnonymousId,
   readIdentity,
   saveTokens,
   type Identity,
@@ -91,15 +91,14 @@ async function refreshInLock(http: AxiosInstance): Promise<string | null> {
       if (!isRefreshRejected(error)) throw error;
       // `src/proxy.ts`는 이 락 밖에서 갱신한다. 그사이 refresh 토큰이 교체됐으면 거절은 그 때문이라
       // 새 토큰을 쓴다. 401이 proxy 응답의 Set-Cookie보다 먼저 오면 아래에서 지우게 되는데, 토큰은
-      // 뒤이어 온 Set-Cookie가 다시 쓰지만 익명 ID는 돌아오지 않는다. 그사이 나간 요청은 비로그인이다
+      // 뒤이어 온 Set-Cookie가 다시 쓰지만 익명 ID는 새로 만든 값으로 남는다. 그사이 나간 요청은 비로그인이다
       const latest = readIdentity();
       if (latest.refreshToken !== current.refreshToken)
         return latest.accessToken;
       // refresh 토큰이 만료됐거나 다른 기기의 로그인·로그아웃으로 지워졌다. 다시 보내도 같은 401이라
-      // 남겨 두면 이후 요청이 모두 갱신 실패로 막힌다. 익명 ID는 로그인 때 계정에 병합돼 서버가 더는
-      // 인정하지 않으므로 함께 지운다. 정상 로그아웃과 달리 토큰이 없어 새 익명 ID를 받을 수 없다
+      // 남겨 두면 이후 요청이 모두 갱신 실패로 막힌다. 로그아웃과 같이 익명 ID도 새로 만든다
       clearTokens();
-      clearAnonymousId();
+      rotateAnonymousId();
       sessionExpiredListeners.forEach((listener) => listener());
       return null;
     }

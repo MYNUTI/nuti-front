@@ -6,6 +6,8 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "@/lib/api/client";
 import { IDENTITY_COOKIES } from "@/lib/api/identity";
+import { consentItemKeys } from "@/lib/consent/keys";
+import { DEVICE_GOAL_COOKIE } from "@/lib/goal/device-cookie";
 import { authMutations } from "@/lib/auth/queries";
 import { metaKeys } from "@/lib/me/keys";
 import { onboardingKeys } from "@/lib/onboarding/keys";
@@ -16,13 +18,7 @@ import {
   stubDocumentCookie,
   stubWebLocks,
 } from "@/test/browser";
-import {
-  failure,
-  jwtExpiringIn,
-  mockAdapter,
-  success,
-  type Reply,
-} from "@/test/http";
+import { failure, jwtExpiringIn, mockAdapter, success } from "@/test/http";
 
 const originalAdapter = api.defaults.adapter;
 
@@ -42,23 +38,29 @@ describe("authMutations", () => {
     stubWebLocks();
     channel = stubBroadcastChannel();
     queryClient = new QueryClient();
-    queryClient.setQueryData(savedKeys.list(), { pages: [], pageParams: [] });
+    queryClient.setQueryData(savedKeys.list("WEIGHT_LOSS"), {
+      pages: [],
+      pageParams: [],
+    });
     queryClient.setQueryData(onboardingKeys.bootstrap(), { isLoggedIn: true });
     queryClient.setQueryData(metaKeys.policies(), { privacy: null });
-    queryClient.setQueryData(searchKeys.popularKeywords(), []);
+    queryClient.setQueryData(searchKeys.popularKeywords(), {
+      basedAt: null,
+      keywords: [],
+    });
   });
   afterEach(() => {
     api.defaults.adapter = originalAdapter;
     vi.unstubAllGlobals();
   });
 
-  function reply(handler: () => Reply) {
+  function reply(handler: Parameters<typeof mockAdapter>[0]) {
     const mock = mockAdapter(handler);
     api.defaults.adapter = mock.adapter;
     return mock;
   }
 
-  it("로그인은 익명 ID를 보내 병합하고, 토큰을 저장하고 익명 ID를 지운 뒤 사용자 조회를 다시 부른다", async () => {
+  it("로그인은 익명 ID를 보내 병합하고, 토큰을 저장한 뒤 사용자 조회를 다시 부른다. 익명 ID는 그대로 둔다", async () => {
     const cookies = stubDocumentCookie({
       [IDENTITY_COOKIES.anonymousId]: "anon-1",
     });
@@ -77,20 +79,187 @@ describe("authMutations", () => {
         provider: "KAKAO",
         code: "code-1",
       }),
-    ).resolves.toMatchObject({ mergedRecordCount: 3, user: null });
+    ).resolves.toMatchObject({
+      status: "SIGNED_IN",
+      mergedRecordCount: 3,
+      user: null,
+    });
 
     expect(requests[0]).toMatchObject({ method: "post", url: "/auth/oauth" });
     expect(requests[0].headers.get("X-Anonymous-Id")).toBe("anon-1");
     expect(cookies.get(IDENTITY_COOKIES.accessToken)).toBe(accessToken);
     expect(cookies.get(IDENTITY_COOKIES.refreshToken)).toBe("refresh-1");
-    expect(cookies.get(IDENTITY_COOKIES.anonymousId)).toBeUndefined();
-    expect(queryClient.getQueryState(savedKeys.list())?.isInvalidated).toBe(
-      true,
-    );
+    // 서버가 병합에 실패하면 다음 로그인 때 같은 익명 ID로 다시 옮긴다
+    expect(cookies.get(IDENTITY_COOKIES.anonymousId)).toBe("anon-1");
+    expect(
+      queryClient.getQueryState(savedKeys.list("WEIGHT_LOSS"))?.isInvalidated,
+    ).toBe(true);
     expect(queryClient.getQueryState(metaKeys.policies())?.isInvalidated).toBe(
       false,
     );
     expect(channel.posted).toEqual([{ name: "nuti-session", data: "login" }]);
+  });
+
+  it("로그인 뒤 동의하고 계정에 저장한 목표가 있으면 기기 목표를 맞춘다", async () => {
+    const cookies = stubDocumentCookie({ [DEVICE_GOAL_COOKIE]: "WEIGHT_LOSS" });
+    reply(() =>
+      success({
+        accessToken: jwtExpiringIn(600_000),
+        refreshToken: "refresh-1",
+        newUser: false,
+        goal: "MUSCLE_GAIN",
+        label: "근육 증가",
+        goalAccountConsented: true,
+        appliedAt: "2026-11-20T10:00:00",
+      }),
+    );
+
+    await run(authMutations.login(queryClient), queryClient, {
+      provider: "KAKAO",
+      code: "code-1",
+    });
+    expect(cookies.get(DEVICE_GOAL_COOKIE)).toBe("MUSCLE_GAIN");
+  });
+
+  it("로그인 뒤 계정 목표를 못 받아도 로그인은 끝나고 기기 목표를 그대로 둔다", async () => {
+    const cookies = stubDocumentCookie({ [DEVICE_GOAL_COOKIE]: "WEIGHT_LOSS" });
+    const accessToken = jwtExpiringIn(600_000);
+    reply((config) =>
+      config.url === "/auth/oauth"
+        ? success({ accessToken, refreshToken: "refresh-1", newUser: false })
+        : failure(503, "INTERNAL_SERVER_ERROR"),
+    );
+
+    await expect(
+      run(authMutations.login(queryClient), queryClient, {
+        provider: "KAKAO",
+        code: "code-1",
+      }),
+    ).resolves.toMatchObject({ newUser: false });
+    expect(cookies.get(IDENTITY_COOKIES.accessToken)).toBe(accessToken);
+    expect(cookies.get(DEVICE_GOAL_COOKIE)).toBe("WEIGHT_LOSS");
+  });
+
+  it("처음 로그인이면 토큰을 저장하지 않고 가입 토큰을 돌려주며, 로그인 처리(방송·무효화)를 하지 않는다", async () => {
+    const cookies = stubDocumentCookie({
+      [IDENTITY_COOKIES.anonymousId]: "anon-1",
+    });
+    reply(() =>
+      success({
+        signupRequired: true,
+        signupToken: "signup-1",
+        signupProfile: { provider: "KAKAO", email: null, nickname: "누티" },
+        accessToken: null,
+        refreshToken: null,
+        newUser: false,
+      }),
+    );
+
+    await expect(
+      run(authMutations.login(queryClient), queryClient, {
+        provider: "KAKAO",
+        code: "code-1",
+      }),
+    ).resolves.toMatchObject({
+      status: "SIGNUP_REQUIRED",
+      signupToken: "signup-1",
+    });
+    expect(cookies.get(IDENTITY_COOKIES.accessToken)).toBeUndefined();
+    expect(cookies.get(IDENTITY_COOKIES.anonymousId)).toBe("anon-1");
+    expect(
+      queryClient.getQueryState(savedKeys.list("WEIGHT_LOSS"))?.isInvalidated,
+    ).toBe(false);
+    expect(channel.posted).toEqual([]);
+  });
+
+  it("가입은 목표 계정 저장에 동의했으면 기기 목표를 함께 보내고 토큰을 저장한 뒤 로그인처럼 마무리한다", async () => {
+    const cookies = stubDocumentCookie({
+      [IDENTITY_COOKIES.anonymousId]: "anon-1",
+      [DEVICE_GOAL_COOKIE]: "MUSCLE_GAIN",
+    });
+    const accessToken = jwtExpiringIn(600_000);
+    const { requests } = reply((config) =>
+      config.url === "/auth/signup"
+        ? success({
+            accessToken,
+            refreshToken: "refresh-1",
+            newUser: true,
+            mergedRecordCount: 0,
+          })
+        : failure(503, "INTERNAL_SERVER_ERROR"),
+    );
+
+    await expect(
+      run(authMutations.signup(queryClient), queryClient, {
+        signupToken: "signup-1",
+        agreements: {
+          AGE_14: true,
+          TERMS: true,
+          PRIVACY: true,
+          GOAL_ACCOUNT: true,
+        },
+        termsVersion: "2026-11",
+        privacyVersion: "2026-11",
+      }),
+    ).resolves.toMatchObject({ status: "SIGNED_IN", newUser: true });
+
+    expect(requests[0]).toMatchObject({ method: "post", url: "/auth/signup" });
+    expect(JSON.parse(requests[0].data as string)).toEqual({
+      signupToken: "signup-1",
+      agreements: {
+        AGE_14: true,
+        TERMS: true,
+        PRIVACY: true,
+        GOAL_ACCOUNT: true,
+      },
+      termsVersion: "2026-11",
+      privacyVersion: "2026-11",
+      goal: "MUSCLE_GAIN",
+    });
+    expect(cookies.get(IDENTITY_COOKIES.accessToken)).toBe(accessToken);
+    expect(
+      queryClient.getQueryState(savedKeys.list("WEIGHT_LOSS"))?.isInvalidated,
+    ).toBe(true);
+    expect(channel.posted).toEqual([{ name: "nuti-session", data: "login" }]);
+  });
+
+  it("목표 계정 저장에 동의하지 않았으면 가입할 때 목표를 보내지 않는다(민감정보)", async () => {
+    stubDocumentCookie({ [DEVICE_GOAL_COOKIE]: "MUSCLE_GAIN" });
+    const { requests } = reply(() =>
+      success({
+        accessToken: jwtExpiringIn(600_000),
+        refreshToken: "refresh-1",
+        newUser: true,
+      }),
+    );
+
+    await run(authMutations.signup(queryClient), queryClient, {
+      signupToken: "signup-1",
+      agreements: {
+        AGE_14: true,
+        TERMS: true,
+        PRIVACY: true,
+        GOAL_ACCOUNT: false,
+      },
+    });
+    expect(JSON.parse(requests[0].data as string)).not.toHaveProperty("goal");
+  });
+
+  it("가입이 약관 판 충돌(409)로 거절되면 가입 동의 항목을 다시 부른다", async () => {
+    const cookies = stubDocumentCookie();
+    queryClient.setQueryData(consentItemKeys.all(), { items: [] });
+    reply(() => failure(409, "POLICY_VERSION_CONFLICT"));
+
+    await run(authMutations.signup(queryClient), queryClient, {
+      signupToken: "signup-1",
+      agreements: { AGE_14: true, TERMS: true, PRIVACY: true },
+      termsVersion: "old",
+    }).catch(() => undefined);
+
+    expect(cookies.get(IDENTITY_COOKIES.accessToken)).toBeUndefined();
+    expect(
+      queryClient.getQueryState(consentItemKeys.all())?.isInvalidated,
+    ).toBe(true);
   });
 
   it("로그인이 실패하면 토큰을 저장하지 않고 익명 ID를 남긴다", async () => {
@@ -106,30 +275,42 @@ describe("authMutations", () => {
 
     expect(cookies.get(IDENTITY_COOKIES.refreshToken)).toBeUndefined();
     expect(cookies.get(IDENTITY_COOKIES.anonymousId)).toBe("anon-1");
-    expect(queryClient.getQueryData(savedKeys.list())).toBeDefined();
+    expect(
+      queryClient.getQueryData(savedKeys.list("WEIGHT_LOSS")),
+    ).toBeDefined();
     expect(channel.posted).toEqual([]);
   });
 
-  it("로그아웃은 토큰을 지우고 새 익명 ID를 저장한 뒤 사용자 캐시만 비운다", async () => {
+  it("로그아웃은 토큰을 지우고 익명 ID를 새로 만든 뒤 사용자 캐시만 비운다", async () => {
     const cookies = stubDocumentCookie({
       [IDENTITY_COOKIES.accessToken]: jwtExpiringIn(600_000),
       [IDENTITY_COOKIES.refreshToken]: "refresh-1",
+      [IDENTITY_COOKIES.anonymousId]: "anon-1",
     });
-    reply(() => success({ anonymousId: "anon-2" }));
+    reply(() => success(null));
 
     await run(authMutations.logout(queryClient), queryClient, undefined);
 
     expect(cookies.get(IDENTITY_COOKIES.accessToken)).toBeUndefined();
     expect(cookies.get(IDENTITY_COOKIES.refreshToken)).toBeUndefined();
-    expect(cookies.get(IDENTITY_COOKIES.anonymousId)).toBe("anon-2");
-    expect(queryClient.getQueryData(savedKeys.list())).toBeUndefined();
+    const anonymousId = cookies.get(IDENTITY_COOKIES.anonymousId);
+    expect(anonymousId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+    );
+    expect(anonymousId).not.toBe("anon-1");
+    expect(
+      queryClient.getQueryData(savedKeys.list("WEIGHT_LOSS")),
+    ).toBeUndefined();
     expect(
       queryClient.getQueryData(onboardingKeys.bootstrap()),
     ).toBeUndefined();
     expect(queryClient.getQueryData(metaKeys.policies())).toEqual({
       privacy: null,
     });
-    expect(queryClient.getQueryData(searchKeys.popularKeywords())).toEqual([]);
+    expect(queryClient.getQueryData(searchKeys.popularKeywords())).toEqual({
+      basedAt: null,
+      keywords: [],
+    });
     expect(channel.posted).toEqual([{ name: "nuti-session", data: "logout" }]);
   });
 
@@ -154,8 +335,10 @@ describe("authMutations", () => {
       ).catch(() => undefined);
 
       expect(cookies.get(IDENTITY_COOKIES.refreshToken)).toBeUndefined();
-      expect(cookies.get(IDENTITY_COOKIES.anonymousId)).toBeUndefined();
-      expect(queryClient.getQueryData(savedKeys.list())).toBeUndefined();
+      expect(cookies.get(IDENTITY_COOKIES.anonymousId)).not.toBe("anon-1");
+      expect(
+        queryClient.getQueryData(savedKeys.list("WEIGHT_LOSS")),
+      ).toBeUndefined();
       expect(channel.posted).toEqual([
         { name: "nuti-session", data: "logout" },
       ]);
@@ -174,11 +357,13 @@ describe("authMutations", () => {
     );
 
     expect(cookies.get(IDENTITY_COOKIES.refreshToken)).toBe("refresh-1");
-    expect(queryClient.getQueryData(savedKeys.list())).toBeDefined();
+    expect(
+      queryClient.getQueryData(savedKeys.list("WEIGHT_LOSS")),
+    ).toBeDefined();
     expect(channel.posted).toEqual([]);
   });
 
-  it("탈퇴는 사유를 query로 보내고 토큰·익명 ID를 모두 지운다", async () => {
+  it("탈퇴는 사유 없이 DELETE로 보내고 토큰을 지운 뒤 익명 ID를 새로 만든다", async () => {
     const cookies = stubDocumentCookie({
       [IDENTITY_COOKIES.accessToken]: jwtExpiringIn(600_000),
       [IDENTITY_COOKIES.refreshToken]: "refresh-1",
@@ -186,11 +371,64 @@ describe("authMutations", () => {
     });
     const { requests } = reply(() => success());
 
-    await run(authMutations.withdraw(queryClient), queryClient, "안 써요");
+    await run(authMutations.withdraw(queryClient), queryClient, undefined);
 
     expect(requests[0]).toMatchObject({ method: "delete", url: "/users/me" });
+    expect(requests[0].params).toBeUndefined();
     expect(cookies.get(IDENTITY_COOKIES.refreshToken)).toBeUndefined();
-    expect(cookies.get(IDENTITY_COOKIES.anonymousId)).toBeUndefined();
-    expect(queryClient.getQueryData(savedKeys.list())).toBeUndefined();
+    const anonymousId = cookies.get(IDENTITY_COOKIES.anonymousId);
+    expect(anonymousId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+    );
+    expect(anonymousId).not.toBe("anon-1");
+    expect(
+      queryClient.getQueryData(savedKeys.list("WEIGHT_LOSS")),
+    ).toBeUndefined();
+  });
+
+  it("탈퇴하면 기기 목표·온보딩 완료 기록도 지워 처음 방문 상태로 돌린다. 로그아웃은 남긴다", async () => {
+    const store = new Map([["nuti_onboarding_completed", "1"]]);
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => store.set(key, value),
+      removeItem: (key: string) => store.delete(key),
+    });
+    const cookies = stubDocumentCookie({
+      [IDENTITY_COOKIES.accessToken]: jwtExpiringIn(600_000),
+      [IDENTITY_COOKIES.refreshToken]: "refresh-1",
+      [DEVICE_GOAL_COOKIE]: "MUSCLE_GAIN",
+    });
+    reply(() => success(null));
+
+    await run(authMutations.logout(queryClient), queryClient, undefined);
+    expect(cookies.get(DEVICE_GOAL_COOKIE)).toBe("MUSCLE_GAIN");
+    expect(store.get("nuti_onboarding_completed")).toBe("1");
+
+    await run(authMutations.withdraw(queryClient), queryClient, undefined);
+    expect(cookies.get(DEVICE_GOAL_COOKIE)).toBeUndefined();
+    expect(store.has("nuti_onboarding_completed")).toBe(false);
+  });
+
+  it("탈퇴가 401이어도 이 기기는 처음 방문 상태로 돌린다", async () => {
+    const store = new Map([["nuti_onboarding_completed", "1"]]);
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => store.set(key, value),
+      removeItem: (key: string) => store.delete(key),
+    });
+    const cookies = stubDocumentCookie({
+      [IDENTITY_COOKIES.accessToken]: jwtExpiringIn(600_000),
+      [IDENTITY_COOKIES.refreshToken]: "refresh-1",
+      [DEVICE_GOAL_COOKIE]: "MUSCLE_GAIN",
+    });
+    reply(() => failure(401, "UNAUTHORIZED"));
+
+    await run(
+      authMutations.withdraw(queryClient),
+      queryClient,
+      undefined,
+    ).catch(() => undefined);
+    expect(cookies.get(DEVICE_GOAL_COOKIE)).toBeUndefined();
+    expect(store.has("nuti_onboarding_completed")).toBe(false);
   });
 });

@@ -8,8 +8,6 @@ export type Goal = "diet" | "muscle";
 
 export type PopularProduct = ProductCardItem;
 
-export const FIXTURE_GOAL: Goal = "diet";
-
 export const FIXTURE_POPULAR: PopularProduct[] = [
   {
     id: "5",
