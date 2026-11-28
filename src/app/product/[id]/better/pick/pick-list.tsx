@@ -17,9 +17,9 @@ import {
   useCompare,
   type CompareItem,
 } from "@/components/compare/compare-store";
-import { cn } from "@/lib/utils";
+import { cn, isRemoteImage } from "@/lib/utils";
 
-import type { BetterItem } from "../../_fixtures";
+import type { BetterItem } from "../../model";
 
 type Current = CompareItem & {
   brand: string | null;
@@ -201,6 +201,7 @@ function PickThumb({ src }: { src: string | null }) {
     <Thumb>
       <Image
         src={src ?? "/common/no-photo.png"}
+        unoptimized={src !== null && isRemoteImage(src)}
         width={64}
         height={64}
         sizes="64px"

@@ -137,8 +137,11 @@ export type ProductResultDto = {
   category: { code: string; name: string } | null;
   /** 마시는 환자용 균형영양식이면 「환자용 식품이에요」 */
   patientFoodNote: string | null;
-  /** 1회 제공량이 없으면 null */
-  serving: { text: string; amount: number; unit: string } | null;
+  /**
+   * 1회 제공량이 없으면 null. text는 성분표에 적힌 그대로(「1개(40g)」), 거기서 양을 못 읽으면 amount·unit이 null이다
+   * (백엔드 `ServingSize.parse`)
+   */
+  serving: { text: string; amount: number | null; unit: string | null } | null;
   basis: "100g" | "100mL";
   /** 감량 점수에 쓴 하루 칼로리 구간 */
   kcalBand: number;
@@ -276,7 +279,7 @@ export type ProductResult = {
   stateLabel: string;
   category: { code: string; name: string } | null;
   patientFoodNote: string | null;
-  serving: { text: string; amount: number; unit: string } | null;
+  serving: { text: string; amount: number | null; unit: string | null } | null;
   basis: "100g" | "100mL";
   kcalBand: number;
   /** 목표별 결과. 점수가 없는 제품은 null이라, 점수를 꺼내려면 null 처리를 거쳐야 한다 */

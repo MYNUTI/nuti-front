@@ -19,12 +19,16 @@ import {
   useCompare,
   type CompareItem,
 } from "@/components/compare/compare-store";
+import { useRemoveSavedProduct, useSaveProduct } from "@/lib/saved/queries";
 import { cn } from "@/lib/utils";
 
 /*
  * 3-2 ♡ 저장 · 비교함 담기. 둘은 따로 켜지고 꺼진다(디자인 「담고 저장했을 때」·「비교함에 담았을 때」·「즐겨찾기했을 때」).
  * ♡는 점수 줄에, 담기는 아래 고정 줄에 있어 같은 상태를 나눠 쓰려고 context로 묶는다.
- * 비교함은 화면 사이에 유지되는 공통 저장소(components/compare)를 쓴다. ♡ 서버 저장은 API 연결 때 붙인다(지금은 이 화면 안 상태).
+ * 비교함은 화면 사이에 유지되는 공통 저장소(components/compare)를 쓴다. ♡는 즐겨찾기 API로 저장하고, 서버가 받은 뒤
+ * 상세 캐시의 `saved`가 바뀐다(`savedMutations`의 setQueryData). 화면은 그 값을 `saved`로 받는다.
+ * 저장과 해제의 응답 순서가 뒤바뀌면 서버와 어긋나 보내는 동안에는 ♡를 막는다(API 플랜 「화면 연결 때 챙길 것」).
+ * 실패 알림은 공통 알림(`setMutationErrorListener`)이 맡는다(API 12단계 「나중」).
  */
 
 type ToastState = {
@@ -38,6 +42,8 @@ type Actions = {
   /** 되돌리기 뒤 포커스를 돌려놓을 ♡ 버튼 */
   saveRef: React.RefObject<HTMLButtonElement | null>;
   saved: boolean;
+  /** 저장 · 해제를 보내는 중 */
+  saving: boolean;
   /** 비교함에 담긴 제품들(이 제품 포함 여부는 added) */
   compare: readonly CompareItem[];
   added: boolean;
@@ -62,17 +68,22 @@ function useActions() {
 
 export function ProductActions({
   product,
+  saved,
   previewing,
   children,
 }: {
   /** 비교함에 담을 이 제품 */
   product: CompareItem;
+  /** 즐겨찾기 여부(상세 캐시) */
+  saved: boolean;
   /** 다른 목표로 미리 보는 중이면 담기 알림이 「내 목표 기준으로 담았어요」(디자인 메모 11-03) */
   previewing: boolean;
   children: React.ReactNode;
 }) {
   const saveRef = useRef<HTMLButtonElement>(null);
-  const [saved, setSaved] = useState(false);
+  const save = useSaveProduct();
+  const remove = useRemoveSavedProduct();
+  const saving = save.isPending || remove.isPending;
   const compare = useCompare();
   const added = compare.some((item) => item.id === product.id);
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -83,25 +94,32 @@ export function ProductActions({
     setToast((prev) => ({ ...t, key: (prev?.key ?? 0) + 1 }));
 
   const toggleSave = () => {
+    if (saving) return;
     if (saved) {
-      setSaved(false);
-      // 【최종】: ♥를 풀면 「즐겨찾기에서 뺐어요」 + [되돌리기]
-      showToast({
-        message: "즐겨찾기에서 뺐어요",
-        action: {
-          label: "되돌리기",
-          onClick: () => {
-            setSaved(true);
-            // 알림 띠가 누른 버튼째 사라지니 포커스를 ♡로 돌려놓는다
-            saveRef.current?.focus();
-            setToast(null);
-          },
+      remove.mutate(product.id, {
+        onSuccess: () => {
+          // 【최종】: ♥를 풀면 「즐겨찾기에서 뺐어요」 + [되돌리기]
+          showToast({
+            message: "즐겨찾기에서 뺐어요",
+            action: {
+              label: "되돌리기",
+              onClick: () => {
+                // 알림 띠가 누른 버튼째 사라지니 포커스를 ♡로 돌려놓는다
+                saveRef.current?.focus();
+                setToast(null);
+                save.mutate(product.id);
+              },
+            },
+          });
         },
       });
     } else {
-      setSaved(true);
-      showToast({
-        message: "즐겨찾기에 넣었어요. 기록 탭에서 볼 수 있어요.",
+      save.mutate(product.id, {
+        onSuccess: () => {
+          showToast({
+            message: "즐겨찾기에 넣었어요. 기록 탭에서 볼 수 있어요.",
+          });
+        },
       });
     }
   };
@@ -129,6 +147,7 @@ export function ProductActions({
         previewing,
         saveRef,
         saved,
+        saving,
         compare,
         added,
         toggleSave,
@@ -203,13 +222,15 @@ export function ShareButton({ path, title }: { path: string; title: string }) {
 
 /** 점수 줄의 ♡. 켜면 분홍으로 채운다 */
 export function SaveButton() {
-  const { saveRef, saved, toggleSave } = useActions();
+  // 보내는 동안은 toggleSave가 막는다. disabled로 막으면 키보드 포커스가 빠진다
+  const { saveRef, saved, saving, toggleSave } = useActions();
   return (
     <button
       ref={saveRef}
       type="button"
       aria-label="저장"
       aria-pressed={saved}
+      aria-disabled={saving}
       className={cn("[&_svg]:size-7", saved && "text-accent-pink")}
       onClick={toggleSave}
     >

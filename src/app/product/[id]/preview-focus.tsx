@@ -7,17 +7,37 @@ import { useEffect, useRef } from "react";
  * 「다른 목표로 보기」를 켜고 끌 때 누른 링크가 다른 요소로 바뀌며 사라져 키보드·화면 읽기 포커스가 끊긴다.
  * 제목도 그대로라 화면이 바뀐 걸 알리지 못해, 링크를 눌러 바뀐 경우에만 새 상태의 첫 자리로 포커스를 옮긴다.
  * 주소로 바로 들어올 때는 옮기지 않는다(포커스를 빼앗지 않게).
+ *
+ * 두 목표 결과가 한 응답에 있어 주소(`?preview=`)만 바꾼다. 링크로 이동하면 Next 16은 동적 페이지를 캐시하지 않아
+ * (`staleTimes.dynamic` 0) 서버 렌더와 상세 조회가 다시 돌고, 서버는 조회마다 조회수를 올린다.
+ * `history.pushState`는 Next 라우터의 `useSearchParams`와 이어져 서버를 부르지 않고 다시 그린다.
+ * 새 탭 열기(보조 키 · 가운데 버튼)는 그대로 둔다.
  */
 let moved = false;
 
-export function PreviewLink(props: React.ComponentProps<typeof Link>) {
+export function PreviewLink({
+  href,
+  ...props
+}: Omit<React.ComponentProps<typeof Link>, "href"> & { href: string }) {
   return (
     <Link
       scroll={false}
+      href={href}
       {...props}
       onClick={(event) => {
-        moved = true;
         props.onClick?.(event);
+        if (
+          event.defaultPrevented ||
+          event.button !== 0 ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey
+        )
+          return;
+        event.preventDefault();
+        moved = true;
+        window.history.pushState(null, "", href);
       }}
     />
   );

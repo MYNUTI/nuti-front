@@ -9,8 +9,10 @@ import { useProductToast } from "./product-actions";
 
 /** 3-2 「정보 수정 요청」 글자 버튼. 누르면 정보가 틀렸어요 시트, 보낸 뒤 알림은 3-2의 알림 띠 */
 export function ReportButton({
+  productId,
   failPreview = false,
 }: {
+  productId: string;
   failPreview?: boolean;
 }) {
   const showToast = useProductToast();
@@ -27,6 +29,7 @@ export function ReportButton({
         정보 수정 요청
       </button>
       <ReportSheet
+        productId={productId}
         open={open}
         onOpenChange={setOpen}
         onSent={(message) => showToast({ message })}

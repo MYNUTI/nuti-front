@@ -32,3 +32,11 @@ const twMerge = extendTailwindMerge({
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+/**
+ * API가 주는 제품 사진(쿠팡 이미지 서버 등 바깥 주소)인지. 사진 주소의 호스트가 정해져 있지 않아
+ * `next.config`의 `images.remotePatterns`로 열 수 없어, 바깥 주소는 next/image 최적화를 끄고 그대로 받는다
+ */
+export function isRemoteImage(src: string) {
+  return /^https?:\/\//.test(src);
+}

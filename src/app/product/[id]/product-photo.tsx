@@ -3,7 +3,9 @@
 import Image from "next/image";
 import { useState } from "react";
 
-import type { ProductResult } from "./_fixtures";
+import { isRemoteImage } from "@/lib/utils";
+
+import type { ProductResult } from "./model";
 
 /*
  * 3-2 제품 머리의 큰 사진. 사진이 없거나 주소가 깨지면 3-2 「사진이 없을 때」 그림으로 바꾼다.
@@ -18,6 +20,7 @@ export function ProductPhoto({ image }: { image: ProductResult["image"] }) {
     return (
       <Image
         src={image.src}
+        unoptimized={isRemoteImage(image.src)}
         width={image.size}
         height={image.size}
         sizes="256px"
