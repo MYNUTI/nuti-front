@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { toGtin14 } from "@/lib/scan/gtin";
+
 import { ScanEntry } from "./scan-entry";
 
 export const metadata: Metadata = {
@@ -12,8 +14,11 @@ export default async function ScanPage({ searchParams }: PageProps<"/scan">) {
   return (
     <ScanEntry
       // 숫자만 받는다. 사진에서 읽은 바코드를 홈의 시트가 넘긴다
+      // 앱 안에서는 GTIN-14로 만든 주소로 오지만, 직접 넣은 8 · 12 · 13자리도 조회 키(GTIN-14)로 맞춘다
       gtin={
-        typeof gtin === "string" && /^\d{8,14}$/.test(gtin) ? gtin : undefined
+        typeof gtin === "string" && /^\d{8,14}$/.test(gtin)
+          ? toGtin14(gtin)
+          : undefined
       }
       manual={manual === "1"}
     />

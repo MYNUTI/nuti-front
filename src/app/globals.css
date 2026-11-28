@@ -19,6 +19,9 @@
   --brand-primary-weak: #f0ffe0;
   --brand-on-lime: #0d1a02;
   --brand-link: #2a7d06;
+  /* 【최종】 주 버튼 면. 검정이 기본, 라임은 온보딩 5장(0-3 · 0-3x · 0-4 · 0-4b · 1-5)만. 누른 색 변수는 디자인에 없다 */
+  --brand-button: #141516;
+  --brand-button-lime: #aff868;
   --accent-pink: #f0306b;
   --accent-pink-weak: #ffe8ef;
   --accent-pink-text: #c4104d;
@@ -60,7 +63,7 @@
 
   /*
    * 점수 색(11-03 점수 링). 디자인 변수 모음 「점수 색」의 모드 ① 우리 색.
-   * 모드를 바꾸면 이 값만 바꾼다(② 중간 · ③ 노써치와 같게). 1 잘 맞음 ~ 5 안 맞음
+   * 모드를 바꾸면 이 값만 바꾼다(② 중간 · ③ 노써치와 같게). 1 매우 높음 ~ 5 매우 낮음
    */
   --score-track: #eef0f2;
   --score-ring-1: #40cf52;
@@ -74,108 +77,12 @@
   --score-number-4: #111111;
   --score-number-5: #111111;
 
-  /*
-   * 예전 디자인 토큰. 아직 바꾸지 않은 임시 화면이 쓰고 있어 남겨 둔다.
-   * 새 코드에서는 쓰지 않고, 마지막 사용처가 바뀌면 지운다(UI 플랜 13단계).
-   * v3와 이름이 겹치는 text-disabled·text-danger·icon-default는 v3 값을 쓴다.
-   */
-  /* Figma Primitive 컬렉션 중 컴포넌트가 직접 참조하는 것만 */
-  --deep-green-500: #258770;
-  /* Figma 컴포넌트는 같은 값의 Grove (수정필요)/100을 참조 중 */
-  --deep-green-700: #2f6758;
-  --grayscale-100: #f7f7f7;
-  --grayscale-300: #d4d4d4;
-  --grayscale-800: #333333;
-  --black-alpha-50: #1a1a1a80;
-  --black-alpha-80: #1a1a1acc;
-
-  /* Figma Semantic 컬렉션 (Light). 값은 Primitive를 풀어 쓴 것 */
-  --bg-default: #f8f9fa;
-  --bg-surface: #ffffff;
-  --bg-disabled: #eaeaea;
-  --bg-neutral: #eaeaea;
-  --bg-info: #e8f4fb;
-  --bg-success: #e8fbf0;
-  --bg-warning: #fef8e8;
-  --bg-danger: #fbe8e8;
-  --bg-a-default: #3a7fb8;
-  --bg-a-light: #e8f3fb;
-  --bg-b-default: #3a956e;
-  --bg-b-light: #e8f8f0;
-  --bg-c-default: #a87a15;
-  --bg-c-light: #fbf6e8;
-  --bg-d-default: #c9652a;
-  --bg-d-light: #fbf0e8;
-  --bg-e-default: #c92a3f;
-  --bg-e-light: #fbe8ec;
-
-  --text-default: #1f1f1f;
-  --text-secondary: #4d4d4d;
-  --text-tertiary: #888888;
-  --text-neutral: #666666;
-  --text-on-color: #f8f9fa;
-  --text-info: #2a7fdc;
-  --text-success: #2fa86e;
-  --text-warning: #b57522;
-  --text-a-default: #285a85;
-  --text-b-default: #287050;
-  --text-c-default: #7a5a10;
-  --text-d-default: #8f481a;
-  --text-e-default: #8f1a2a;
-
-  --icon-secondary: #666666;
-  --icon-disabled: #b0b0b0;
-  --icon-on-color: #f8f9fa;
-  --icon-neutral: #666666;
-  --icon-info: #2a7fdc;
-  --icon-success: #2fa86e;
-  --icon-warning: #b57522;
-  --icon-danger: #dc2a3f;
-
-  --border-default: #eaeaea;
-  --border-focus: #4d4d4d;
-  --border-neutral-default: #888888;
-  --border-neutral-strong: #666666;
-  --border-info: #2a7fdc;
-  --border-warning: #b57522;
-  --border-danger: #dc2a3f;
-  --border-a-default: #3a7fb8;
-  --border-a-strong: #285a85;
-  --border-b-default: #3a956e;
-  --border-b-strong: #287050;
-  --border-c-default: #a87a15;
-  --border-c-strong: #7a5a10;
-  --border-d-default: #c9652a;
-  --border-d-strong: #8f481a;
-  --border-e-default: #c92a3f;
-  --border-e-strong: #8f1a2a;
-
-  /* shadcn 컴포넌트용 별칭 */
+  /* shadcn 기본 스타일(아래 @layer base)과 앱 셸이 쓰는 별칭만 남겼다 */
   --background: var(--bg-page);
   --foreground: var(--text-body);
-  --card: var(--bg-page);
-  --card-foreground: var(--text-body);
-  --popover: var(--bg-page);
-  --popover-foreground: var(--text-body);
-  --primary: var(--brand-primary);
-  --primary-foreground: var(--brand-on-lime);
-  --secondary: var(--bg-band);
-  --secondary-foreground: var(--text-strong);
-  --muted: var(--bg-band);
-  --muted-foreground: var(--text-sub);
-  --accent: var(--bg-band);
-  --accent-foreground: var(--text-strong);
-  --destructive: var(--text-danger);
   --border: var(--line-default);
-  --input: var(--line-strong);
   --ring: var(--text-strong);
   --radius: 1rem;
-
-  --chart-1: var(--grade-a);
-  --chart-2: var(--grade-b);
-  --chart-3: var(--grade-c);
-  --chart-4: var(--grade-d);
-  --chart-5: var(--grade-e);
 }
 
 @theme inline {
@@ -230,6 +137,8 @@
   --color-brand-primary-weak: var(--brand-primary-weak);
   --color-brand-on-lime: var(--brand-on-lime);
   --color-brand-link: var(--brand-link);
+  --color-brand-button: var(--brand-button);
+  --color-brand-button-lime: var(--brand-button-lime);
   --color-accent-pink: var(--accent-pink);
   --color-accent-pink-weak: var(--accent-pink-weak);
   --color-accent-pink-text: var(--accent-pink-text);
@@ -279,113 +188,19 @@
   --color-backdrop: var(--backdrop);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
   --color-border: var(--border);
-  --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --color-deep-green-500: var(--deep-green-500);
-  --color-deep-green-700: var(--deep-green-700);
-  --color-grayscale-100: var(--grayscale-100);
-  --color-grayscale-300: var(--grayscale-300);
-  --color-grayscale-800: var(--grayscale-800);
-  --color-black-alpha-50: var(--black-alpha-50);
-  --color-black-alpha-80: var(--black-alpha-80);
-
-  --color-bg-default: var(--bg-default);
-  --color-bg-surface: var(--bg-surface);
-  --color-bg-disabled: var(--bg-disabled);
-  --color-bg-neutral: var(--bg-neutral);
-  --color-bg-info: var(--bg-info);
-  --color-bg-success: var(--bg-success);
-  --color-bg-warning: var(--bg-warning);
-  --color-bg-danger: var(--bg-danger);
-  --color-bg-a-default: var(--bg-a-default);
-  --color-bg-a-light: var(--bg-a-light);
-  --color-bg-b-default: var(--bg-b-default);
-  --color-bg-b-light: var(--bg-b-light);
-  --color-bg-c-default: var(--bg-c-default);
-  --color-bg-c-light: var(--bg-c-light);
-  --color-bg-d-default: var(--bg-d-default);
-  --color-bg-d-light: var(--bg-d-light);
-  --color-bg-e-default: var(--bg-e-default);
-  --color-bg-e-light: var(--bg-e-light);
-
-  --color-text-default: var(--text-default);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-tertiary: var(--text-tertiary);
-  --color-text-neutral: var(--text-neutral);
   --color-text-disabled: var(--text-disabled);
-  --color-text-on-color: var(--text-on-color);
-  --color-text-info: var(--text-info);
-  --color-text-success: var(--text-success);
-  --color-text-warning: var(--text-warning);
   --color-text-danger: var(--text-danger);
-  --color-text-a-default: var(--text-a-default);
-  --color-text-b-default: var(--text-b-default);
-  --color-text-c-default: var(--text-c-default);
-  --color-text-d-default: var(--text-d-default);
-  --color-text-e-default: var(--text-e-default);
 
   --color-icon-default: var(--icon-default);
-  --color-icon-secondary: var(--icon-secondary);
-  --color-icon-disabled: var(--icon-disabled);
-  --color-icon-on-color: var(--icon-on-color);
-  --color-icon-neutral: var(--icon-neutral);
-  --color-icon-info: var(--icon-info);
-  --color-icon-success: var(--icon-success);
-  --color-icon-warning: var(--icon-warning);
-  --color-icon-danger: var(--icon-danger);
-
-  --color-border-default: var(--border-default);
-  --color-border-focus: var(--border-focus);
-  --color-border-neutral-default: var(--border-neutral-default);
-  --color-border-neutral-strong: var(--border-neutral-strong);
-  --color-border-info: var(--border-info);
-  --color-border-warning: var(--border-warning);
-  --color-border-danger: var(--border-danger);
-  --color-border-a-default: var(--border-a-default);
-  --color-border-a-strong: var(--border-a-strong);
-  --color-border-b-default: var(--border-b-default);
-  --color-border-b-strong: var(--border-b-strong);
-  --color-border-c-default: var(--border-c-default);
-  --color-border-c-strong: var(--border-c-strong);
-  --color-border-d-default: var(--border-d-default);
-  --color-border-d-strong: var(--border-d-strong);
-  --color-border-e-default: var(--border-e-default);
-  --color-border-e-strong: var(--border-e-strong);
-
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
 
   /* 디자인 radius/ — sm 8 · md 12 · lg 16 · sheet 20. pill은 rounded-full */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: var(--radius);
   --radius-sheet: 20px;
-  /*
-   * xl 이상은 디자인에 없는 값이다. 임시 화면이 예전 모양을 유지하도록 토큰 교체 전 값으로 고정했다.
-   * 새 코드에서는 쓰지 않고, 마지막 사용처가 바뀌면 지운다(UI 플랜 13단계).
-   */
-  --radius-xl: 14px;
-  --radius-2xl: 18px;
-  --radius-3xl: 22px;
-  --radius-4xl: 26px;
 }
 
 @layer base {

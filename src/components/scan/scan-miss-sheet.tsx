@@ -7,7 +7,7 @@ import { BottomSheet } from "@/components/common/sheet";
 
 /**
  * 3-1 스캔(바코드를 못 읽었을 때). 카메라 위 바텀시트. 뒤의 카메라는 계속 켜 둔다.
- * 디자인 메모: ✕·「다시 비추기」 → 3-1 스캔(닫고 다시 인식)
+ * 디자인 메모: ✕·「바코드 다시 찍기」 → 3-1 스캔(닫고 다시 인식)
  */
 export function ScanMissSheet({
   open,
@@ -24,13 +24,7 @@ export function ScanMissSheet({
       open={open}
       onOpenChange={onOpenChange}
       title="바코드를 읽지 못했어요"
-      description={
-        <>
-          흔들리거나 빛이 반사되면 잘 안 읽혀요.
-          <br />
-          다른 방법으로 찾아볼까요?
-        </>
-      }
+      description="흔들리거나 빛이 반사되면 잘 안 읽혀요."
     >
       <div className="mt-2 flex gap-2">
         <Button
@@ -58,7 +52,7 @@ export function ScanMissSheet({
           size="M"
           onClick={() => onOpenChange(false)}
         >
-          다시 비추기
+          바코드 다시 찍기
         </Button>
       </div>
     </BottomSheet>
@@ -87,14 +81,7 @@ export function PhotoMissSheet({
       open={open}
       onOpenChange={onOpenChange}
       title="사진에서 바코드를 못 읽었어요"
-      description={
-        <>
-          바코드가 또렷하게 나온 사진을 골라 주세요.
-          <br />
-          {/* 번호 입력이 없는 곳(PC)에서는 없는 방법을 안내하지 않는다 */}
-          {onManual ? "번호나 이름으로도" : "이름으로도"} 찾을 수 있어요.
-        </>
-      }
+      description="바코드가 또렷하게 나온 사진을 골라 주세요."
     >
       <div className="mt-2 flex gap-2">
         {onManual && (

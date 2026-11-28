@@ -1,7 +1,5 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { createContext, use, useRef, useState } from "react";
 
 import { BottomCta } from "@/components/common/bottom-cta";
@@ -13,12 +11,20 @@ import {
   IconHeartFill,
   IconShare,
 } from "@/components/icons";
+import { CompareBar } from "@/components/compare/compare-bar";
+import { CompareFullSheet } from "@/components/compare/compare-full-sheet";
+import {
+  addToCompare,
+  removeFromCompare,
+  useCompare,
+  type CompareItem,
+} from "@/components/compare/compare-store";
 import { cn } from "@/lib/utils";
 
 /*
  * 3-2 ♡ 저장 · 비교함 담기. 둘은 따로 켜지고 꺼진다(디자인 「담고 저장했을 때」·「비교함에 담았을 때」·「즐겨찾기했을 때」).
  * ♡는 점수 줄에, 담기는 아래 고정 줄에 있어 같은 상태를 나눠 쓰려고 context로 묶는다.
- * 서버 저장·비교함 목록 유지는 API 연결·05단계(비교) 때 붙인다. 지금은 이 화면 안 상태다.
+ * 비교함은 화면 사이에 유지되는 공통 저장소(components/compare)를 쓴다. ♡ 서버 저장은 API 연결 때 붙인다(지금은 이 화면 안 상태).
  */
 
 type ToastState = {
@@ -32,6 +38,8 @@ type Actions = {
   /** 되돌리기 뒤 포커스를 돌려놓을 ♡ 버튼 */
   saveRef: React.RefObject<HTMLButtonElement | null>;
   saved: boolean;
+  /** 비교함에 담긴 제품들(이 제품 포함 여부는 added) */
+  compare: readonly CompareItem[];
   added: boolean;
   toggleSave: () => void;
   toggleAdd: () => void;
@@ -53,17 +61,23 @@ function useActions() {
 }
 
 export function ProductActions({
+  product,
   previewing,
   children,
 }: {
+  /** 비교함에 담을 이 제품 */
+  product: CompareItem;
   /** 다른 목표로 미리 보는 중이면 담기 알림이 「내 목표 기준으로 담았어요」(디자인 메모 11-03) */
   previewing: boolean;
   children: React.ReactNode;
 }) {
   const saveRef = useRef<HTMLButtonElement>(null);
   const [saved, setSaved] = useState(false);
-  const [added, setAdded] = useState(false);
+  const compare = useCompare();
+  const added = compare.some((item) => item.id === product.id);
   const [toast, setToast] = useState<ToastState | null>(null);
+  // 꽉 찼을 때 담으려던 이 제품(3-4 비교함이 다 찼을 때 시트)
+  const [pending, setPending] = useState<CompareItem | null>(null);
 
   const showToast = (t: Omit<ToastState, "key">) =>
     setToast((prev) => ({ ...t, key: (prev?.key ?? 0) + 1 }));
@@ -71,9 +85,9 @@ export function ProductActions({
   const toggleSave = () => {
     if (saved) {
       setSaved(false);
-      // 디자인 메모: ♥를 풀면 「저장을 풀었어요」 + [되돌리기]
+      // 【최종】: ♥를 풀면 「즐겨찾기에서 뺐어요」 + [되돌리기]
       showToast({
-        message: "저장을 풀었어요",
+        message: "즐겨찾기에서 뺐어요",
         action: {
           label: "되돌리기",
           onClick: () => {
@@ -86,19 +100,27 @@ export function ProductActions({
       });
     } else {
       setSaved(true);
-      showToast({ message: "즐겨찾기에 넣었어요. 내 기록에서 볼 수 있어요." });
+      showToast({
+        message: "즐겨찾기에 넣었어요. 기록 탭에서 볼 수 있어요.",
+      });
     }
   };
 
   const toggleAdd = () => {
     if (added) {
-      setAdded(false);
+      removeFromCompare(product.id);
       return;
     }
-    setAdded(true);
-    showToast({
-      message: previewing ? "내 목표 기준으로 담았어요" : "비교함에 담았어요",
-    });
+    if (addToCompare(product) === "full") {
+      setPending(product);
+      return;
+    }
+    showAdded();
+  };
+
+  // 【최종】: 비교함 바 글이 담은 걸 알려 주니 알림은 미리 보는 중(다른 목표로 보는데 내 목표 기준으로 담김)에만
+  const showAdded = () => {
+    if (previewing) showToast({ message: "내 목표 기준으로 담았어요" });
   };
 
   return (
@@ -107,6 +129,7 @@ export function ProductActions({
         previewing,
         saveRef,
         saved,
+        compare,
         added,
         toggleSave,
         toggleAdd,
@@ -115,6 +138,13 @@ export function ProductActions({
       }}
     >
       {children}
+      <CompareFullSheet
+        key={pending?.id}
+        pending={pending}
+        onClose={() => setPending(null)}
+        // 빼고 담은 것도 담은 것이라 담기와 같은 알림
+        onReplaced={showAdded}
+      />
     </ActionsContext>
   );
 }
@@ -155,7 +185,7 @@ export function ShareButton({ path, title }: { path: string; title: string }) {
     showToast({
       message: previewing
         ? "주소를 복사했어요. 받는 사람의 목표 기준으로 보여요"
-        : "주소를 복사했어요. 카카오톡 등에 붙여 넣어 보내 보세요.",
+        : "링크를 복사했어요",
     });
   };
 
@@ -188,18 +218,18 @@ export function SaveButton() {
   );
 }
 
-/** 아래 고정 줄 [비교함 담기][쿠팡에서 보기] + 담으면 그 위 비교함 바 + 알림 띠 */
+/** 아래 고정 줄 [비교함 담기][쿠팡에서 보기] + 비교함에 담은 제품이 있으면 그 위 비교함 바 + 알림 띠 */
 export function ProductBottomBar({
   coupangUrl,
-  thumbnail,
+  soldOut,
 }: {
   coupangUrl: string | null;
-  /** 비교함 바에 보일 이 제품 사진 */
-  thumbnail: string | null;
+  /** 쿠팡 품절이면 「쿠팡에서 찾아보기」(주소는 쿠팡 검색 결과) */
+  soldOut: boolean;
 }) {
-  const { added, toggleAdd, toast, showToast } = useActions();
-  // 지금은 이 화면에서 담은 제품만 센다(비교함 목록 유지는 05단계)
-  const count = added ? 1 : 0;
+  const { compare, added, toggleAdd, toast, showToast } = useActions();
+  // 다른 화면에서 담은 제품도 센다(비교함은 화면 사이에 유지된다)
+  const count = compare.length;
 
   return (
     <>
@@ -207,30 +237,13 @@ export function ProductBottomBar({
       {count > 0 && <div aria-hidden className="h-[61px]" />}
       {count > 0 && (
         // 아래 고정 줄(위 선 1 + 위 여백 12 + 버튼 52 + 아래 여백) 바로 위에 붙인다. 바 높이 61 = 선 1 + 12 + 버튼 44 + 4
-        <div className="fixed-app bottom-[calc(65px+max(var(--safe-bottom),12px))] z-30 flex items-center gap-2 border-t border-line-default bg-bg-page px-5 pt-3 pb-1">
-          <span className="size-8 shrink-0 overflow-hidden rounded-sm bg-bg-tint">
-            <CompareThumb key={thumbnail} src={thumbnail} />
-          </span>
-          <p className="flex-1 text-body1-bold text-text-strong">
-            비교함 {count}
-          </p>
-          {count < 2 ? (
-            // 디자인 메모: 1개만 담고 비교하기 → 「비교하려면 하나 더 담아 주세요」
-            <Button
-              type="button"
-              size="M"
-              onClick={() =>
-                showToast({ message: "비교하려면 하나 더 담아 주세요" })
-              }
-            >
-              비교하기
-            </Button>
-          ) : (
-            <Button size="M" asChild>
-              <Link href="/compare">비교하기</Link>
-            </Button>
-          )}
-        </div>
+        <CompareBar
+          items={compare}
+          onTooFew={() =>
+            showToast({ message: "비교하려면 하나 더 담아 주세요" })
+          }
+          className="bottom-[calc(65px+max(var(--safe-bottom),12px))] pb-1"
+        />
       )}
 
       {/* 디자인 메모(11-04): 아래 고정 줄은 [비교함 담기] [쿠팡에서 보기]만, 위에 얇은 선 */}
@@ -257,7 +270,7 @@ export function ProductBottomBar({
         {coupangUrl && (
           <Button className="flex-1" asChild>
             <a href={coupangUrl} target="_blank" rel="noopener noreferrer">
-              쿠팡에서 보기
+              {soldOut ? "쿠팡에서 찾아보기" : "쿠팡에서 보기"}
             </a>
           </Button>
         )}
@@ -270,38 +283,11 @@ export function ProductBottomBar({
           action={toast.action}
           className={
             count > 0
-              ? "bottom-[calc(65px+max(var(--safe-bottom),12px)+69px)]"
-              : "bottom-[calc(65px+max(var(--safe-bottom),12px)+8px)]"
+              ? "bottom-[calc(65px+max(var(--safe-bottom),12px)+73px)]"
+              : "bottom-[calc(65px+max(var(--safe-bottom),12px)+12px)]"
           }
         />
       )}
     </>
-  );
-}
-
-/** 비교함 바의 작은 사진. 사진이 없거나 깨지면 3-2 「사진이 없을 때」 그림만(작은 칸은 글 없이) */
-function CompareThumb({ src }: { src: string | null }) {
-  const [broken, setBroken] = useState(false);
-  if (!src || broken) {
-    // 로컬 그림이라 작은 칸 크기로 줄여 받는다
-    return (
-      <Image
-        src="/common/no-photo.png"
-        width={32}
-        height={32}
-        alt=""
-        className="size-full"
-      />
-    );
-  }
-  return (
-    // 서버 사진 주소라 next/image 허용 도메인을 정하기 전까지 img로 둔다
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt=""
-      className="size-full object-contain"
-      onError={() => setBroken(true)}
-    />
   );
 }

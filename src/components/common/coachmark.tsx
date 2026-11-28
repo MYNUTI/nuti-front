@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
  * 화면 위에 검정(#111418) 60% 막을 깔고 가리킬 곳만 뚫어 밝게 둔다. 꼬리는 가리킬 곳 쪽.
  * 가리킬 곳은 data-guide 속성으로 찾아 실제 위치를 잰다.
  * 막이 떠 있는 동안 뒤 화면은 스크롤·누르기가 막히고, 밝힌 자리도 눌리지 않는다(가이드 중 다른 화면으로 넘어가지 않게).
- * 초점 가두기·스크롤 막기·Esc는 Radix Dialog가 맡는다. 막 바깥을 눌러서는 닫히지 않고, Esc는 onClose를 부른다.
+ * 초점 가두기·스크롤 막기·Esc는 Radix Dialog가 맡는다. Esc는 onClose를, 말풍선 밖(막)을 누르면 onOutside를 부른다.
  */
 type Rect = { top: number; left: number; width: number; height: number };
 
@@ -28,6 +28,7 @@ export function Coachmark({
   body,
   actions,
   onClose,
+  onOutside,
 }: {
   /** 가리킬 요소의 data-guide 값 */
   target: string;
@@ -40,10 +41,12 @@ export function Coachmark({
   /** 꼬리 왼쪽 위치(말풍선 왼쪽 기준 px). 없으면 구멍 가운데를 가리킨다 */
   tailOffset?: number;
   title: React.ReactNode;
-  body: React.ReactNode;
+  body?: React.ReactNode;
   actions: React.ReactNode;
   /** Esc로 닫을 때 */
   onClose: () => void;
+  /** 말풍선 밖(막)을 눌렀을 때. 없으면 아무 일도 없다 */
+  onOutside?: () => void;
 }) {
   const [layout, setLayout] = useState<{
     hole: Rect;
@@ -123,7 +126,11 @@ export function Coachmark({
           style={hole}
         />
         <Dialog.Content
-          onPointerDownOutside={(e) => e.preventDefault()}
+          {...(body ? {} : { "aria-describedby": undefined })}
+          onPointerDownOutside={(e) => {
+            e.preventDefault();
+            onOutside?.();
+          }}
           className="fixed z-50 flex flex-col outline-none"
           style={bubbleStyle}
         >
@@ -132,9 +139,11 @@ export function Coachmark({
             <Dialog.Title className="text-body1-bold text-text-strong">
               {title}
             </Dialog.Title>
-            <Dialog.Description className="text-body2 whitespace-pre-line text-text-body">
-              {body}
-            </Dialog.Description>
+            {body && (
+              <Dialog.Description className="text-body2 whitespace-pre-line text-text-body">
+                {body}
+              </Dialog.Description>
+            )}
             <div className="flex items-center justify-end gap-3 pt-1.5">
               {actions}
             </div>

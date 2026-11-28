@@ -12,6 +12,7 @@ import type { Goal } from "./_fixtures";
  * 디자인 메모: 1/2는 스캔 버튼, 2/2는 검색칸만 밝힌다.
  * 디자인 메모에는 밝힌 자리를 누르면 그 기능으로 간다고 되어 있지만, 가이드 중에는 누르지 않게 했다(11-04 결정).
  * 건너뛰기·시작하기·Esc는 가이드를 닫고 홈(첫 방문)을 그대로 보인다.
+ * 【최종】 메모: 말풍선 밖(막)을 누르면 1/2는 2/2로 넘어가고, 2/2는 가이드를 닫는다.
  * 단계마다 key를 달리해 2/2로 넘어갈 때 초점을 새 말풍선으로 다시 옮긴다.
  */
 export function HomeGuide({ goal }: { goal: Goal }) {
@@ -30,8 +31,8 @@ export function HomeGuide({ goal }: { goal: Goal }) {
         shape="circle"
         padding={6}
         placement="above"
+        onOutside={() => setStep(2)}
         title="여기를 눌러 바코드를 찍어요"
-        body="궁금한 제품 하나로 시작해 보세요."
         actions={
           <>
             <button
@@ -58,13 +59,14 @@ export function HomeGuide({ goal }: { goal: Goal }) {
     <Coachmark
       key="search"
       onClose={close}
+      onOutside={close}
       target="search"
       shape="rounded"
       padding={4}
       placement="below"
       tailOffset={32}
       title="바코드가 없으면 이름으로 찾아요"
-      body={"제품명, 브랜드로 검색해도\n같은 등급을 볼 수 있어요."}
+      body={"이름으로 찾아도\n같은 점수가 나와요."}
       actions={
         <button type="button" onClick={close} className={linkClass}>
           시작하기

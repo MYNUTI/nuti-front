@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { CheckboxMark } from "@/components/common/check-mark";
 import { GradeBadge, type Grade } from "@/components/common/grade";
+import { ScoreRing, type ScoreBand } from "@/components/common/score-ring";
 import { Thumb } from "@/components/common/thumb";
 import { cn } from "@/lib/utils";
 
@@ -9,12 +10,14 @@ import { cn } from "@/lib/utils";
  * v2/ProductRow — [순위] 사진 64 · 브랜드 / 이름(2줄까지) / 메타 · 등급 배지 M.
  * 행 사이는 선 없이 여백으로 나눈다. 디자인 trailing과의 대응:
  *   badge → grade · button → grade + action · select → select(비교할 제품 고르기)
+ *   v3 점수 링 S → score(【최종】 3-6 같은 종류에서 점수가 있는 제품)
  */
 export function ProductRow({
   brand,
   name,
   meta,
   grade,
+  score,
   image,
   rank,
   href,
@@ -26,6 +29,8 @@ export function ProductRow({
   name: React.ReactNode;
   meta?: React.ReactNode;
   grade?: Grade;
+  /** 등급 배지 대신 v3 점수 링 S(【최종】 3-6 같은 종류에서 점수가 있는 제품) */
+  score?: { value: number; band: ScoreBand };
   /** Thumb 안에 넣을 사진 */
   image?: React.ReactNode;
   rank?: number;
@@ -53,12 +58,13 @@ export function ProductRow({
       <Thumb>{image}</Thumb>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         {brand && <span className="text-body2 text-text-sub">{brand}</span>}
-        <span className="line-clamp-2 text-body1-medium text-text-strong">
+        <span className="line-clamp-2 text-body1-medium break-keep text-text-strong">
           {name}
         </span>
         {meta && <span className="text-body2 text-text-sub">{meta}</span>}
       </span>
       {grade && <GradeBadge grade={grade} />}
+      {score && <ScoreRing score={score.value} band={score.band} size="S" />}
     </>
   );
 

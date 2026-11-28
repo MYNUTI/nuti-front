@@ -104,6 +104,9 @@ export function BottomSheet({
   children: React.ReactNode;
 }) {
   const drag = useDragToClose(() => onOpenChange(false));
+  // Trigger 없이 open으로만 여닫아 Radix가 닫힌 뒤 포커스를 돌려줄 곳을 모른다(Trigger가 있을 때만 돌려준다).
+  // 연 순간 포커스가 있던 요소(누른 버튼 등)를 기억했다가 닫히면 그리로 돌려준다
+  const returnFocus = useRef<HTMLElement | null>(null);
 
   return (
     <Dialog.Root
@@ -126,9 +129,19 @@ export function BottomSheet({
           )}
           style={{ transform: `translateY(${drag.offset}px)` }}
           onOpenAutoFocus={(event) => {
+            // 이 시점에는 아직 포커스가 시트로 옮겨지기 전이라 activeElement가 연 요소다
+            returnFocus.current =
+              document.activeElement instanceof HTMLElement
+                ? document.activeElement
+                : null;
             if (!initialFocus?.current) return;
             event.preventDefault();
             initialFocus.current.focus();
+          }}
+          onCloseAutoFocus={(event) => {
+            if (!returnFocus.current?.isConnected) return;
+            event.preventDefault();
+            returnFocus.current.focus();
           }}
         >
           {/* 손잡이·제목 줄: 아래로 끌어 닫는 자리. touch-none으로 화면 스크롤과 섞이지 않게 한다 */}
@@ -164,7 +177,8 @@ export function BottomSheet({
 
 /*
  * 되돌릴 수 없는 일을 묻는 확인 시트(5-7c 지우기 확인 등). 손잡이·닫기 버튼 없이 제목 + 설명 + 버튼 두 개.
- * 바깥을 눌러도 닫히지 않게 AlertDialog를 쓴다.
+ * confirmLabel을 빼면 취소 버튼 하나만 남는다(5-10b 기기 기록 삭제 요청처럼 읽고 닫기만 하는 같은 틀의 시트).
+ * 바깥을 눌러도 닫히지 않게 AlertDialog를 쓴다(dismissible이면 덮개로도 닫힌다).
  */
 export function ConfirmSheet({
   open,
@@ -174,28 +188,59 @@ export function ConfirmSheet({
   cancelLabel,
   confirmLabel,
   onConfirm,
+  onCancel,
   danger = false,
+  dismissible = false,
+  cancelKind = "secondary",
+  children,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: React.ReactNode;
   description?: React.ReactNode;
   cancelLabel: React.ReactNode;
-  confirmLabel: React.ReactNode;
-  onConfirm: () => void;
   /** 지우기·철회처럼 되돌릴 수 없는 일이면 확인 버튼을 빨간색으로 */
   danger?: boolean;
-}) {
+  /** 닫기 버튼 모양. 닫기 하나뿐인 안내(4-1 홈 화면에 추가 「알겠어요」)는 그림이 검정 주 버튼 */
+  cancelKind?: "secondary" | "primary";
+  /** 덮개를 눌러도 닫는다(취소와 같음). 【최종】 메모가 「바깥 → 닫힘」이라 정한 시트에서만(3-5 비교함 비우기 · 5-5 로그아웃 · 5-6 동의 시트) */
+  dismissible?: boolean;
+  /** 취소 버튼만의 동작(「몸 정보 없이 시작」처럼 닫기 말고도 할 일이 있을 때). 덮개로 닫을 때는 부르지 않는다 */
+  onCancel?: () => void;
+  /** 설명과 버튼 사이 내용(5-6 동의 시트의 「알릴 4가지」 상자 등) */
+  children?: React.ReactNode;
+} & (
+  | { confirmLabel: React.ReactNode; onConfirm: () => void }
+  // 확인 버튼 없이 닫기 하나. 이름표만 있고 동작이 없는 확인 버튼이 생기지 않게 둘을 함께 빼게 한다
+  | { confirmLabel?: undefined; onConfirm?: undefined }
+)) {
+  // BottomSheet와 같은 이유로 연 순간의 포커스 요소를 기억했다가 닫히면 돌려준다
+  const returnFocus = useRef<HTMLElement | null>(null);
+
   return (
     <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
       <AlertDialog.Portal>
-        <AlertDialog.Overlay className={overlayClass} />
+        <AlertDialog.Overlay
+          className={overlayClass}
+          onClick={dismissible ? () => onOpenChange(false) : undefined}
+        />
         <AlertDialog.Content
           {...(!description && { "aria-describedby": undefined })}
           className={cn(
             contentClass,
             "gap-3 px-5 pt-7 pb-[max(var(--safe-bottom),12px)]",
           )}
+          onOpenAutoFocus={() => {
+            returnFocus.current =
+              document.activeElement instanceof HTMLElement
+                ? document.activeElement
+                : null;
+          }}
+          onCloseAutoFocus={(event) => {
+            if (!returnFocus.current?.isConnected) return;
+            event.preventDefault();
+            returnFocus.current.focus();
+          }}
         >
           <AlertDialog.Title className="text-title2 text-text-strong">
             {title}
@@ -205,21 +250,29 @@ export function ConfirmSheet({
               {description}
             </AlertDialog.Description>
           )}
+          {/* 내용이 길면(5-6 동의 시트의 알릴 4가지 등) 이 칸만 스크롤해 아래 버튼이 화면 밖으로 밀리지 않게 한다 */}
+          {children && (
+            <div className="-mx-5 flex min-h-0 flex-col gap-3 overflow-y-auto px-5">
+              {children}
+            </div>
+          )}
           <div className="flex gap-2 pt-3">
             <AlertDialog.Cancel asChild>
-              <Button kind="secondary" className="flex-1">
+              <Button kind={cancelKind} className="flex-1" onClick={onCancel}>
                 {cancelLabel}
               </Button>
             </AlertDialog.Cancel>
-            <AlertDialog.Action asChild>
-              <Button
-                kind={danger ? "danger" : "primary"}
-                className="flex-1"
-                onClick={onConfirm}
-              >
-                {confirmLabel}
-              </Button>
-            </AlertDialog.Action>
+            {onConfirm && (
+              <AlertDialog.Action asChild>
+                <Button
+                  kind={danger ? "danger" : "primary"}
+                  className="flex-1"
+                  onClick={onConfirm}
+                >
+                  {confirmLabel}
+                </Button>
+              </AlertDialog.Action>
+            )}
           </div>
         </AlertDialog.Content>
       </AlertDialog.Portal>

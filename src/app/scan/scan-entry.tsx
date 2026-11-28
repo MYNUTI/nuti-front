@@ -19,9 +19,18 @@ import { CameraPermission } from "./camera-permission";
  * 그 시트에서 사진·번호로 찾으면 ?gtin=·?manual=1로 다시 들어와 카메라 없이 결과를 보인다.
  */
 type Step =
-  | { name: "checking" | "ask" | "denied" | "scan" }
+  | { name: "checking" | "ask" | "scan" }
+  /** 0-3x. stillOff: 「카메라 다시 켜기」를 눌렀는데 아직 꺼져 있음 */
+  | { name: "denied"; stillOff?: boolean }
   /** 0-3x의 카메라 없이 찾기. 카메라가 꺼진 채로 스캔 화면의 사진·번호 입력을 쓴다 */
-  | { name: "no-camera"; gtin?: Gtin; manual?: boolean; cameraOff?: boolean };
+  | {
+      name: "no-camera";
+      gtin?: Gtin;
+      /** gtin이 주소(`?gtin=`)로 왔다 */
+      fromUrl?: boolean;
+      manual?: boolean;
+      cameraOff?: boolean;
+    };
 
 function queryCamera(): Promise<PermissionState | "unknown"> {
   // permissions.query가 없거나 "camera"를 모르는 브라우저는 알 수 없음으로 둔다
@@ -46,7 +55,7 @@ export function ScanEntry({
   const router = useRouter();
   const [step, setStep] = useState<Step>(
     gtin || manual
-      ? { name: "no-camera", gtin, manual, cameraOff: true }
+      ? { name: "no-camera", gtin, fromUrl: !!gtin, manual, cameraOff: true }
       : { name: "checking" },
   );
 
@@ -59,10 +68,13 @@ export function ScanEntry({
     let cancelled = false;
     void queryCamera().then((state) => {
       if (cancelled) return;
-      setStep({
-        name:
-          state === "granted" ? "scan" : state === "denied" ? "denied" : "ask",
-      });
+      setStep(
+        state === "granted"
+          ? { name: "scan" }
+          : state === "denied"
+            ? { name: "denied" }
+            : { name: "ask" },
+      );
     });
     return () => {
       cancelled = true;
@@ -70,9 +82,13 @@ export function ScanEntry({
   }, [step.name, router]);
 
   const retry = () => {
-    // 디자인 메모: 아직 꺼져 있으면 그대로. 거부로 확인될 때만 머물고, 나머지는 스캐너가 다시 확인한다
+    // 【최종】 0-3x 아직 꺼져 있음: 거부로 확인되면 머물며 버튼 위 문장. 나머지는 스캐너가 다시 확인한다
     void queryCamera().then((state) => {
-      if (state !== "denied") setStep({ name: "scan" });
+      setStep(
+        state === "denied"
+          ? { name: "denied", stillOff: true }
+          : { name: "scan" },
+      );
     });
   };
 
@@ -85,6 +101,7 @@ export function ScanEntry({
     case "denied":
       return (
         <CameraOff
+          stillOff={!!step.stillOff}
           onRetry={retry}
           onPhotoGtin={(gtin) => setStep({ name: "no-camera", gtin })}
           onManual={() => setStep({ name: "no-camera", manual: true })}
@@ -97,6 +114,7 @@ export function ScanEntry({
         <main>
           <ScanStage
             initialGtin={step.name === "no-camera" ? step.gtin : null}
+            initialFromUrl={step.name === "no-camera" && !!step.fromUrl}
             initialManualOpen={step.name === "no-camera" && step.manual}
             cameraOff={step.name === "no-camera" && step.cameraOff}
             onPermissionDenied={

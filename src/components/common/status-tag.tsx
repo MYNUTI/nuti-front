@@ -9,6 +9,14 @@ const STATUS = {
   checking: { label: "확인 중", className: "bg-[#e3eefb] text-[#1b4f8a]" },
   before: { label: "분석 전", className: "bg-[#f2f4f3] text-text-sub" },
   done: { label: "등급 나옴", className: "bg-[#e7f2ee] text-[#17624f]" },
+  // 【최종】 3-6(검색이나 기록에서) 제품 머리. 모양은 「분석 전」과 같다
+  noScore: { label: "점수 없음", className: "bg-[#f2f4f3] text-text-sub" },
+  // 【최종】 4-3 내 기록(분석 요청) 줄의 상태. 분석 못 함은 bg/band 회색(「점수 없음」 #f2f4f3과 그림 값이 조금 다름), 완료는 옅은 연두
+  failed: { label: "분석 못 함", className: "bg-bg-band text-text-sub" },
+  complete: {
+    label: "완료",
+    className: "bg-brand-primary-weak text-brand-link",
+  },
 } as const;
 
 export type Status = keyof typeof STATUS;

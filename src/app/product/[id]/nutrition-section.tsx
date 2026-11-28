@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import type { NutrientValue, ProductResult } from "./_fixtures";
 
 /*
- * 3-2 영양성분. 처음에는 주요 성분만, 「다른 영양성분 n개 더 보기」로 펼친다(3-2 영양성분 펼침).
+ * 3-2 영양성분. 처음에는 주요 성분만, 「영양성분 자세히 보기」로 펼친다(3-2 영양성분 펼침).
  * 펼치면 기준 전환 칩 [100g당] [1회 제공량]이 보이고 표의 숫자·평가 말·막대가 그 기준으로 바뀐다.
  * 디자인 메모: 기본은 늘 100g당, 접으면 100g당으로 돌아온다. 위 이유 칩·점수는 전환과 상관없이 100g 기준.
  */
@@ -23,10 +23,10 @@ function level(percent: number) {
 }
 
 function format(value: number, unit: NutrientValue["unit"]) {
-  // kcal·mg은 정수, g은 소수 첫째 자리(0이면 뗀다)
+  // kcal·mg은 정수, g은 소수 첫째 자리(0이면 뗀다), 천 단위 쉼표(⑩ 공통 규칙 「숫자」)
   const rounded =
     unit === "g" ? Math.round(value * 10) / 10 : Math.round(value);
-  return `${rounded}${unit}`;
+  return `${rounded.toLocaleString("ko-KR", { maximumFractionDigits: 1 })}${unit}`;
 }
 
 type Basis = "per100" | "serving";
@@ -50,8 +50,9 @@ export function NutritionSection({
   const calories = [...nutrition.main, ...nutrition.more].find(
     (n) => n.key === "calories",
   )?.per100;
+  // 【최종】 메모: 한 개 용량이 100g(100mL)과 다를 때만 붙인다
   const servingNote =
-    serving && calories != null
+    serving && serving.amount !== 100 && calories != null
       ? `${serving.label}(${serving.amount}${unit})는 ${format((calories * serving.amount) / 100, "kcal")}`
       : null;
 
@@ -125,7 +126,7 @@ export function NutritionSection({
             setOpen(!open);
           }}
         >
-          {open ? "접기" : `다른 영양성분 ${nutrition.more.length}개 더 보기`}
+          {open ? "접기" : "영양성분 자세히 보기"}
           <IconChevronDown className={cn("size-4", open && "rotate-180")} />
         </button>
       )}

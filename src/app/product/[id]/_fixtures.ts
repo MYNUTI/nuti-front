@@ -4,9 +4,12 @@
  * "4"는 디자인 3-2 화면 값 그대로, "1"·"2"는 스캔 목 조회(lib/mock-catalog.ts)와 같은 상품이라 스캔에서 「자세히 보기」로 와도 열린다.
  * "3"은 「더 맞는 제품」 칼만스 카드가 404가 되지 않게 카드와 같은 이름·사진·점수로 둔다.
  * "5"는 디자인 「더 맞는 제품이 없을 때」 값 그대로(커클랜드 카드도 이 주소로 연다).
- * "6"은 디자인 「생산 중단」(재고 판매 중), "7"은 단종(쿠팡 버튼 없음), "8"·"9"는 「내 몸에 맞춤」(다이어트·근육 증가 목표), "10"은 「쿠팡 상품이 없을 때」.
- * 상태 확인용: "1"은 더 맞는 제품이 없는 C~E 등급·사진 없음, "2"는 아쉬운 점이 없는 제품·사진 주소가 깨진 제품.
- * 순위는 API에 없다(인수인계 백엔드 질문 8).
+ * "6"은 디자인 「생산 중단」(재고 판매 중), "7"은 단종(쿠팡 상품 없음 — 【최종】은 쿠팡 링크가 없으면 단종), "8"·"9"는 「내 몸에 맞춤」(다이어트·근육 증가 목표), "10"은 「쿠팡 상품이 없을 때」, "11"은 더 맞는 제품 · 홈 카드의 마이프로틴.
+ * 상태 확인용: "1"은 더 맞는 제품이 없는 C~E 등급·사진 없음, "2"는 아쉬운 점이 없는 제품·사진 주소가 깨진 제품,
+ * "12"는 환자용 균형영양식(이름 아래 「환자용 식품이에요」, 디자인 수정분 #6),
+ * "13"은 쿠팡 품절, "14"는 쿠팡에 묶음 상품만(6개 묶음), "15"는 묶음인데 개수를 못 읽음(「다른 용량」).
+ * 더 맞는 제품 칸은 점수 중간 이하("4" 등)에서만 보인다. "2"·"3"·"11"은 높음인데 더 높은 제품이 있어 칸도 ✓ 줄도 없다.
+ * 순위(「같은 종류 N개 중 M위」)는 지금 API 응답에 없어 백엔드에 줄 수 있는지 물어 둔 상태다.
  */
 import type { ProductCardItem } from "@/components/common/product-card";
 import type { ScoreBand } from "@/components/common/score-ring";
@@ -45,6 +48,8 @@ export type ProductResult = {
   brand: string | null;
   /** 「프로틴바·간식」 */
   category: string;
+  /** 그 분류의 코드(API `category.code`). 「같은 종류 순위 보기」가 그 순위(`/ranking/[code]`)로 간다 */
+  categoryCode: string | null;
   name: string;
   image: { src: string; size: number } | null;
   score: number;
@@ -57,6 +62,8 @@ export type ProductResult = {
    * 목표처럼 사용자 값이지만 화면이 한 모양으로 받도록 여기 둔다
    */
   bodyFitKcal: number | null;
+  /** 환자용 균형영양식(이름 아래 「환자용 식품이에요」) */
+  patientFood?: boolean;
   reasons: { good: string[]; bad: string[] };
   /** 다른 목표로 미리 볼 때의 점수·순위·이유(3-2 다른 목표로 보기) */
   preview: Partial<Record<Goal, GoalView>>;
@@ -67,20 +74,43 @@ export type ProductResult = {
     serving: { label: string; amount: number } | null;
     /** 처음부터 보이는 줄 */
     main: NutrientValue[];
-    /** 「다른 영양성분 n개 더 보기」로 펼치는 줄 */
+    /** 「영양성분 자세히 보기」로 펼치는 줄 */
     more: NutrientValue[];
   };
-  better: ProductCardItem[];
+  better: BetterItem[];
   /**
-   * 생산 중단·단종. label은 받은 상태 글자 그대로(「단종」·「생산 중단 · 재고 판매 중」), 재고가 없으면(단종) 쿠팡 버튼을 뺀다.
-   * 판매 중이면 null. API에 아직 이 값이 없다(인수인계 백엔드 질문 10)
+   * 생산 중단·단종. label은 받은 상태 글자 그대로(「단종」·「생산 중단 · 재고 판매 중」).
+   * 판매 중이면 null. API에 아직 이 값이 없다(지금 `ProductStatus`는 `ANALYZED`·`INSUFFICIENT`뿐, 백엔드에 물어 둔 상태)
    */
-  production: { label: string; inStock: boolean } | null;
-  /** 쿠팡 상품 주소. 없으면 쿠팡 버튼·고지를 뺀다 */
+  production: { label: string } | null;
+  /**
+   * 쿠팡 상품 주소. 없으면 쿠팡 버튼·고지를 뺀다(【최종】: 쿠팡 링크가 없으면 단종으로 본다).
+   * 품절이면 제품 이름으로 찾은 쿠팡 검색 결과(제휴) 주소
+   */
   coupangUrl: string | null;
+  /** 쿠팡 품절(3-2 쿠팡 상품이 품절일 때). 가격 줄을 빼고 버튼이 「쿠팡에서 찾아보기」가 된다 */
+  coupangSoldOut?: boolean;
+  /** 이름 아래 가격 줄(3-2 기본 · 묶음 상품만 이어졌을 때). 없으면 줄을 뺀다 */
+  coupangPrice?: CoupangPrice | null;
 };
 
-const BETTER: ProductCardItem[] = [
+/**
+ * 쿠팡 판매가. date는 판매가를 받은 날(새 값을 못 받으면 서버가 직전 값과 그날 날짜를 준다 — 【최종】 메모).
+ * 묶음 상품만 이어졌으면 bundle(개수)과 1개당 값, 상품명에서 개수 · 용량을 못 읽으면 otherSize(가격 · 날짜 없이 「다른 용량」만)
+ */
+export type CoupangPrice =
+  | { kind: "single"; amount: number; date: string }
+  | { kind: "bundle"; count: number; unitAmount: number; date: string }
+  | { kind: "otherSize" };
+
+/**
+ * 더 맞는 제품 하나. diff는 지금 제품과 100g당 값을 비교해 나아진 성분 두 개(3-4 골라 비교 줄 · API의 items[].diffs).
+ * 지금 제품에 따라 달라지는 값이지만 fixture는 디자인 그림의 숫자(디자인 상품 4 기준)를 그대로 모든 제품에 같이 쓴다.
+ * 상세 fixture의 영양성분으로 계산한 값이 아니다
+ */
+export type BetterItem = ProductCardItem & { diff: string };
+
+const BETTER: BetterItem[] = [
   {
     id: "5",
     brand: "커클랜드 시그니처",
@@ -90,13 +120,14 @@ const BETTER: ProductCardItem[] = [
     score: 92,
     band: 1,
     tags: [
-      { label: "고포화지방", warn: true },
       { label: "고단백" },
       { label: "저당" },
+      { label: "고포화지방", warn: true },
     ],
+    diff: "칼로리 −97kcal, 당류 −9.3g",
   },
   {
-    id: "2",
+    id: "11",
     brand: "마이프로틴",
     name: "하이프로틴바 초콜렛 오렌지",
     image: "/fixtures/product-2.png",
@@ -104,6 +135,7 @@ const BETTER: ProductCardItem[] = [
     score: 89,
     band: 1,
     tags: [{ label: "고단백" }, { label: "저당" }],
+    diff: "칼로리 −90kcal, 당류 −8.3g",
   },
   {
     id: "3",
@@ -114,6 +146,7 @@ const BETTER: ProductCardItem[] = [
     score: 86,
     band: 1,
     tags: [{ label: "고단백" }],
+    diff: "칼로리 −83kcal, 당류 −8.0g",
   },
 ];
 
@@ -121,16 +154,17 @@ const DESIGN: ProductResult = {
   id: "4",
   brand: "미트리",
   category: "프로틴바·간식",
+  categoryCode: "01S4",
   name: "카카오초코 프로틴바",
   image: { src: "/fixtures/product-4.png", size: 600 },
   score: 62,
   band: 3,
-  rank: { position: 12, total: 48 },
+  rank: { position: 5, total: 48 },
   goal: "diet",
   bodyFitKcal: null,
   reasons: {
     good: ["단백질이 많아요"],
-    bad: ["칼로리가 높은 편이에요", "식이섬유 표시가 없어요"],
+    bad: ["칼로리가 높은 편이에요"],
   },
   // 디자인 「3-2 다른 목표로 보기」 값
   preview: {
@@ -139,8 +173,8 @@ const DESIGN: ProductResult = {
       band: 1,
       rank: { position: 6, total: 48 },
       reasons: {
-        good: ["단백질이 많아요", "칼로리가 충분해요"],
-        bad: ["식이섬유 표시가 없어요"],
+        good: ["단백질이 많아요", "칼로리가 높은 편이에요"],
+        bad: [],
       },
     },
   },
@@ -206,6 +240,8 @@ const DESIGN: ProductResult = {
   better: BETTER,
   production: null,
   coupangUrl: "https://www.coupang.com/",
+  // 디자인 「3-2 제품 결과」 가격 줄
+  coupangPrice: { kind: "single", amount: 12900, date: "2026-11-16" },
 };
 
 // 디자인 「더 맞는 제품이 없을 때」·「쿠팡 상품이 없을 때」의 커클랜드
@@ -213,6 +249,7 @@ const KIRKLAND: ProductResult = {
   id: "5",
   brand: "커클랜드 시그니처",
   category: "프로틴바·간식",
+  categoryCode: "01S4",
   name: "프로틴바 초콜릿 브라우니",
   image: { src: "/fixtures/product-1.png", size: 800 },
   score: 92,
@@ -313,6 +350,8 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
     id: "1",
     brand: null,
     category: "음료",
+    // 실제 API는 중분류 이하 코드를 준다. 순위가 열리지 않은 대분류 화면을 보이려고 대분류 코드를 둔 예시
+    categoryCode: "03",
     name: "더단백 라떼 350ml",
     nutrition: { ...DESIGN.nutrition, unit: "mL", serving: null },
     image: null,
@@ -330,6 +369,8 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
     id: "2",
     brand: null,
     category: "음료",
+    // 실제 API는 중분류 이하 코드를 준다. 순위가 열리지 않은 대분류 화면을 보이려고 대분류 코드를 둔 예시
+    categoryCode: "03",
     name: "잇더핏 프로틴 190ml",
     nutrition: { ...DESIGN.nutrition, unit: "mL", serving: null },
     // 일부러 없는 파일. 사진 주소가 깨졌을 때 그림으로 바뀌는지 본다
@@ -337,6 +378,8 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
     score: 88,
     band: 1,
     reasons: { good: ["단백질이 많아요", "당류가 적어요"], bad: [] },
+    // 더 맞는 제품은 자기보다 점수가 높은 다른 제품만(API가 걸러 준다고 본다)
+    better: BETTER.filter((p) => p.score > 88),
   },
   "3": {
     ...DESIGN,
@@ -346,6 +389,7 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
     image: { src: "/fixtures/product-3.png", size: 400 },
     score: 86,
     band: 1,
+    better: BETTER.filter((p) => p.id !== "3" && p.score > 86),
     rank: null,
     // 순위가 없는 상품이라 미리 보기에서도 순위를 빼 디자인 상품 값이 새지 않게 한다
     preview: {
@@ -357,12 +401,14 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
   "6": {
     ...DESIGN,
     id: "6",
-    production: { label: "생산 중단 · 재고 판매 중", inStock: true },
+    production: { label: "생산 중단 · 재고 판매 중" },
   },
   "7": {
     ...DESIGN,
     id: "7",
-    production: { label: "단종", inStock: false },
+    production: { label: "단종" },
+    coupangUrl: null,
+    coupangPrice: null,
   },
   // 디자인 「내 몸에 맞춤」(다이어트 목표). 등급·문장은 자리 표시용이라 디자인 상품 값 그대로
   "8": { ...DESIGN, id: "8", bodyFitKcal: 2680 },
@@ -384,4 +430,57 @@ export const FIXTURE_PRODUCTS: Record<string, ProductResult> = {
   },
   // 디자인 「쿠팡 상품이 없을 때」(A 등급, 더 맞는 제품 없음)
   "10": { ...KIRKLAND, id: "10", coupangUrl: null },
+  // 더 맞는 제품 · 홈 인기 상품 카드의 마이프로틴. 카드와 같은 이름·사진·점수로 둬 비교함에 담아도 다른 상품과 섞이지 않게 한다
+  "11": {
+    ...DESIGN,
+    id: "11",
+    brand: "마이프로틴",
+    name: "하이프로틴바 초콜렛 오렌지",
+    image: { src: "/fixtures/product-2.png", size: 400 },
+    score: 89,
+    band: 1,
+    rank: null,
+    // 순위가 없는 상품이라 미리 보기에서도 순위를 빼 디자인 상품 값이 새지 않게 한다
+    preview: {
+      muscle: { ...DESIGN.preview.muscle!, rank: null },
+    },
+    better: BETTER.filter((p) => p.id !== "11" && p.score > 89),
+  },
+  // 디자인 수정분 #6(11-09): 환자용 균형영양식. 마시는 제품이라 100mL당
+  "12": {
+    ...DESIGN,
+    id: "12",
+    brand: null,
+    category: "단백질 음료",
+    categoryCode: "01S5",
+    name: "고단백 균형영양식 (환자용)",
+    image: null,
+    rank: null,
+    patientFood: true,
+    preview: {},
+    nutrition: { ...DESIGN.nutrition, unit: "mL", serving: null },
+    better: [],
+  },
+  // 디자인 「쿠팡 상품이 품절일 때」(9717:18491)
+  "13": {
+    ...DESIGN,
+    id: "13",
+    coupangUrl:
+      "https://www.coupang.com/np/search?q=%EC%B9%B4%EC%B9%B4%EC%98%A4%EC%B4%88%EC%BD%94",
+    coupangSoldOut: true,
+    coupangPrice: null,
+  },
+  // 디자인 「쿠팡에 묶음 상품만 이어졌을 때」(9722:19111)
+  "14": {
+    ...DESIGN,
+    id: "14",
+    coupangPrice: {
+      kind: "bundle",
+      count: 6,
+      unitAmount: 2150,
+      date: "2026-11-16",
+    },
+  },
+  // 묶음 상품인데 상품명에서 개수 · 용량을 못 읽음(그림 없음, 메모 문장대로)
+  "15": { ...DESIGN, id: "15", coupangPrice: { kind: "otherSize" } },
 };

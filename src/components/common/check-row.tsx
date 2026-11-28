@@ -11,12 +11,15 @@ import { cn } from "@/lib/utils";
 export function CheckRow({
   label,
   detailHref,
+  onDetailClick,
   className,
   ...props
 }: Omit<React.ComponentProps<"input">, "type"> & {
   label: React.ReactNode;
   /** 「보기 ›」를 눌렀을 때 갈 곳(약관 화면 등) */
   detailHref?: string;
+  /** 「보기 ›」가 이동 대신 화면 안 동작(동의 시트 열기 등)을 할 때. detailHref와 함께 쓰지 않는다 */
+  onDetailClick?: () => void;
 }) {
   return (
     <div className={cn("flex items-center gap-3 px-5 py-3", className)}>
@@ -25,6 +28,16 @@ export function CheckRow({
         <CheckboxMark className="peer-focus-visible:rounded-[6px] peer-focus-visible:outline-2 peer-focus-visible:outline-text-strong" />
         <span className="flex-1 text-body1 text-text-body">{label}</span>
       </label>
+      {onDetailClick && (
+        <button
+          type="button"
+          onClick={onDetailClick}
+          className="flex shrink-0 items-center text-body2-medium text-text-sub"
+        >
+          보기
+          <IconChevronRight className="size-4" />
+        </button>
+      )}
       {detailHref && (
         <Link
           href={detailHref}
