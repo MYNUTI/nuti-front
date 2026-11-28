@@ -13,6 +13,7 @@ import { meKeys } from "@/lib/me/keys";
 import { onboardingKeys } from "@/lib/onboarding/keys";
 import { productKeys } from "@/lib/product/keys";
 import { savedKeys } from "@/lib/saved/keys";
+import { rankingKeys } from "@/lib/ranking/keys";
 import { searchKeys } from "@/lib/search/keys";
 import { stubDocumentCookie, stubWebLocks } from "@/test/browser";
 import { mockAdapter, success } from "@/test/http";
@@ -115,6 +116,9 @@ describe("consentMutations.change", () => {
       productKeys.alternatives("7", "WEIGHT_LOSS"),
       searchKeys.result("두유", "WEIGHT_LOSS"),
       savedKeys.list("WEIGHT_LOSS"),
+      rankingKeys.list({ category: "0703", goal: "WEIGHT_LOSS" }),
+      rankingKeys.overview({ major: "07", goal: "WEIGHT_LOSS" }),
+      rankingKeys.leaders({ goal: "WEIGHT_LOSS" }),
     ];
     for (const key of scoreKeys) queryClient.setQueryData(key, {});
 

@@ -19,6 +19,7 @@ import { invalidateGoalDependents } from "@/lib/goal/invalidate";
 import { onboardingKeys } from "@/lib/onboarding/keys";
 import { productKeys } from "@/lib/product/keys";
 import { savedKeys } from "@/lib/saved/keys";
+import { rankingKeys } from "@/lib/ranking/keys";
 import { searchKeys } from "@/lib/search/keys";
 
 export const consentQueries = {
@@ -75,6 +76,9 @@ export const consentMutations = {
                 productKeys.all,
                 searchKeys.results(),
                 savedKeys.all,
+                rankingKeys.lists(),
+                rankingKeys.overviews(),
+                rankingKeys.leadersAll(),
               ]
             : [onboardingKeys.bootstrap()];
         return Promise.all(

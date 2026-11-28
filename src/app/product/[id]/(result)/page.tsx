@@ -42,7 +42,9 @@ export default async function ProductPage({
   if (state === "error") return <ProductError />;
 
   const detail = await getProductDetail(id);
-  if (!detail) notFound();
+  // 점수를 매기지 않는 종류(술 · 영유아식 · 환자용 등)는 결과 화면으로 열어야 하는데 그린 모양이 없다. 3-6으로 보내면
+  // 분석 요청으로 이어지고 서버가 409로 거절해, 디자인이 나올 때까지 없는 제품으로 본다(API 플랜 「남은 질문」)
+  if (!detail || detail.state === "SCORE_EXCLUDED") notFound();
   // 점수가 없는 제품은 3-6 아직 점수가 없는 제품(검색이나 기록에서)이 맡는다(기능명세)
   if (!detail.goals) redirect(`/contribute/product/${encodeURIComponent(id)}`);
 

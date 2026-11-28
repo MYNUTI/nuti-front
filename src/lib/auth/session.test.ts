@@ -6,6 +6,7 @@ import { IDENTITY_COOKIES, subscribeTokens } from "@/lib/api/identity";
 import { getFreshAccessToken } from "@/lib/api/refresh";
 import { connectSession } from "@/lib/auth/session";
 import { metaKeys } from "@/lib/me/keys";
+import { rankingKeys } from "@/lib/ranking/keys";
 import { savedKeys } from "@/lib/saved/keys";
 import {
   stubBroadcastChannel,
@@ -28,6 +29,8 @@ describe("connectSession", () => {
       pageParams: [],
     });
     queryClient.setQueryData(metaKeys.policies(), { privacy: null });
+    queryClient.setQueryData(rankingKeys.leaders({ goal: "WEIGHT_LOSS" }), {});
+    queryClient.setQueryData(rankingKeys.categories(), { majors: [] });
     disconnect = connectSession(queryClient);
   });
   afterEach(() => {
@@ -46,6 +49,13 @@ describe("connectSession", () => {
     ).toBeUndefined();
     expect(queryClient.getQueryData(metaKeys.policies())).toEqual({
       privacy: null,
+    });
+    // 랭킹 카드는 계정마다 다르고, 분류는 사용자와 무관해 남긴다
+    expect(
+      queryClient.getQueryData(rankingKeys.leaders({ goal: "WEIGHT_LOSS" })),
+    ).toBeUndefined();
+    expect(queryClient.getQueryData(rankingKeys.categories())).toEqual({
+      majors: [],
     });
     expect(listener).toHaveBeenCalledOnce();
     release();

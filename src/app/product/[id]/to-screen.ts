@@ -65,24 +65,38 @@ function toPurchase(
 ): Pick<ProductResult, "coupangUrl" | "coupangSoldOut" | "coupangPrice"> {
   if (purchase.matchType === "NONE" || purchase.url === null)
     return { coupangUrl: null, coupangSoldOut: false, coupangPrice: null };
-  // 이름으로 찾은 검색 결과뿐이면 「구매하기」를 쓰지 않는다(명세). 그린 화면이 없어 품절 모양(가격 없이 「쿠팡에서
-  // 찾아보기」)을 빌린다(API 플랜 「남은 질문」)
-  if (purchase.matchType === "NAME_SEARCH")
+  // 판매 상태를 확인하지 못했으면 서버가 가격을 숨기고 검색 결과 주소를 준다(품절과 같은 「쿠팡에서 찾아보기」, DATA_006).
+  // 이름으로 찾은 예전 연결(NAME_SEARCH)도 「구매하기」를 쓰지 않는다(명세). 그린 화면이 없어 같은 모양을 빌린다(API 플랜 「남은 질문」)
+  if (purchase.saleStatus === "UNKNOWN" || purchase.matchType === "NAME_SEARCH")
     return {
       coupangUrl: purchase.url,
       coupangSoldOut: true,
       coupangPrice: null,
     };
+  const date = purchase.priceCheckedAt?.slice(0, 10) ?? null;
+  // 다른 용량: 묶음 수를 읽었으면 「6개 묶음 · 1개당 2,150원」, 못 읽었으면 「다른 용량」만(판매가 없음, RSLT_009)
+  if (purchase.matchType === "OTHER_SIZE")
+    return {
+      coupangUrl: purchase.url,
+      coupangSoldOut: false,
+      coupangPrice:
+        purchase.bundleCount !== null &&
+        purchase.unitPrice !== null &&
+        date !== null
+          ? {
+              kind: "bundle",
+              count: purchase.bundleCount,
+              unitAmount: purchase.unitPrice,
+              date,
+            }
+          : { kind: "otherSize" },
+    };
   return {
     coupangUrl: purchase.url,
     coupangSoldOut: false,
     coupangPrice:
-      purchase.price !== null && purchase.priceCheckedAt !== null
-        ? {
-            kind: "single",
-            amount: purchase.price,
-            date: purchase.priceCheckedAt.slice(0, 10),
-          }
+      purchase.price !== null && date !== null
+        ? { kind: "single", amount: purchase.price, date }
         : null,
   };
 }

@@ -168,6 +168,59 @@ describe("toScreenProduct", () => {
     });
   });
 
+  it("다른 용량: 묶음 수 · 1개당 값을 읽었으면 묶음 가격 줄, 못 읽었으면 「다른 용량」", () => {
+    const of = (purchase: Parameters<typeof productResultDto>[0]) =>
+      toScreenProduct(toProductResult(productResultDto(purchase)), "diet", [])!
+        .coupangPrice;
+    expect(
+      of({
+        purchase: {
+          matchType: "OTHER_SIZE",
+          url: "https://link.coupang.com/b",
+          saleStatus: "ON_SALE",
+          bundleCount: 6,
+          unitPrice: 2150,
+          priceCheckedAt: "2026-11-16T09:00:00",
+          isAd: true,
+        },
+      }),
+    ).toEqual({
+      kind: "bundle",
+      count: 6,
+      unitAmount: 2150,
+      date: "2026-11-16",
+    });
+    expect(
+      of({
+        purchase: {
+          matchType: "OTHER_SIZE",
+          url: "https://link.coupang.com/b",
+          saleStatus: "ON_SALE",
+          isAd: true,
+        },
+      }),
+    ).toEqual({ kind: "otherSize" });
+  });
+
+  it("판매 상태를 확인하지 못했으면 정확히 찾은 상품이어도 가격 없이 「쿠팡에서 찾아보기」", () => {
+    expect(
+      toScreenProduct(
+        toProductResult(
+          productResultDto({
+            purchase: {
+              matchType: "EXACT",
+              url: "https://link.coupang.com/s",
+              saleStatus: "UNKNOWN",
+              isAd: true,
+            },
+          }),
+        ),
+        "diet",
+        [],
+      ),
+    ).toMatchObject({ coupangSoldOut: true, coupangPrice: null });
+  });
+
   it("하루 칼로리가 기본값(2,000)이 아닐 때만 내 몸에 맞춘 것으로 본다", () => {
     const of = (kcalBand: number) =>
       toScreenProduct(

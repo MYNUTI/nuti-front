@@ -33,7 +33,7 @@ export type ScanEventLogDto = {
 };
 
 /**
- * 앱 이벤트 이름(v3 이벤트 목록 61개, 백엔드 `EventNames.KNOWN`). 목록에 없는 이름은 서버가 오류 없이 버린다.
+ * 앱 이벤트 이름(v3 이벤트 목록 63개, 백엔드 `origin/main` `EventNames.KNOWN`). 목록에 없는 이름은 서버가 오류 없이 버린다.
  * 이름마다 붙일 속성·기록 시점의 정본은 v3 기능명세 LOG_002다
  */
 export type AppEventName =
@@ -102,7 +102,10 @@ export type AppEventName =
   | "logout"
   | "account_delete"
   | "device_id_copy"
-  | "notification_open"
+  // 알림(백엔드 `1ddb9b4` 뒤에 `notification_open`이 `analysis_notification_open`으로 바뀌고 둘이 더해졌다)
+  | "analysis_notification_open"
+  | "notification_menu_tap"
+  | "notification_login_tap"
   // 몸 정보
   | "body_profile_consent"
   | "body_profile_set"

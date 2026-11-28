@@ -11,6 +11,7 @@ import { goalKeys } from "@/lib/goal/keys";
 import { meKeys } from "@/lib/me/keys";
 import { onboardingKeys } from "@/lib/onboarding/keys";
 import { productKeys } from "@/lib/product/keys";
+import { rankingKeys } from "@/lib/ranking/keys";
 import { savedKeys } from "@/lib/saved/keys";
 import { searchKeys } from "@/lib/search/keys";
 
@@ -24,6 +25,10 @@ const USER_QUERY_KEYS: QueryKey[] = [
   savedKeys.all,
   productKeys.all,
   searchKeys.results(),
+  // 랭킹 카드는 몸 정보 칼로리 구간 · 즐겨찾기 여부가 계정마다 다르다. 분류 · 필터 시트 · 브랜드는 사용자와 무관하다
+  rankingKeys.lists(),
+  rankingKeys.overviews(),
+  rankingKeys.leadersAll(),
 ];
 
 /** 로그인 뒤. 익명 기록이 계정으로 옮겨져 이전 값을 보이다가 다시 불러와도 된다 */

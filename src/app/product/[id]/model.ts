@@ -85,7 +85,7 @@ export type ProductResult = {
 /**
  * 쿠팡 판매가. date는 판매가를 받은 날(새 값을 못 받으면 서버가 직전 값과 그날 날짜를 준다 — 【최종】 메모).
  * 묶음 상품만 이어졌으면 bundle(개수)과 1개당 값, 상품명에서 개수 · 용량을 못 읽으면 otherSize(가격 · 날짜 없이 「다른 용량」만).
- * API는 아직 묶음 · 다른 용량을 주지 않아 single만 온다
+ * 다른 용량(OTHER_SIZE)에서 묶음 수 · 1개당 값을 읽었으면 bundle, 못 읽었으면 otherSize(`to-screen.ts`의 `toPurchase`)
  */
 export type CoupangPrice =
   | { kind: "single"; amount: number; date: string }

@@ -104,7 +104,12 @@ function toPurchaseLink(dto: PurchaseLinkDto): PurchaseLink {
   return {
     matchType: dto.matchType,
     url: dto.url ?? null,
+    saleStatus: dto.saleStatus ?? null,
     price: dto.price ?? null,
+    per100Price: dto.per100Price ?? null,
+    per100Unit: dto.per100Unit ?? null,
+    bundleCount: dto.bundleCount ?? null,
+    unitPrice: dto.unitPrice ?? null,
     priceCheckedAt: dto.priceCheckedAt ?? null,
     priceStale: dto.priceStale ?? false,
     isAd: dto.isAd,

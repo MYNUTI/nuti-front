@@ -14,8 +14,12 @@ export type ProductStatus = "ANALYZED" | "INSUFFICIENT";
 
 export type GradeLetter = "A" | "B" | "C" | "D" | "E";
 
-/** 점수 없음 · 분석 완료 · 생산 중단 · 재고 판매 중 · 단종 */
+/**
+ * 점수 제외 · 점수 없음 · 분석 완료 · 생산 중단 · 재고 판매 중 · 단종.
+ * 점수 제외(술 · 영유아식 · 환자용 등 점수를 매기지 않는 종류)는 백엔드 `1ddb9b4` 뒤에 생겼다(12-5 확인)
+ */
 export type ProductState =
+  | "SCORE_EXCLUDED"
   | "NO_SCORE"
   | "ANALYZED"
   | "PRODUCTION_STOPPED"
@@ -44,8 +48,15 @@ export type NutrientTone = "GOOD" | "BAD" | "NEUTRAL";
 /** 더 맞는 제품: 이미 A·B / 같은 중분류에 더 높은 점수 `count`개 / C~E인데 후보 없음 */
 export type BetterChoiceStatus = "TOP" | "AVAILABLE" | "NONE";
 
-/** 구매 줄 문구를 정한다. EXACT 「구매하기」, NAME_SEARCH 「이 제품을 검색해 보기」(구매하기 금지), NONE 링크 없음 */
-export type PurchaseMatchType = "EXACT" | "NAME_SEARCH" | "NONE";
+/**
+ * 구매 줄 문구를 정한다. EXACT 같은 용량(판매가), OTHER_SIZE 다른 용량(묶음이면 1개당 값, 판매가 없음),
+ * NAME_SEARCH 용량을 확인하지 못한 예전 연결(검색 결과, 「구매하기」 금지), NONE 링크 없음.
+ * OTHER_SIZE는 백엔드 `1ddb9b4` 뒤에 생겼다(12-5 확인, 배포 Swagger 2026-11-28)
+ */
+export type PurchaseMatchType = "EXACT" | "OTHER_SIZE" | "NAME_SEARCH" | "NONE";
+
+/** 판매 중 · 판매 상태를 확인하지 못함(가격을 숨기고 링크는 그 제품 이름의 쿠팡 검색 결과) */
+export type SaleStatus = "ON_SALE" | "UNKNOWN";
 
 /** 상세 조회의 `source` query. 서버가 최근 본 제품에 들어온 경로로 남긴다 */
 export type ProductViewSource =
@@ -115,9 +126,21 @@ export type PurchaseLinkDto = {
   vendor?: string;
   url?: string;
   matchType: PurchaseMatchType;
-  /** EXACT이고 24시간 이내 조회분일 때만 */
+  /** 링크가 있을 때 */
+  saleStatus?: SaleStatus;
+  /** EXACT일 때 판매가 */
   price?: number;
+  /** EXACT일 때 100g(mL)당 값. 쿠팡 상품명에 1개 용량 · 개수가 다 적혔을 때만 */
+  per100Price?: number;
+  /** `per100Price`의 단위(g · mL) */
+  per100Unit?: string;
+  /** OTHER_SIZE일 때 쿠팡 상품명에서 읽은 묶음 수 */
+  bundleCount?: number;
+  /** 1개당 값(판매가 ÷ 개수). EXACT · OTHER_SIZE에서 개수가 적혔을 때만 */
+  unitPrice?: number;
+  /** price나 unitPrice가 있을 때 — 「○월 ○일 기준」 */
   priceCheckedAt?: string;
+  /** priceCheckedAt이 있을 때 — 조회한 지 24시간이 지났으면 true */
   priceStale?: boolean;
   isAd: boolean;
   /** 구매 버튼 바로 옆에 둘 광고 고지(링크가 있을 때) */
@@ -262,7 +285,13 @@ export type GoalResult = GoalResultDto;
 export type PurchaseLink = {
   matchType: PurchaseMatchType;
   url: string | null;
+  /** 링크가 없으면 null */
+  saleStatus: SaleStatus | null;
   price: number | null;
+  per100Price: number | null;
+  per100Unit: string | null;
+  bundleCount: number | null;
+  unitPrice: number | null;
   priceCheckedAt: string | null;
   priceStale: boolean;
   isAd: boolean;
