@@ -26,8 +26,8 @@ export function ScanNoScoreSheet({
   onReport,
 }: {
   gtin: Gtin;
-  /** 식약처 바코드 목록의 이름 · 회사. 없으면 기본 모양 */
-  named: { brand: string; name: string } | null;
+  /** 점수만 없는 제품의 이름 · 회사(회사는 없을 수 있다). 없으면 기본 모양 */
+  named: { brand: string | null; name: string } | null;
   /** 3-6 메모 「이럴 땐」: 다른 사람이 먼저 요청 · 이 기기에서 이미 요청 */
   requested: "others" | "mine" | null;
   /** 붙을 때 포커스를 줄 곳. 제목(번호 · 사진으로 찾았을 때) · 「정보 수정 요청」(그 시트에서 돌아왔을 때) */
@@ -86,9 +86,11 @@ export function ScanNoScoreSheet({
             />
           </span>
           <span className="flex min-w-0 flex-col gap-0.5">
-            <span className="truncate text-caption text-text-sub">
-              {named.brand}
-            </span>
+            {named.brand && (
+              <span className="truncate text-caption text-text-sub">
+                {named.brand}
+              </span>
+            )}
             <span className="truncate text-body1-bold text-text-strong">
               {named.name}
             </span>

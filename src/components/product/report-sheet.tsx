@@ -8,30 +8,42 @@ import { CheckRow } from "@/components/common/check-row";
 import { BottomSheet } from "@/components/common/sheet";
 import { TextField } from "@/components/common/text-field";
 import { IconImage } from "@/components/icons";
+import { useReportProduct } from "@/lib/contribution/queries";
 import { cn } from "@/lib/utils";
+
+import {
+  needsDetail,
+  REPORT_DETAIL_MAX_LENGTH,
+  REPORT_REASONS,
+  reportFailMessage,
+  reportSentMessage,
+  toReportInput,
+  type ReportReasonKey,
+} from "./report-input";
 
 /*
  * 3-2 제품 결과(정보가 틀렸어요) 바텀시트. 3-2의 「정보 수정 요청」과 3-6 이름을 아는 바코드 시트의 「정보 수정 요청」이 연다.
  * 디자인 메모: 자세한 내용·영양성분표 사진은 선택, 사진 칸은 「영양성분 값이 포장과 달라요」를 고를 때만, 연락처 칸 없음.
- * 보내기는 아직 서버로 보내지 않는다(API 연결 때 제보 API로). 실패하면 시트를 닫지 않고 보내기 위에 ⑩ 상태표 문장
- * 「보내지 못했어요. …고른 내용은 그대로 있어요.」(그림 없음 — 3-6 제품 요청하기와 같은 자리). 미리 보기는 `failPreview`.
+ * `productId`가 있으면 제보 API(`POST /products/{id}/reports`)로 보낸다. 없으면(아직 임시 데이터로 그리는 화면) 서버로
+ * 보내지 않고 이 시트에서 보낸 것만 기억한다. 실패하면 시트를 닫지 않고 보내기 위에 ⑩ 상태표 문장
+ * 「보내지 못했어요. …고른 내용은 그대로 있어요.」(그림 없음 — 3-6 제품 요청하기와 같은 자리), 서버가 거절했으면 그 이유.
+ * 미리 보기는 `failPreview`. 보내는 동안에는 닫지 않는다(닫은 뒤 늦게 온 실패가 다음에 열 때 남지 않게).
+ * 사진은 v3 제보 API가 받지 않아 보내지 않는다(API 플랜 「남은 질문」).
  * 닫으면(보내기·✕·끌어 닫기) 다음에 열 때 빈 칸으로 시작한다(바코드 번호 시트와 같게). 실패하면 시트를 닫지 않으니 고른 내용은 남는다.
  */
-const REASONS = [
-  { key: "other-product", label: "다른 제품이 나와요" },
-  { key: "name-photo", label: "제품 이름이나 사진이 달라요" },
-  { key: "nutrition", label: "영양성분 값이 포장과 달라요" },
-  { key: "etc", label: "그 밖의 문제" },
-] as const;
-
-type ReasonKey = (typeof REASONS)[number]["key"];
 
 export function ReportSheet({
+  productId,
+  barcode,
   open,
   onOpenChange,
   onSent,
   failPreview = false,
 }: {
+  /** 상세 경로와 같은 문자열 ID. 없으면 서버로 보내지 않는다(화면을 API에 연결하기 전) */
+  productId?: string;
+  /** 바코드로 찾은 제품이면 그 바코드(운영자가 바코드 연결이 틀렸는지 본다) */
+  barcode?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** 보낸 뒤 알림 문장(띄우는 쪽이 자기 알림 띠에 보인다) */
@@ -41,7 +53,7 @@ export function ReportSheet({
 }) {
   const errorId = useId();
   const formId = useId();
-  const [picked, setPicked] = useState<ReadonlySet<ReasonKey>>(new Set());
+  const [picked, setPicked] = useState<ReadonlySet<ReportReasonKey>>(new Set());
   const [detail, setDetail] = useState("");
   const [photo, setPhotoState] = useState<Photo | null>(null);
   // 미리 보기 주소는 바꾸거나 비울 때, 화면을 떠날 때 돌려준다
@@ -58,18 +70,22 @@ export function ReportSheet({
     [],
   );
   const [error, setError] = useState(false);
+  const [detailError, setDetailError] = useState(false);
+  const detailInput = useRef<HTMLInputElement>(null);
   // 오류가 떠 있는 채로 다시 눌러도 다시 읽히게 안쪽 노드를 바꾼다
   const [errorKey, setErrorKey] = useState(0);
-  // 같은 내용을 다시 보내면 「이미 보내 주신 내용이에요」(디자인 메모). 서버 연결 전이라 이 화면에서 보낸 것만 기억한다
+  const [failed, setFailed] = useState<string | null>(null);
+  // 서버로 보내지 않을 때 같은 내용을 다시 보내면 「이미 보내 주신 내용이에요」(디자인 메모). 이 시트에서 보낸 것만 기억한다
   const [sent, setSent] = useState<string[]>([]);
-  const [failed, setFailed] = useState(false);
+  const report = useReportProduct();
 
   const reset = () => {
     setPicked(new Set());
     setDetail("");
     setPhoto(null);
     setError(false);
-    setFailed(false);
+    setDetailError(false);
+    setFailed(null);
   };
 
   const close = () => {
@@ -77,9 +93,10 @@ export function ReportSheet({
     reset();
   };
 
-  const toggle = (key: ReasonKey) => {
+  const toggle = (key: ReportReasonKey) => {
     setError(false);
-    setFailed(false);
+    setDetailError(false);
+    setFailed(null);
     // 사진 칸이 사라지면 보이지 않는 사진이 함께 보내지지 않게 비운다
     if (key === "nutrition" && picked.has("nutrition")) setPhoto(null);
     setPicked((prev) => {
@@ -96,21 +113,32 @@ export function ReportSheet({
       setErrorKey((k) => k + 1);
       return;
     }
+    if (needsDetail(picked, detail)) {
+      setDetailError(true);
+      // 문장은 칸에 묶여 있어 칸으로 옮기면 함께 읽힌다
+      detailInput.current?.focus();
+      return;
+    }
     if (failPreview) {
-      setFailed(true);
+      setFailed(reportFailMessage(null));
       return;
     }
-    // 사진은 판정에 넣지 않는다. 같은 제보를 어떻게 가를지는 제보 API의 중복 응답이 정해질 때 맞춘다
-    const signature = [...picked].sort().join(",") + "|" + detail.trim();
-    close();
-    if (sent.includes(signature)) {
-      onSent("이미 보내 주신 내용이에요. 확인 중이에요.");
+    if (productId === undefined) {
+      const signature = [...picked].sort().join(",") + "|" + detail.trim();
+      close();
+      onSent(reportSentMessage({ duplicate: sent.includes(signature) }));
+      if (!sent.includes(signature)) setSent((prev) => [...prev, signature]);
       return;
     }
-    setSent((prev) => [...prev, signature]);
-    onSent(
-      "보내 주셔서 고마워요. 확인 결과는 기록 › 분석 요청에서 볼 수 있어요.",
-    );
+    const input = toReportInput({ productId, barcode, picked, detail });
+    if (!input) return;
+    report.mutate(input, {
+      onSuccess: (result) => {
+        close();
+        onSent(reportSentMessage(result));
+      },
+      onError: (error) => setFailed(reportFailMessage(error)),
+    });
   };
 
   return (
@@ -119,7 +147,7 @@ export function ReportSheet({
         open={open}
         onOpenChange={(next) => {
           if (next) onOpenChange(true);
-          else close();
+          else if (!report.isPending) close();
         }}
         title="어떤 정보가 틀렸나요?"
         description={
@@ -136,11 +164,14 @@ export function ReportSheet({
                 role="alert"
                 className={cn("text-body2 text-text-danger", failed && "pb-2")}
               >
-                {failed
-                  ? "보내지 못했어요. 인터넷 연결을 확인하고 다시 보내 주세요. 고른 내용은 그대로 있어요."
-                  : ""}
+                {failed ?? ""}
               </p>
-              <Button type="submit" form={formId} className="w-full">
+              <Button
+                type="submit"
+                form={formId}
+                className="w-full"
+                disabled={report.isPending}
+              >
                 보내기
               </Button>
             </div>
@@ -157,7 +188,7 @@ export function ReportSheet({
         >
           <fieldset className="-mx-5">
             <legend className="sr-only">틀린 내용</legend>
-            {REASONS.map((r) => (
+            {REPORT_REASONS.map((r) => (
               <CheckRow
                 key={r.key}
                 label={r.label}
@@ -180,10 +211,19 @@ export function ReportSheet({
             className="pt-3"
             label="자세한 내용(선택)"
             placeholder="예: 포장에는 당류 2g으로 적혀 있어요"
+            ref={detailInput}
+            maxLength={REPORT_DETAIL_MAX_LENGTH}
             value={detail}
+            status={detailError ? "error" : undefined}
+            message={
+              detailError
+                ? "그 밖의 문제를 골랐다면 자세한 내용을 적어 주세요."
+                : undefined
+            }
             onChange={(event) => {
               setDetail(event.target.value);
-              setFailed(false);
+              setFailed(null);
+              setDetailError(false);
             }}
           />
           {picked.has("nutrition") && (
@@ -191,7 +231,7 @@ export function ReportSheet({
               photo={photo}
               onChange={(next) => {
                 setPhoto(next);
-                setFailed(false);
+                setFailed(null);
               }}
             />
           )}

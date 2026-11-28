@@ -24,10 +24,6 @@ import {
 } from "@/components/scan/scan-miss-sheet";
 import { ScanMessageSheet } from "@/components/scan/scan-result-sheet";
 import { ScanNoScoreSheet } from "@/components/scan/scan-no-score-sheet";
-import {
-  FIXTURE_NAMED_BARCODES,
-  FIXTURE_REQUESTED,
-} from "@/components/scan/_fixtures";
 import { ReportSheet } from "@/components/product/report-sheet";
 import { isRequestedHere } from "@/components/scan/requested-gtins";
 import {
@@ -219,14 +215,19 @@ export function ScanStage({
   };
 
   // 3-6 아직 점수가 없는 제품
-  // TODO(API 12-1): 이름 · 회사는 아직 임시 데이터(FIXTURE_NAMED_BARCODES)에서 찾는다. 점수 없음은 응답의 제품으로 바꾼다
+  // 점수만 없는 제품(NO_SCORE)은 서버에 제품이 있어 이름 · 회사를 보이고 제보할 수 있다(이름을 아는 바코드).
+  // 미등록(NOT_FOUND)은 응답에 이름이 없어 기본 시트다
   const noScore =
     gtin !== null &&
     (lookup.data?.outcome === "NOT_FOUND" ||
       lookup.data?.outcome === "NO_SCORE")
       ? gtin
       : null;
-  const named = noScore ? (FIXTURE_NAMED_BARCODES[noScore] ?? null) : null;
+  const unscored =
+    lookup.data?.outcome === "NO_SCORE" ? lookup.data.product : null;
+  const named = unscored
+    ? { brand: unscored.brandLine, name: unscored.name }
+    : null;
   // 알림 자리: 아래 버튼 줄(186) 위 12. 3-6 시트가 버튼 줄을 덮고 있으면 시트를 가리지 않게 화면 위(닫기 줄 아래)
   const toastPlace = noScore
     ? "top-[calc(var(--safe-top)+64px)] bottom-auto"
@@ -354,12 +355,8 @@ export function ScanStage({
           key={noScore}
           gtin={noScore}
           named={named}
-          // 둘 다면 「내가 요청함」이 더 맞다
-          requested={
-            isRequestedHere(noScore)
-              ? "mine"
-              : (FIXTURE_REQUESTED[noScore] ?? null)
-          }
+          // 「다른 사람이 먼저 요청함」은 응답에 없어 이 기기에서 요청한 것만 보인다(API 플랜 「API가 없는 값」)
+          requested={isRequestedHere(noScore) ? "mine" : null}
           // 정보가 틀렸어요에서 돌아오면 그 버튼으로. 번호 · 사진으로 찾았으면 누른 버튼이 가려져 제목으로.
           // 카메라로 찾았으면 폰을 든 채라 포커스를 옮기지 않고 위 영역으로 알리기만 한다
           focusOnMount={
@@ -369,17 +366,22 @@ export function ScanStage({
           onReport={() => setReportOpen(true)}
         />
       )}
-      <ReportSheet
-        // 보낸 내용 기억(같은 내용 다시 보내기)은 바코드마다 따로
-        // 형제인 3-6 시트의 key(바코드)와 겹치지 않게 앞말을 붙인다
-        key={`report-${noScore ?? "none"}`}
-        open={reportOpen}
-        onOpenChange={(open) => {
-          setReportOpen(open);
-          if (!open) setBackFromReport(true);
-        }}
-        onSent={showNotice}
-      />
+      {/* 「정보 수정 요청」은 서버에 제품이 있는 이름을 아는 바코드 시트에만 있다 */}
+      {unscored && noScore && (
+        <ReportSheet
+          // 바코드가 바뀌면 새 제품의 빈 시트로 연다
+          // 형제인 3-6 시트의 key(바코드)와 겹치지 않게 앞말을 붙인다
+          key={`report-${noScore}`}
+          productId={unscored.id}
+          barcode={noScore}
+          open={reportOpen}
+          onOpenChange={(open) => {
+            setReportOpen(open);
+            if (!open) setBackFromReport(true);
+          }}
+          onSent={showNotice}
+        />
+      )}
 
       {/* 알림 자리는 하나다. 연결이 끊긴 뒤에 다른 알림(체크 디지트)이 뜨지 않았으면 연결 끊김 알림 */}
       {offline && notice?.whileOffline !== gtin ? (
